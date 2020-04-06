@@ -17,9 +17,8 @@ namespace PeakboardExtensionCatFacts
             {
                 ID = $"CatFactsCustomList",
                 Name = "Cat Facts List",
-                Description = "Random cute stuff about cats",
-                DataInputPossible = true,
-                DataInputRequired = false,
+                Description = "Random cute stuff about cats", 
+                PropertyInputPossible = true,
                 PropertyDefaultValues = { { "MaxLength", "140" },  }
             };
         }

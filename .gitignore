@@ -2,3 +2,7 @@
 CatFacts/bin
 CatFacts/obj
 CatFacts/packages
+SQLServer/.vs
+SQLServer/bin
+SQLServer/obj
+SQLServer/packages
