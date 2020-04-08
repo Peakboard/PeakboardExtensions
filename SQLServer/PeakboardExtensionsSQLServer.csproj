@@ -32,7 +32,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=AMD64">
-      <HintPath>packages\Peakboard.ExtensionKit.1.0.3\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
+      <HintPath>packages\Peakboard.ExtensionKit.1.0.4\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -51,12 +51,12 @@
     <Compile Include="SQLServerDataSource.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
