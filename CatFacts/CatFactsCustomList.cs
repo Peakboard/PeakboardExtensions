@@ -19,7 +19,9 @@ namespace PeakboardExtensionCatFacts
                 Name = "Cat Facts List",
                 Description = "Random cute stuff about cats", 
                 PropertyInputPossible = true,
-                PropertyDefaultValues = { { "MaxLength", "140" },  }
+                PropertyInputDefaults = {
+                    new CustomListPropertyDefinition(){ Name = "MaxLength", Value = "140"}
+                }
             };
         }
 

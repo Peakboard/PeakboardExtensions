@@ -20,14 +20,15 @@ namespace PeakboardExtensionsSQLServer
             {
                 ID = $"SQLServerCustomList",
                 Name = "SQLServer List",
-                Description = "Returns SQL Server data", 
+                Description = "Returns SQL Server data",
                 PropertyInputPossible = true,
-                PropertyDefaultValues = { { "DBServer", "sunshine.database.windows.net" },
-                    { "DBName", "SunshineDB" },
-                    { "Username", "MySQLAccess" },
-                    { "*Password", "Heisenberg" },
-                    { "SQLStatement", "Select * from MyLittleTable" },
-                }
+                PropertyInputDefaults = {
+                    new CustomListPropertyDefinition() { Name = "DBServer", Value = "sunshine.database.windows.net" },
+                    new CustomListPropertyDefinition() { Name = "DBName", Value = "SunshineDB" },
+                    new CustomListPropertyDefinition() { Name = "Username", Value = "MySQLAccess" },
+                    new CustomListPropertyDefinition() { Name = "Password", Masked = true },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "Select * from MyLittleTable" },
+                },
             };
         }
 
@@ -78,6 +79,8 @@ namespace PeakboardExtensionsSQLServer
                 }
                 items.Add(newitem);
             }
+
+            this.Log.Info(string.Format("SQL Server extension fetched {0} rows.", items.Count));
             
             return items;
         }
