@@ -3,6 +3,6 @@
   <Extensions>
     <Extension ID="SQLServer"
                Path="PeakboardExtensionsSQLServer.dll"
-               Class="PeakboardExtensionsSQLServer.SQLServerDataSource" />
+               Class="PeakboardExtensionsSQLServer.SQLServerExtension" />
   </Extensions>
 </ExtensionCatalog>

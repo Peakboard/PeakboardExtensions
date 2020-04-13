@@ -9,6 +9,7 @@ using Peakboard.ExtensionKit;
 namespace PeakboardExtensionCatFacts
 {
     [Serializable]
+    [CustomListIcon("PeakboardExtensionCatFacts.cat1.png")]
     class CatFactsCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -16,7 +17,7 @@ namespace PeakboardExtensionCatFacts
             return new CustomListDefinition
             {
                 ID = $"CatFactsCustomList",
-                Name = "Cat Facts List",
+                Name = "Cat Facts",
                 Description = "Random cute stuff about cats", 
                 PropertyInputPossible = true,
                 PropertyInputDefaults = {
@@ -48,7 +49,7 @@ namespace PeakboardExtensionCatFacts
 
             var items = new CustomListObjectElementCollection();
             items.Add(new CustomListObjectElement { { "Fact", myfact.fact }, { "Length", myfact.length }, });
-            
+
             return items;
         }
 

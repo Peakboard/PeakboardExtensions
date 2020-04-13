@@ -3,6 +3,6 @@
   <Extensions>
     <Extension ID="CatFacts"
                Path="PeakboardExtensionCatFacts.dll"
-               Class="PeakboardExtensionCatFacts.CatFactsDataSource" />
+               Class="PeakboardExtensionCatFacts.CatFactsExtension" />
   </Extensions>
 </ExtensionCatalog>

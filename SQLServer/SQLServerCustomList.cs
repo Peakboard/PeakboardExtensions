@@ -27,20 +27,18 @@ namespace PeakboardExtensionsSQLServer
                     new CustomListPropertyDefinition() { Name = "DBName", Value = "SunshineDB" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "MySQLAccess" },
                     new CustomListPropertyDefinition() { Name = "Password", Masked = true },
-                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "Select * from MyLittleTable" },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "Select * from Auftrag" },
                 },
             };
         }
 
         protected override void CheckDataOverride(CustomListData data)
         {
-            MessageBox.Show("CheckDataOverride");
             CheckProperties(data);
         }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            MessageBox.Show("GetColumnsOverride");
             CustomListColumnCollection cols = new CustomListColumnCollection();
             DataTable sqlresult = GetSQLTable(data);
 
@@ -64,7 +62,6 @@ namespace PeakboardExtensionsSQLServer
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            MessageBox.Show("GetItemsOverride");
             DataTable sqlresult = GetSQLTable(data);
 
             var items = new CustomListObjectElementCollection();
@@ -80,7 +77,7 @@ namespace PeakboardExtensionsSQLServer
                 items.Add(newitem);
             }
 
-            this.Log.Info(string.Format("SQL Server extension fetched {0} rows.", items.Count));
+            this.Log?.Info(string.Format("SQL Server extension fetched {0} rows.", items.Count));
             
             return items;
         }
