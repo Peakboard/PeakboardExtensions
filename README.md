@@ -8,3 +8,9 @@ Here is a step-by-step guide how to run the samples:
 
 # Cat Facts
 This sample is a supereasy sample and ideal for beginners to explore the basic concepts. It shows how to provide a simple, fixed list in Peakboard but already gives the user the option to adjust a list property. 
+
+# SQL Server
+This is a sample to show, how a typical database extension works. It's fully functional, however please don#t use it in real life.... it's for programmers only.
+
+# Airport Weather Conditions
+This sample shows, how to create your own dialog and your own UI. The user can download weather information from various airports in Germany.
