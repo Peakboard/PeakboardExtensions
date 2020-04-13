@@ -4,14 +4,14 @@ using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionsSQLServer
 {
-    public class SQLServerDataSource : ExtensionBase
+    public class SQLServerExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
         {
             return new ExtensionDefinition
             {
                 ID = "SQLServer", // Must be unqiue over all extensions, so may use a namespace notation
-                Name = "SQLServer Data Source",
+                Name = "SQLServer Demo Extension",
                 Description = "This is a sample implementation for accessing SQL Server data",
                 Version = "1.0",
                 Author = "Jesse Pinkman",

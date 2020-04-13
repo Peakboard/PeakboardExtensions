@@ -6,3 +6,7 @@ SQLServer/.vs
 SQLServer/bin
 SQLServer/obj
 SQLServer/packages
+AirportConditions/.vs
+AirportConditions/bin
+AirportConditions/obj
+AirportConditions/packages

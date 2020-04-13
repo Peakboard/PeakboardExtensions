@@ -1,0 +1,21 @@
+﻿<controls:CustomListUserControlBase x:Class="PeakboardExtensionAirportConditions.AirportConditionUIControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PeakboardExtensionAirportConditions"
+             xmlns:controls="clr-namespace:Peakboard.ExtensionKit;assembly=Peakboard.ExtensionKit"
+             mc:Ignorable="d" >
+    <Grid>
+        <Image x:Name="image" HorizontalAlignment="Left" Stretch="Uniform" Height="300"  VerticalAlignment="Top" Width="450" Source="germany-map-outline.jpg"/>
+        <RadioButton x:Name="radEDDB" Content="Berlin" HorizontalAlignment="Left" Margin="186,95,0,0" VerticalAlignment="Top" FontWeight="ExtraBold"/>
+        <RadioButton x:Name="radEDDH" Content="Hamburg" HorizontalAlignment="Left" Margin="138,65,0,0" VerticalAlignment="Top" FontWeight="ExtraBold" RenderTransformOrigin="-1.307,-4.133"/>
+        <RadioButton x:Name="radEDDF" Content="Frankfurt" HorizontalAlignment="Left" Margin="112,175,0,0" VerticalAlignment="Top" FontWeight="ExtraBold"/>
+        <RadioButton x:Name="radEDDS" Content="Stuttgart" HorizontalAlignment="Left" Margin="123,226,0,0" VerticalAlignment="Top" FontWeight="ExtraBold"/>
+        <RadioButton x:Name="radEDDM" Content="Munich" HorizontalAlignment="Left" Margin="150,246,0,0" VerticalAlignment="Top" FontWeight="ExtraBold"/>
+        <RadioButton x:Name="radEDDK" Content="Cologne" HorizontalAlignment="Left" Margin="85,126,0,0" VerticalAlignment="Top" FontWeight="ExtraBold"/>
+
+
+
+    </Grid>
+</controls:CustomListUserControlBase>
