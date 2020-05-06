@@ -23,3 +23,12 @@ Ingres/SourceCode/.vs
 Ingres/SourceCode/packages
 Ingres/SourceCode/obj
 Ingres/SourceCode/bin
+Samples/AirportConditions/SourceCode/.vs
+Samples/AirportConditions/SourceCode/bin
+Samples/AirportConditions/SourceCode/packages
+Samples/AirportConditions/SourceCode/obj
+Samples/CatFacts/SourceCode/bin
+Samples/CatFacts/SourceCode/obj
+Samples/CatFacts/SourceCode/packages
+Samples/SQLServer/SourceCode/bin
+Samples/SQLServer/SourceCode/obj
