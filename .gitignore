@@ -32,3 +32,12 @@ Samples/CatFacts/SourceCode/obj
 Samples/CatFacts/SourceCode/packages
 Samples/SQLServer/SourceCode/bin
 Samples/SQLServer/SourceCode/obj
+
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+Samples/CatFacts/SourceCode/.vs
