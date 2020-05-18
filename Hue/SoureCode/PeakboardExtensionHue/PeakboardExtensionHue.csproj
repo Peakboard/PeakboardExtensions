@@ -34,7 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
-    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.10" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.14" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
