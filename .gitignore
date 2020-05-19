@@ -41,3 +41,4 @@ Samples/SQLServer/SourceCode/obj
 *.userosscache
 *.sln.docstates
 Samples/CatFacts/SourceCode/.vs
+Samples/SQLServer/SourceCode/.vs
