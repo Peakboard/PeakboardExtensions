@@ -26,8 +26,8 @@ namespace PeakboardExtensionsSQLServer
                     new CustomListPropertyDefinition() { Name = "DBServer", Value = "sunshine.database.windows.net" },
                     new CustomListPropertyDefinition() { Name = "DBName", Value = "SunshineDB" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "MySQLAccess" },
-                    new CustomListPropertyDefinition() { Name = "Password", Masked = true },
-                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "Select * from Auftrag" },
+                    new CustomListPropertyDefinition() { Name = "Password", Masked = true, Fixed = false },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "Select * from Auftrag", MultiLine = true },
                 },
             };
         }
