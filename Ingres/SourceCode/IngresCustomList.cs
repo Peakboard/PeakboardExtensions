@@ -22,11 +22,11 @@ namespace PeakboardExtensionIngres
                 Description = "Returns data from Ingres database",
                 PropertyInputPossible = true,
                 PropertyInputDefaults = {
-                    new CustomListPropertyDefinition() { Name = "Host", Value = "ec2-54-164-77-64.compute-1.amazonaws.com" },
-                    new CustomListPropertyDefinition() { Name = "Database", Value = "demodb" },
-                    new CustomListPropertyDefinition() { Name = "Username", Value = "Administrator" },
-                    new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="Hellraiser76" },
-                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "SELECT * FROM PERSONS", EvalParameters = true, MultiLine = true  },
+                    new CustomListPropertyDefinition() { Name = "Host", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "Database", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "Username", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="" },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "SELECT * FROM MYTABLE", EvalParameters = true, MultiLine = true  },
                 },
             };
         }
