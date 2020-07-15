@@ -26,7 +26,7 @@ namespace PeakboardExtensionIngres
                     new CustomListPropertyDefinition() { Name = "Database", Value = "demodb" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "Administrator" },
                     new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="Hellraiser76" },
-                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "SELECT * FROM PERSONS", EvalParameters = true },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "SELECT * FROM PERSONS", EvalParameters = true, MultiLine = true  },
                 },
             };
         }
