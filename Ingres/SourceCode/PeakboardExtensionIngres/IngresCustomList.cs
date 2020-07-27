@@ -46,7 +46,7 @@ namespace PeakboardExtensionIngres
                 CustomListColumn newcol = new CustomListColumn(sqlcol.ColumnName);
 
                 // We convert the types to one of the three Peakboard types (string, number or boolean)
-                if (sqlcol.DataType.ToString().Equals("System.Int32"))
+                if (sqlcol.DataType.ToString().Equals("System.Int32") || sqlcol.DataType.ToString().Equals("System.Decimal"))
                     newcol.Type = CustomListColumnTypes.Number;
                 else if (sqlcol.DataType.ToString().Equals("System.Boolean"))
                     newcol.Type = CustomListColumnTypes.Boolean;
