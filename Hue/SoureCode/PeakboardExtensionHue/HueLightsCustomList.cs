@@ -134,7 +134,7 @@ namespace PeakboardExtensionHue
                 { "ProductName", light.ProductName }, {"SwitchedOn", light.SwitchedOn},   {"Brightness", light.Brightness},});
             }
 
-            this.Log?.Info(string.Format("Airport condition extension fetched {0} rows.", items.Count));
+            this.Log?.Info(string.Format("Hue extension fetched {0} rows.", items.Count));
             
             return items;
         }

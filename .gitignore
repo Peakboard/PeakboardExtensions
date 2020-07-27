@@ -42,3 +42,8 @@ Samples/SQLServer/SourceCode/obj
 *.sln.docstates
 Samples/CatFacts/SourceCode/.vs
 Samples/SQLServer/SourceCode/.vs
+Ingres/SourceCode/IngresTestConsole/bin
+Ingres/SourceCode/IngresTestConsole/obj
+Ingres/SourceCode/PeakboardExtensionIngres/bin
+Ingres/SourceCode/PeakboardExtensionIngres/obj
+Ingres/merker.txt
