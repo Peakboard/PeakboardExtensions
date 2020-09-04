@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YaroomsTestConsole", "YaroomsTestConsole\YaroomsTestConsole.csproj", "{993080F7-326B-467E-B47F-E798C574741C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeakboardExtensionYarooms", "PeakboardExtensionYarooms\PeakboardExtensionYarooms.csproj", "{F9D35BD2-0D7F-4B95-862F-29A24D752690}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{993080F7-326B-467E-B47F-E798C574741C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{993080F7-326B-467E-B47F-E798C574741C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{993080F7-326B-467E-B47F-E798C574741C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{993080F7-326B-467E-B47F-E798C574741C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9D35BD2-0D7F-4B95-862F-29A24D752690}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9D35BD2-0D7F-4B95-862F-29A24D752690}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9D35BD2-0D7F-4B95-862F-29A24D752690}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9D35BD2-0D7F-4B95-862F-29A24D752690}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {174A1456-159E-4018-83E2-B18F6D9F696C}
+	EndGlobalSection
+EndGlobal
