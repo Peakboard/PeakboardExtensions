@@ -47,3 +47,14 @@ Ingres/SourceCode/IngresTestConsole/obj
 Ingres/SourceCode/PeakboardExtensionIngres/bin
 Ingres/SourceCode/PeakboardExtensionIngres/obj
 Ingres/merker.txt
+Yarooms/SourceCode/.vs
+Yarooms/SourceCode/YaroomsTestConsole/bin
+Yarooms/SourceCode/YaroomsTestConsole/obj
+Yarooms/SourceCode/PeakboardExtensionYarooms/obj
+Yarooms/SourceCode/packages
+Yarooms/Binaries/Extension.xml
+Yarooms/Binaries/Newtonsoft.Json.dll
+Yarooms/Binaries/Newtonsoft.Json.xml
+Yarooms/Binaries/PeakboardExtensionYarooms.dll
+Yarooms/Binaries/PeakboardExtensionYarooms.pdb
+Yarooms/merker.txt
