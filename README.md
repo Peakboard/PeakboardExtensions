@@ -13,3 +13,9 @@ Check out the source code to learn more about on how to use custom functions wit
 
 # Ingres
 This is a ready-to-use extension for Ingres databases.
+
+# Yarooms
+This is a ready-to-use extension for Yarooms meetings.
+
+# MySql
+This is a ready-to-use extension for MySql databases.
