@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+  <Extensions>
+    <Extension ID="MySql"
+               Path="PeakboardExtensionMySql.dll"
+               Class="PeakboardExtensionMySql.MySqlExtension" />
+  </Extensions>
+</ExtensionCatalog>
