@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
-using Peakboard.ExtensionKit;
 using System.Data;
 using MySql.Data.MySqlClient;
+using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionMySql
 {
@@ -38,23 +33,32 @@ namespace PeakboardExtensionMySql
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            CustomListColumnCollection cols = new CustomListColumnCollection();
-            DataTable sqlresult = GetSQLTable(data);
+            data.Properties.TryGetValue("SQLStatement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
 
-            foreach(DataColumn sqlcol in sqlresult.Columns)
+            var cols = new CustomListColumnCollection();
+            var con = GetConnection(data);
+            var command = new MySqlCommand(SQLStatement, con);
+            var reader = command.ExecuteReader();
+            var schemaTable = reader.GetSchemaTable();
+
+            foreach (DataRow sqlcol in schemaTable.Rows)
             {
-                CustomListColumn newcol = new CustomListColumn(sqlcol.ColumnName);
+                var columnName = (string)sqlcol["ColumnName"];
+                var dataType = (Type)sqlcol["DataType"];
+                var listColumnType = CustomListColumnTypes.String;
 
                 // We convert the types to one of the three Peakboard types (string, number or boolean)
-                if (sqlcol.DataType.ToString().Equals("System.Int32") || sqlcol.DataType.ToString().Equals("System.Decimal"))
-                    newcol.Type = CustomListColumnTypes.Number;
-                else if (sqlcol.DataType.ToString().Equals("System.Boolean"))
-                    newcol.Type = CustomListColumnTypes.Boolean;
+                if (dataType == typeof(string))
+                    listColumnType = CustomListColumnTypes.String;
+                else if (dataType == typeof(bool))
+                    listColumnType = CustomListColumnTypes.Boolean;
                 else
-                    newcol.Type = CustomListColumnTypes.String;
+                    listColumnType = DataTypeHelper.IsNumericType(dataType) ? CustomListColumnTypes.Number : CustomListColumnTypes.String;
 
-                cols.Add(newcol);
+                cols.Add(new CustomListColumn(columnName, listColumnType));
             }
+
+            con.Close();
 
             return cols;
         }
@@ -66,18 +70,16 @@ namespace PeakboardExtensionMySql
             var items = new CustomListObjectElementCollection();
 
             // We simply transfer the Datatable object to a CustomListObjectCollection
-            foreach(DataRow sqlrow in sqlresult.Rows)
+            foreach (DataRow sqlrow in sqlresult.Rows)
             {
                 CustomListObjectElement newitem = new CustomListObjectElement();
-                foreach(DataColumn sqlcol in sqlresult.Columns)
-                {
-                    newitem.Add(sqlcol.ColumnName, sqlrow[sqlcol.ColumnName]); 
-                }
+                foreach (DataColumn sqlcol in sqlresult.Columns)
+                    newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, sqlrow[sqlcol.ColumnName]));
                 items.Add(newitem);
             }
 
             this.Log?.Info(string.Format("MySql extension fetched {0} rows.", items.Count));
-            
+
             return items;
         }
 

@@ -1,6 +1,4 @@
-﻿using System;
-using Peakboard.ExtensionKit;
-
+﻿using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionMySql
 {
