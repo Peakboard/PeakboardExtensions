@@ -38,23 +38,32 @@ namespace PeakboardExtensionIngres
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            CustomListColumnCollection cols = new CustomListColumnCollection();
-            DataTable sqlresult = GetSQLTable(data);
+            data.Properties.TryGetValue("SQLStatement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
 
-            foreach(DataColumn sqlcol in sqlresult.Columns)
+            var cols = new CustomListColumnCollection();
+            var con = GetConnection(data);
+            var command = new IngresCommand(SQLStatement, con);
+            var reader = command.ExecuteReader();
+            var schemaTable = reader.GetSchemaTable();
+
+            foreach (DataRow sqlcol in schemaTable.Rows)
             {
-                CustomListColumn newcol = new CustomListColumn(sqlcol.ColumnName);
+                var columnName = (string)sqlcol["ColumnName"];
+                var dataType = (Type)sqlcol["DataType"];
+                var listColumnType = CustomListColumnTypes.String;
 
                 // We convert the types to one of the three Peakboard types (string, number or boolean)
-                if (sqlcol.DataType.ToString().Equals("System.Int32") || sqlcol.DataType.ToString().Equals("System.Decimal"))
-                    newcol.Type = CustomListColumnTypes.Number;
-                else if (sqlcol.DataType.ToString().Equals("System.Boolean"))
-                    newcol.Type = CustomListColumnTypes.Boolean;
+                if (dataType == typeof(string))
+                    listColumnType = CustomListColumnTypes.String;
+                else if (dataType == typeof(bool))
+                    listColumnType = CustomListColumnTypes.Boolean;
                 else
-                    newcol.Type = CustomListColumnTypes.String;
+                    listColumnType = DataTypeHelper.IsNumericType(dataType) ? CustomListColumnTypes.Number : CustomListColumnTypes.String;
 
-                cols.Add(newcol);
+                cols.Add(new CustomListColumn(columnName, listColumnType));
             }
+
+            con.Close();
 
             return cols;
         }
@@ -69,10 +78,8 @@ namespace PeakboardExtensionIngres
             foreach(DataRow sqlrow in sqlresult.Rows)
             {
                 CustomListObjectElement newitem = new CustomListObjectElement();
-                foreach(DataColumn sqlcol in sqlresult.Columns)
-                {
-                    newitem.Add(sqlcol.ColumnName, sqlrow[sqlcol.ColumnName]);
-                }
+                foreach (DataColumn sqlcol in sqlresult.Columns)
+                    newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, sqlrow[sqlcol.ColumnName]));
                 items.Add(newitem);
             }
 
