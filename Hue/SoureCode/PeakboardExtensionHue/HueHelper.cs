@@ -34,7 +34,7 @@ namespace PeakboardExtensionHue
 
         public static List<HueLight> GetLights(string BridgeIp, string UserName)
         {
-            WebClient client = new WebClient();
+            WebClient client = new WebClient() { Encoding = Encoding.UTF8 };
             string resp = client.DownloadString(string.Format("http://{0}/api/{1}/lights", BridgeIp, UserName));
 
             JObject dynobj = JObject.Parse(resp);
