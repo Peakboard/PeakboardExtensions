@@ -9,8 +9,8 @@ namespace PeakboardExtensionHue
 {
     class HueLightsCustomListStorage
     {
-        public string BridgeIP = "";
-        public string UserName = "";
+        public string BridgeIP { get; set; }
+        public string UserName { get; set; }
 
         public static HueLightsCustomListStorage GetFromParameterString(string Parameter)
         {
