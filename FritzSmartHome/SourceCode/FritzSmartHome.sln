@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29806.167
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleTest", "ConsoleTest\ConsoleTest.csproj", "{0B33DD4A-7CE0-495C-A30B-678CDD1BE6F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVMFritz", "AVMFritz\AVMFritz.csproj", "{983E5419-2B74-4E19-9882-9F59E32F24B1}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0B33DD4A-7CE0-495C-A30B-678CDD1BE6F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B33DD4A-7CE0-495C-A30B-678CDD1BE6F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B33DD4A-7CE0-495C-A30B-678CDD1BE6F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B33DD4A-7CE0-495C-A30B-678CDD1BE6F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{983E5419-2B74-4E19-9882-9F59E32F24B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{983E5419-2B74-4E19-9882-9F59E32F24B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{983E5419-2B74-4E19-9882-9F59E32F24B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{983E5419-2B74-4E19-9882-9F59E32F24B1}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BC8C89D9-216A-4E24-BA19-F7CDAAC2B625}
+	EndGlobalSection
+EndGlobal
