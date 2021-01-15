@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Text;
-using System.Threading.Tasks;
 using Peakboard.ExtensionKit;
-using System.Net;
-using System.Globalization;
 using System.Windows;
-using Newtonsoft.Json;
 using static PeakboardExtensionHue.HueHelper;
 
 namespace PeakboardExtensionHue
@@ -30,13 +23,13 @@ namespace PeakboardExtensionHue
                 {
                     new CustomListFunctionDefinition
                     {
-                        Name = "SwitchLightOn",
+                        Name = "switchlighton",
                         Description = "Switches a light on",
                         InputParameters = new CustomListFunctionInputParameterDefinitionCollection
                         {
                             new CustomListFunctionInputParameterDefinition
                             {
-                                Name = "NameOfLight",
+                                Name = "nameoflight",
                                 Type = CustomListFunctionParameterTypes.String,
                                 Optional = false,
                                 Description = "The name of the light bulb as indicated in the lights list"
@@ -45,13 +38,13 @@ namespace PeakboardExtensionHue
                     },
                     new CustomListFunctionDefinition
                     {
-                        Name = "SwitchLightOff",
+                        Name = "switchlightoff",
                         Description = "Switches a light off",
                         InputParameters = new CustomListFunctionInputParameterDefinitionCollection
                         {
                             new CustomListFunctionInputParameterDefinition
                             {
-                                Name = "NameOfLight",
+                                Name = "nameoflight",
                                 Type = CustomListFunctionParameterTypes.String,
                                 Optional = false,
                                 Description = "The name of the light bulb as indicated in the lights list"
@@ -60,20 +53,20 @@ namespace PeakboardExtensionHue
                     },
                                         new CustomListFunctionDefinition
                     {
-                        Name = "SetLightBrightness",
+                        Name = "setlightbrightness",
                         Description = "Sets the brightness of the light (0-254)",
                         InputParameters = new CustomListFunctionInputParameterDefinitionCollection
                         {
                             new CustomListFunctionInputParameterDefinition
                             {
-                                Name = "NameOfLight",
+                                Name = "nameoflight",
                                 Type = CustomListFunctionParameterTypes.String,
                                 Optional = false,
                                 Description = "The name of the light bulb as indicated in the lights list"
                             },
                                                         new CustomListFunctionInputParameterDefinition
                             {
-                                Name = "Brightness",
+                                Name = "brightness",
                                 Type = CustomListFunctionParameterTypes.Number,
                                 Optional = false,
                                 Description = "Brightness of the light bulb (0-254)"
@@ -92,14 +85,14 @@ namespace PeakboardExtensionHue
 
         protected override void CheckDataOverride(CustomListData data)
         {
-            // doing several checks with the Parameter that contains all out properties as JSon string
-            HueLightsCustomListStorage mystorage = HueLightsCustomListStorage.GetFromParameterString(data.Parameter);
+            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
+            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
 
-            if (string.IsNullOrWhiteSpace(mystorage.BridgeIP))
+            if (string.IsNullOrWhiteSpace(BridgeIP))
             {
                 throw new InvalidOperationException("Please provide a Bridge IP");
             }
-            if (string.IsNullOrWhiteSpace(mystorage.UserName))
+            if (string.IsNullOrWhiteSpace(UserName))
             {
                 throw new InvalidOperationException("Please provide a User Name");
             }
@@ -121,10 +114,10 @@ namespace PeakboardExtensionHue
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            // Downloading the weather data for the airport code
-            HueLightsCustomListStorage mystorage = HueLightsCustomListStorage.GetFromParameterString(data.Parameter);
+            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
+            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
 
-            List<HueLight> mylights = GetLights(mystorage.BridgeIP, mystorage.UserName);
+            List<HueLight> mylights = GetLights(BridgeIP, UserName);
 
             CustomListObjectElementCollection items = new CustomListObjectElementCollection();
 
@@ -141,28 +134,30 @@ namespace PeakboardExtensionHue
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
+            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
+            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
+
             this.Log?.Info(string.Format("The function {0} has been called with {1} parameters", context.FunctionName, context.Values.Count));
-            HueLightsCustomListStorage mystorage = HueLightsCustomListStorage.GetFromParameterString(data.Parameter);
             var returnContext = default(CustomListExecuteReturnContext);
             
             if (context.FunctionName.Equals("SwitchLightOn"))
             {
                 string lightname = context.Values[0].StringValue;
                 this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOn", lightname));
-                HueHelper.SwitchLight(mystorage.BridgeIP, mystorage.UserName, lightname, true);
+                HueHelper.SwitchLight(BridgeIP, UserName, lightname, true);
             }
             else if (context.FunctionName.Equals("SwitchLightOff"))
             {
                 string lightname = context.Values[0].StringValue;
                 this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOff", lightname));
-                HueHelper.SwitchLight(mystorage.BridgeIP, mystorage.UserName, lightname, false);
+                HueHelper.SwitchLight(BridgeIP, UserName, lightname, false);
             }
             else if (context.FunctionName.Equals("SetLightBrightness"))
             {
                 string lightname = context.Values[0].StringValue;
                 int brightness = Convert.ToInt32(context.Values[1].GetValue());
                 this.Log?.Info(string.Format("Lightname: {0} -> SetLightBrightness -> {1}", lightname, brightness));
-                HueHelper.SetLightsBrightness(mystorage.BridgeIP, mystorage.UserName, lightname, brightness);
+                HueHelper.SetLightsBrightness(BridgeIP, UserName, lightname, brightness);
             }
             else
             {
