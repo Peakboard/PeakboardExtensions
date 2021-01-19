@@ -16,10 +16,10 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Column="0" Grid.Row="0" Text="HUE Bridge IP" Margin="3"/>
-            <TextBox Grid.Column="1" Grid.Row="0" Name="HueBridgeIP" Text="192.168.0.178" VerticalContentAlignment="Center" Margin="3"/>
-            <Button Grid.Column="1" Grid.Row="1" Content="Get Username from Bridge"  Margin="3" Click="Button_Click"/>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Hue Bridge IP" Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Name="HueBridgeIP" VerticalContentAlignment="Center" Margin="3"/>
+            <Button Grid.Column="1" Grid.Row="1" Content="Get Username from Bridge" Margin="3" Click="Button_Click"/>
             <TextBlock Grid.Column="0" Grid.Row="2" Text="User Name" Margin="3"/>
-            <TextBox Grid.Column="1" Grid.Row="2" Name="HueUserName" Text="YVkVIpvQsh3HjW7adwoIP8VUYYkMYvOfI7hYrdQI" VerticalContentAlignment="Center"  Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="2" Name="HueUserName" VerticalContentAlignment="Center" Margin="3"/>
         </Grid>
 </controls:CustomListUserControlBase>

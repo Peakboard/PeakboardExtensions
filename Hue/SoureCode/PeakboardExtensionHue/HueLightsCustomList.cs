@@ -51,7 +51,7 @@ namespace PeakboardExtensionHue
                             },
                         },
                     },
-                                        new CustomListFunctionDefinition
+                    new CustomListFunctionDefinition
                     {
                         Name = "setlightbrightness",
                         Description = "Sets the brightness of the light (0-254)",
@@ -64,7 +64,7 @@ namespace PeakboardExtensionHue
                                 Optional = false,
                                 Description = "The name of the light bulb as indicated in the lights list"
                             },
-                                                        new CustomListFunctionInputParameterDefinition
+                            new CustomListFunctionInputParameterDefinition
                             {
                                 Name = "brightness",
                                 Type = CustomListFunctionParameterTypes.Number,
@@ -80,19 +80,24 @@ namespace PeakboardExtensionHue
         protected override FrameworkElement GetControlOverride()
         {
             // return an instance of the UI user control
-            return new HueUIControl();
+            return new HueUIControl(Extension);
         }
 
         protected override void CheckDataOverride(CustomListData data)
         {
-            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
-            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
+            if (data.Parameter.Split(';').Length != 2)
+            {
+                throw new InvalidOperationException("Invalid data");
+            }
 
-            if (string.IsNullOrWhiteSpace(BridgeIP))
+            var bridgeIP = data.Parameter.Split(';')[0];
+            var userName = data.Parameter.Split(';')[1];
+
+            if (string.IsNullOrWhiteSpace(bridgeIP))
             {
                 throw new InvalidOperationException("Please provide a Bridge IP");
             }
-            if (string.IsNullOrWhiteSpace(UserName))
+            if (string.IsNullOrWhiteSpace(userName))
             {
                 throw new InvalidOperationException("Please provide a User Name");
             }
@@ -114,12 +119,17 @@ namespace PeakboardExtensionHue
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
-            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
+            if (data.Parameter.Split(';').Length != 2)
+            {
+                throw new InvalidOperationException("Invalid data");
+            }
 
-            List<HueLight> mylights = GetLights(BridgeIP, UserName);
+            var bridgeIP = data.Parameter.Split(';')[0];
+            var userName = data.Parameter.Split(';')[1];
 
-            CustomListObjectElementCollection items = new CustomListObjectElementCollection();
+            List<HueLight> mylights = GetLights(bridgeIP, userName);
+
+            var items = new CustomListObjectElementCollection();
 
             foreach (var light in mylights)
             {
@@ -127,37 +137,37 @@ namespace PeakboardExtensionHue
                 { "ProductName", light.ProductName }, {"SwitchedOn", light.SwitchedOn},   {"Brightness", light.Brightness},});
             }
 
-            this.Log?.Info(string.Format("Hue extension fetched {0} rows.", items.Count));
-            
+            //this.Log?.Info(string.Format("Hue extension fetched {0} rows.", items.Count));
+
             return items;
         }
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
-            data.Properties.TryGetValue("BridgeIP", StringComparison.OrdinalIgnoreCase, out var BridgeIP);
-            data.Properties.TryGetValue("UserName", StringComparison.OrdinalIgnoreCase, out var UserName);
+            var bridgeIP = data.Parameter.Split(';')[0];
+            var userName = data.Parameter.Split(';')[1];
 
             this.Log?.Info(string.Format("The function {0} has been called with {1} parameters", context.FunctionName, context.Values.Count));
             var returnContext = default(CustomListExecuteReturnContext);
             
-            if (context.FunctionName.Equals("SwitchLightOn"))
+            if (context.FunctionName.Equals("switchlighton", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
                 this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOn", lightname));
-                HueHelper.SwitchLight(BridgeIP, UserName, lightname, true);
+                HueHelper.SwitchLight(bridgeIP, userName, lightname, true);
             }
-            else if (context.FunctionName.Equals("SwitchLightOff"))
+            else if (context.FunctionName.Equals("switchlightoff", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
                 this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOff", lightname));
-                HueHelper.SwitchLight(BridgeIP, UserName, lightname, false);
+                HueHelper.SwitchLight(bridgeIP, userName, lightname, false);
             }
-            else if (context.FunctionName.Equals("SetLightBrightness"))
+            else if (context.FunctionName.Equals("setlightbrightness", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
                 int brightness = Convert.ToInt32(context.Values[1].GetValue());
                 this.Log?.Info(string.Format("Lightname: {0} -> SetLightBrightness -> {1}", lightname, brightness));
-                HueHelper.SetLightsBrightness(BridgeIP, UserName, lightname, brightness);
+                HueHelper.SetLightsBrightness(bridgeIP, userName, lightname, brightness);
             }
             else
             {
