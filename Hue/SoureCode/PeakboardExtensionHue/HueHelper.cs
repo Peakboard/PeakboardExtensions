@@ -49,7 +49,16 @@ namespace PeakboardExtensionHue
                     hueLight.Type = mylight["type"].ToString();
                     hueLight.ProductName = mylight["productname"].ToString();
                     hueLight.SwitchedOn = mylight["state"]["on"].ToString().Equals("True");
-                    hueLight.Brightness = Convert.ToInt32(mylight["state"]["bri"].ToString());
+
+                    if (mylight["state"]["bri"] != null)
+                    {
+                        hueLight.Brightness = Convert.ToInt32(mylight["state"]["bri"].ToString());
+                    }
+                    else
+                    {
+                        hueLight.Brightness = -1;
+                    }
+
                     mylist.Add(hueLight);
                 }
             }
