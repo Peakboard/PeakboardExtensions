@@ -8,10 +8,10 @@ namespace PeakboardExtensionHue
 {
     class HueHelper
     {
-        public static string GetHueUser(string BridgeIp)
+        public static string GetHueUser(string bridgeIp)
         {
             WebClient client = new WebClient();
-            string resp = client.UploadString(string.Format("http://{0}/api", BridgeIp), "{\"devicetype\":\"Peakboard\"}");
+            string resp = client.UploadString(string.Format("http://{0}/api", bridgeIp), "{\"devicetype\":\"Peakboard\"}");
             resp = resp.Substring(1);
             resp = resp.Substring(0, resp.Length - 1);
 
@@ -30,10 +30,10 @@ namespace PeakboardExtensionHue
             }
         }
 
-        public static List<HueLight> GetLights(string BridgeIp, string UserName)
+        public static List<HueLight> GetLights(string bridgeIp, string userName)
         {
             WebClient client = new WebClient() { Encoding = Encoding.UTF8 };
-            string resp = client.DownloadString(string.Format("http://{0}/api/{1}/lights", BridgeIp, UserName));
+            string resp = client.DownloadString(string.Format("http://{0}/api/{1}/lights", bridgeIp, userName));
 
             JObject dynobj = JObject.Parse(resp);
             List<HueLight> mylist = new List<HueLight>();
@@ -66,13 +66,13 @@ namespace PeakboardExtensionHue
             return mylist;
         }
 
-        public static void SwitchLight(string BridgeIp, string UserName, string LightName, bool SwitchOn)
+        public static void SwitchLight(string bridgeIp, string userName, string lightName, bool switchOn)
         {
-            List<HueLight> mylights = GetLights(BridgeIp, UserName);
+            List<HueLight> mylights = GetLights(bridgeIp, userName);
             string LightId = null;
             foreach (HueLight light in mylights)
             {
-                if (light.Name.Equals(LightName))
+                if (light.Name.Equals(lightName))
                 {
                     LightId = light.Id;
                 }
@@ -80,11 +80,11 @@ namespace PeakboardExtensionHue
 
             if (LightId is null)
             {
-                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", LightName));
+                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", lightName));
             }
 
-            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", BridgeIp, UserName, LightId);
-            string data = "{\"on\":" + (SwitchOn ? "true" : "false") + "}";
+            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", bridgeIp, userName, LightId);
+            string data = "{\"on\":" + (switchOn ? "true" : "false") + "}";
             WebClient client = new WebClient();
             string resp = client.UploadString(url, "Put", data);
 
@@ -97,13 +97,13 @@ namespace PeakboardExtensionHue
             Console.WriteLine(resp);
         }
 
-        public static void SetLightsBrightness(string BridgeIp, string UserName, string LightName, int Brightness)
+        public static void SetLightBrightness(string bridgeIp, string userName, string lightName, int brightness)
         {
-            List<HueLight> mylights = GetLights(BridgeIp, UserName);
+            List<HueLight> mylights = GetLights(bridgeIp, userName);
             string LightId = null;
             foreach (HueLight light in mylights)
             {
-                if (light.Name.Equals(LightName))
+                if (light.Name.Equals(lightName))
                 {
                     LightId = light.Id;
                 }
@@ -111,16 +111,16 @@ namespace PeakboardExtensionHue
 
             if (LightId is null)
             {
-                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", LightName));
+                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", lightName));
             }
 
-            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", BridgeIp, UserName, LightId);
+            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", bridgeIp, userName, LightId);
             string data;
-            if (Brightness > 0 && Brightness <= 254)
+            if (brightness > 0 && brightness <= 254)
             {
-                data = "{\"on\":true, \"bri\":" + Brightness.ToString() + "}";
+                data = "{\"on\":true, \"bri\":" + brightness.ToString() + "}";
             }
-            else if (Brightness == 0)
+            else if (brightness == 0)
             {
                 data = "{\"on\":off, \"bri\":0}";
             }
@@ -134,7 +134,76 @@ namespace PeakboardExtensionHue
             {
                 throw new InvalidOperationException("Hue Bridge returned: " + dynobj["error"]["description"]);
             }
+
+            Console.WriteLine(resp);
+        }
+
+        public static void SetLightColor(string bridgeIp, string userName, string lightName, int color)
+        {
+            List<HueLight> mylights = GetLights(bridgeIp, userName);
+            string LightId = null;
+            foreach (HueLight light in mylights)
+            {
+                if (light.Name.Equals(lightName))
+                {
+                    LightId = light.Id;
+                }
+            }
+
+            if (LightId is null)
+            {
+                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", lightName));
+            }
+
+            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", bridgeIp, userName, LightId);
+            string data;
+            if (color > 0 && color <= 65535)
+            {
+                data = "{\"on\":true, \"hue\":" + color.ToString() + "}";
+            }
+            else
+                throw new InvalidOperationException("invalid value for Brightness");
+            WebClient client = new WebClient();
+            string resp = client.UploadString(url, "Put", data);
+
+            JObject dynobj = (JObject)JArray.Parse(resp)[0];
+            if (dynobj.ContainsKey("error"))
+            {
+                throw new InvalidOperationException("Hue Bridge returned: " + dynobj["error"]["description"]);
+            }
+
+            Console.WriteLine(resp);
+        }
+
+        public static void Alert(string bridgeIp, string userName, string lightName)
+        {
+            List<HueLight> mylights = GetLights(bridgeIp, userName);
+            string LightId = null;
+            foreach (HueLight light in mylights)
+            {
+                if (light.Name.Equals(lightName))
+                {
+                    LightId = light.Id;
+                }
+            }
+
+            if (LightId is null)
+            {
+                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", lightName));
+            }
+
+            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", bridgeIp, userName, LightId);
+            string data = "{\"on\":true, \"alert\":\"lselect\"}";
             
+            WebClient client = new WebClient();
+            string resp = client.UploadString(url, "Put", data);
+
+            JObject dynobj = (JObject)JArray.Parse(resp)[0];
+            if (dynobj.ContainsKey("error"))
+            {
+                throw new InvalidOperationException("Hue Bridge returned: " + dynobj["error"]["description"]);
+            }
+
             Console.WriteLine(resp);
         }
 

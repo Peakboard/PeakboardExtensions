@@ -73,6 +73,43 @@ namespace PeakboardExtensionHue
                             },
                         },
                     },
+                    new CustomListFunctionDefinition
+                    {
+                        Name = "setlightcolor",
+                        Description = "Sets the color of the light (0-65535)",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "nameoflight",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Optional = false,
+                                Description = "The name of the light bulb as indicated in the lights list"
+                            },
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "color",
+                                Type = CustomListFunctionParameterTypes.Number,
+                                Optional = false,
+                                Description = "Color of the light bulb (0-65535)"
+                            },
+                        },
+                    },
+                    new CustomListFunctionDefinition
+                    {
+                        Name = "Alert",
+                        Description = "Runs a 15 seconds alert",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "nameoflight",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Optional = false,
+                                Description = "The name of the light bulb as indicated in the lights list"
+                            },
+                        },
+                    }
                 }
             };
         }
@@ -153,21 +190,34 @@ namespace PeakboardExtensionHue
             if (context.FunctionName.Equals("switchlighton", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
-                this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOn", lightname));
+                this.Log?.Info(string.Format("Lightname: {0} -> switchlighton", lightname));
                 HueHelper.SwitchLight(bridgeIP, userName, lightname, true);
             }
             else if (context.FunctionName.Equals("switchlightoff", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
-                this.Log?.Info(string.Format("Lightname: {0} -> SwitchLightOff", lightname));
+                this.Log?.Info(string.Format("Lightname: {0} -> switchlightoff", lightname));
                 HueHelper.SwitchLight(bridgeIP, userName, lightname, false);
             }
             else if (context.FunctionName.Equals("setlightbrightness", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
                 int brightness = Convert.ToInt32(context.Values[1].GetValue());
-                this.Log?.Info(string.Format("Lightname: {0} -> SetLightBrightness -> {1}", lightname, brightness));
-                HueHelper.SetLightsBrightness(bridgeIP, userName, lightname, brightness);
+                this.Log?.Info(string.Format("Lightname: {0} -> setlightbrightness -> {1}", lightname, brightness));
+                HueHelper.SetLightBrightness(bridgeIP, userName, lightname, brightness);
+            }
+            else if (context.FunctionName.Equals("setlightcolor", StringComparison.InvariantCultureIgnoreCase))
+            {
+                string lightname = context.Values[0].StringValue;
+                int color = Convert.ToInt32(context.Values[1].GetValue());
+                this.Log?.Info(string.Format("Lightname: {0} -> setlightcolor -> {1}", lightname, color));
+                HueHelper.SetLightColor(bridgeIP, userName, lightname, color);
+            }
+            else if (context.FunctionName.Equals("alert", StringComparison.InvariantCultureIgnoreCase))
+            {
+                string lightname = context.Values[0].StringValue;
+                this.Log?.Info(string.Format("Lightname: {0} -> alert", lightname));
+                HueHelper.Alert(bridgeIP, userName, lightname);
             }
             else
             {
