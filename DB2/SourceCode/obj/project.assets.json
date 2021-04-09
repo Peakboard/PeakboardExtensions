@@ -1,0 +1,123 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.8": {
+      "Peakboard.ExtensionKit/1.0.15": {
+        "type": "package",
+        "compile": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        },
+        "runtime": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.8/win": {
+      "Peakboard.ExtensionKit/1.0.15": {
+        "type": "package",
+        "compile": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        },
+        "runtime": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.8/win-x64": {
+      "Peakboard.ExtensionKit/1.0.15": {
+        "type": "package",
+        "compile": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        },
+        "runtime": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.8/win-x86": {
+      "Peakboard.ExtensionKit/1.0.15": {
+        "type": "package",
+        "compile": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        },
+        "runtime": {
+          "lib/net462/Peakboard.ExtensionKit.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Peakboard.ExtensionKit/1.0.15": {
+      "sha512": "lcHgPaNzieOuKiZquDD+/WsHhGWYfkq3nO5MY2/MPB/5oPRyV1YL+IxEIysfbOul+tyTNqLCvq2ehqjKpLI2/Q==",
+      "type": "package",
+      "path": "peakboard.extensionkit/1.0.15",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "lib/net462/Peakboard.ExtensionKit.dll",
+        "peakboard.extensionkit.1.0.15.nupkg.sha512",
+        "peakboard.extensionkit.nuspec",
+        "tools/init.ps1"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.8": [
+      "Peakboard.ExtensionKit >= 1.0.15"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\tiryaki\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "X:\\User\\tiryaki\\DB2\\SourceCode\\PeakboardExtensionDB2.csproj",
+      "projectName": "PeakboardExtensionDB2",
+      "projectPath": "X:\\User\\tiryaki\\DB2\\SourceCode\\PeakboardExtensionDB2.csproj",
+      "packagesPath": "C:\\Users\\tiryaki\\.nuget\\packages\\",
+      "outputPath": "X:\\User\\tiryaki\\DB2\\SourceCode\\obj\\",
+      "projectStyle": "PackageReference",
+      "skipContentFileWrite": true,
+      "configFilePaths": [
+        "C:\\Users\\tiryaki\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net48"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net48": {
+          "projectReferences": {}
+        }
+      }
+    },
+    "frameworks": {
+      "net48": {
+        "dependencies": {
+          "Peakboard.ExtensionKit": {
+            "target": "Package",
+            "version": "[1.0.15, )"
+          }
+        }
+      }
+    },
+    "runtimes": {
+      "win": {
+        "#import": []
+      },
+      "win-x64": {
+        "#import": []
+      },
+      "win-x86": {
+        "#import": []
+      }
+    }
+  }
+}

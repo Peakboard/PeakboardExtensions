@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "ezTSXC5Vn/WGohCxiZuZWLIv92tDSd5vlMTwzr2yNQ5z6Ge71zN8+iENJfnEPdYewjA5d3io8JcICkuRxs06Ew==",
+  "success": true,
+  "projectFilePath": "X:\\User\\tiryaki\\DB2\\SourceCode\\PeakboardExtensionDB2.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\tiryaki\\.nuget\\packages\\peakboard.extensionkit\\1.0.15\\peakboard.extensionkit.1.0.15.nupkg.sha512"
+  ],
+  "logs": []
+}
