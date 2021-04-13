@@ -32,7 +32,11 @@ Samples/CatFacts/SourceCode/obj
 Samples/CatFacts/SourceCode/packages
 Samples/SQLServer/SourceCode/bin
 Samples/SQLServer/SourceCode/obj
-
+DB2/.vs
+DB2/SourceCode/.vs
+DB2/SourceCode/packages
+DB2/SourceCode/obj
+DB2/SourceCode/bin
 
 # User-specific files
 *.rsuser
@@ -87,3 +91,6 @@ MySQL/SourceCode/packages
 MySQL/SourceCode/PeakboardExtensionMySql/bin
 MySQL/SourceCode/PeakboardExtensionMySql/obj
 MySQL/merker.txt
+DB2/SourceCode/PeakboardExtensionDB2/bin
+DB2/SourceCode/PeakboardExtensionDB2/obj
+DB2/merker.txt

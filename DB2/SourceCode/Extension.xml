@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+  <Extensions>
+    <Extension ID="DB2"
+               Path="PeakboardExtensionDB2.dll"
+               Class="PeakboardExtensionDB2.DB2Extension" />
+  </Extensions>
+</ExtensionCatalog>
