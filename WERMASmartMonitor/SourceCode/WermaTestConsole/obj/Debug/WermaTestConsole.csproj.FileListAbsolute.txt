@@ -1,0 +1,17 @@
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaTestConsole.exe.config
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaTestConsole.exe
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaTestConsole.pdb
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\PeakboardExtensionWerma.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\PeakboardExtensionWerma.pdb
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\obj\Debug\WermaTestConsole.csprojAssemblyReference.cache
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\obj\Debug\WermaTestConsole.csproj.CoreCompileInputs.cache
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\obj\Debug\WermaTestConsole.csproj.CopyComplete
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\obj\Debug\WermaTestConsole.exe
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\obj\Debug\WermaTestConsole.pdb
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\DevExpress.Utils.v18.2.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\Softwork.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\WIN-CLI.exe
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\WIN.Client.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\WIN.Core.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\WIN.Core.Types.dll
+C:\Users\benja\Peakboard\PeakboardExtensionWerma\WermaTestConsole\bin\Debug\WermaUtilities\WIN-CLI.exe.swlic
