@@ -29,6 +29,7 @@ namespace PeakboardExtensionWerma
             return new CustomListCollection
             {
                 new WermaController(),
+                new WermaTimestampList()
             };
         }
     }
