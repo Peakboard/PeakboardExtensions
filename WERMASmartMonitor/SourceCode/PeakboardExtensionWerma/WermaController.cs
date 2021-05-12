@@ -44,12 +44,12 @@ namespace PeakboardExtensionWerma
                                 Name = "macid",
                                 Type = CustomListFunctionParameterTypes.String,
                                 Optional = false,
-                                Description = "The MacID of your signal light (Example : 009E40)"
+                                Description = "The ID of your signal light (Example : 009E40)"
                             },
                             new CustomListFunctionInputParameterDefinition
                             {
                                 Name = "nameofchannel",
-                                Type = CustomListFunctionParameterTypes.String,
+                                Type = CustomListFunctionParameterTypes.Number,
                                 Optional = false,
                                 Description = "The name of the channel (Possible values : 1/2/3/4)"
                             },
@@ -97,7 +97,7 @@ namespace PeakboardExtensionWerma
                 {
                     string deviceSlaveId = sqlrow1[sqlcol1.ColumnName].ToString();
 
-                    string commandText2 = "SELECT MacId as ID, Name, Channel1, Channel2, Channel3, Channel4 FROM dbo.slaveData, dbo.slaveDevice WHERE dbo.slaveData.slaveId = dbo.slaveDevice.id AND dbo.slaveData.id = (SELECT MAX(id) FROM dbo.slaveData WHERE slaveId = " + deviceSlaveId +")";
+                    string commandText2 = $"SELECT MacId as ID, Name, Channel1, Channel2, Channel3, Channel4 FROM dbo.slaveData, dbo.slaveDevice WHERE dbo.slaveData.slaveId = dbo.slaveDevice.id AND dbo.slaveData.id = (SELECT MAX(id) FROM dbo.slaveData WHERE slaveId = {deviceSlaveId})";
                     DataTable sqlresult2 = GetSQLTable(data, commandText2);
 
                     foreach (DataRow sqlrow2 in sqlresult2.Rows)
@@ -111,7 +111,7 @@ namespace PeakboardExtensionWerma
                             {
                                 cs = "Off";
                             }
-                            else if (cs == "16" || cs == "17" || cs == "18" || cs == "19")
+                            else if (cs == "1" || cs == "2" || cs == "3" || cs == "16" || cs == "17" || cs == "18" || cs == "19")
                             {
                                 cs = "On";
                             }
