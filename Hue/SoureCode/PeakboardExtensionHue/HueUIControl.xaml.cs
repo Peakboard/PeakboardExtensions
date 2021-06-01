@@ -19,7 +19,7 @@ namespace PeakboardExtensionHue
 
         protected override void SetParameterOverride(string parameter)
         {
-            if (parameter.Split(';').Length != 2)
+            if (string.IsNullOrEmpty(parameter) || parameter.Split(';').Length != 2)
             {
                 return;
             }
