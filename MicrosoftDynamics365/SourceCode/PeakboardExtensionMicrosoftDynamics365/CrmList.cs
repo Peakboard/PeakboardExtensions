@@ -43,7 +43,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             var password = data.Parameter.Split(';')[2];
             var maxRows = data.Parameter.Split(';')[3];
             var logicalNameViewOrTable = data.Parameter.Split(';')[4];
-            var displayNameColumn = data.Parameter.Split(';')[5];
+            //var displayNameColumn = data.Parameter.Split(';')[5];
             var logicalNameColumn = data.Parameter.Split(';')[6];
             var chooseEntityOrView = data.Parameter.Split(';')[7];
 
@@ -70,14 +70,14 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
             if (chooseEntityOrView == "Entity")
             {
-                
+
                 if (string.IsNullOrWhiteSpace(logicalNameColumn))
                 {
                     throw new InvalidOperationException("Please select some columns");
                 }
             }
 
-            if (!int.TryParse(maxRows,out int i))
+            if (!int.TryParse(maxRows, out int i))
             {
                 throw new InvalidOperationException("Invalid max rows property. Please check carefully!");
             }
@@ -88,28 +88,38 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            var columnCollection = new CustomListColumnCollection();
-            var chooseEntityOrView = data.Parameter.Split(';')[7];
 
-            if(chooseEntityOrView=="View")
-            {
+            var columnCollection = new CustomListColumnCollection();
+
+            //try
+            //{
                 var link = data.Parameter.Split(';')[0];
                 var username = data.Parameter.Split(';')[1];
                 var password = data.Parameter.Split(';')[2];
-                var logicalNameView = data.Parameter.Split(';')[4];
+                var logicalNameViewOrTable = data.Parameter.Split(';')[4];
+                var chooseEntityOrView = data.Parameter.Split(';')[7];
 
-                columnCollection = CrmHelper.GetViewColumns(link, username, password, logicalNameView);
-            }
-            else if(chooseEntityOrView == "Entity")
-            {
-                var displayNameColumn = data.Parameter.Split(';')[5];
-                string[] newDisplayNameColumn = displayNameColumn.Replace(" ", String.Empty).Split(',');
-
-                foreach (var c in newDisplayNameColumn)
+                if (chooseEntityOrView == "View")
                 {
-                    columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
+                    columnCollection = CrmHelper.GetViewColumns(link, username, password, logicalNameViewOrTable);
                 }
-            }
+                else if (chooseEntityOrView == "Entity")
+                {
+                    var displayNameColumn = data.Parameter.Split(';')[5];
+                    var logicalNameColumn = data.Parameter.Split(';')[6];
+
+                    columnCollection = CrmHelper.GetEntityColumns(link, username, password, logicalNameViewOrTable, displayNameColumn, logicalNameColumn);
+                }
+                else
+                {
+                    throw new InvalidOperationException("You have to select View or Entity");
+                }
+            //}
+            //catch (Exception exception)
+            //{
+            //    throw new InvalidOperationException("Error, please try again");
+            //}
+
 
             return columnCollection;
         }
@@ -117,25 +127,38 @@ namespace PeakboardExtensionMicrosoftDynamics365
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
-            var chooseEntityOrView = data.Parameter.Split(';')[7];
 
-            var link = data.Parameter.Split(';')[0];
-            var username = data.Parameter.Split(';')[1];
-            var password = data.Parameter.Split(';')[2];
-            var maxRows = data.Parameter.Split(';')[3];
-            var logicalNameViewOrTable = data.Parameter.Split(';')[4];
+            //try
+            //{
+                var chooseEntityOrView = data.Parameter.Split(';')[7];
 
-            if (chooseEntityOrView == "View")
-            {
-                itemsCollection = CrmHelper.GetDataFromView(link, username, password, maxRows, logicalNameViewOrTable);
-            }
-            else if (chooseEntityOrView == "Entity")
-            {
-                var displayNameColumn = data.Parameter.Split(';')[5];
-                var logicalNameColumn = data.Parameter.Split(';')[6];
+                var link = data.Parameter.Split(';')[0];
+                var username = data.Parameter.Split(';')[1];
+                var password = data.Parameter.Split(';')[2];
+                var maxRows = data.Parameter.Split(';')[3];
+                var logicalNameViewOrTable = data.Parameter.Split(';')[4];
 
-                itemsCollection = CrmHelper.GetDataFromEntity(link, username, password, maxRows, logicalNameViewOrTable, displayNameColumn, logicalNameColumn);
-            }
+                if (chooseEntityOrView == "View")
+                {
+                    itemsCollection = CrmHelper.GetDataFromView(link, username, password, maxRows, logicalNameViewOrTable);
+                }
+                else if (chooseEntityOrView == "Entity")
+                {
+                    var displayNameColumn = data.Parameter.Split(';')[5];
+                    var logicalNameColumn = data.Parameter.Split(';')[6];
+
+                    itemsCollection = CrmHelper.GetDataFromEntity(link, username, password, maxRows, logicalNameViewOrTable, displayNameColumn, logicalNameColumn);
+                }
+                else
+                {
+                    throw new InvalidOperationException("You have to select View or Entity");
+                }
+            //}
+            //catch (Exception exception)
+            //{
+            //    throw new InvalidOperationException("Error, please try again");
+            //}
+
 
             return itemsCollection;
         }

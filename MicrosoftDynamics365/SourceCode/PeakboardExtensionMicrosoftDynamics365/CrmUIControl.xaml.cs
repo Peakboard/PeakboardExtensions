@@ -33,18 +33,14 @@ namespace PeakboardExtensionMicrosoftDynamics365
             string displayName = "";
             string chooseEntityOrView = "";
             string entityOrViewName = "";
-            
-            if(rbEntity.IsChecked==true)
+
+            if (rbEntity.IsChecked == true)
             {
                 chooseEntityOrView = "Entity";
 
                 if (this.cboTable.Items.Contains((ComboBoxItem)this.cboTable.SelectedItem))
                 {
                     entityOrViewName = ((ComboBoxItem)this.cboTable.SelectedItem).Tag.ToString();
-                }
-                else
-                {
-                    throw new InvalidOperationException("Please provide an Entity");
                 }
 
                 foreach (CheckBox item in this.columns.Items)
@@ -60,28 +56,17 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     logicalName = logicalName.Substring(0, logicalName.Length - 1);
                     displayName = displayName.Substring(0, displayName.Length - 1);
                 }
-                else
-                {
-                    throw new InvalidOperationException("Please select some Attributes/Columns!");
-                }
+
             }
             else if (rbView.IsChecked == true)
             {
                 chooseEntityOrView = "View";
 
-                if(this.cboView.Items.Contains((ComboBoxItem)this.cboView.SelectedItem))
+                if (this.cboView.Items.Contains((ComboBoxItem)this.cboView.SelectedItem))
                 {
                     entityOrViewName = ((ComboBoxItem)this.cboView.SelectedItem).Tag.ToString();
                 }
-                else
-                {
-                    throw new InvalidOperationException("Please provide a View");
-                }
 
-            }
-            else
-            {
-                throw new InvalidOperationException("You must select an Entity or a View");
             }
 
             return $"{this.link.Text};{this.username.Text};{this.password.Password};{this.maxRows.Text};{entityOrViewName};{displayName};{logicalName};{chooseEntityOrView}";
@@ -110,48 +95,47 @@ namespace PeakboardExtensionMicrosoftDynamics365
             this.cboTable.Items.Clear();
             this.cboView.Items.Clear();
 
-
-            List<CrmName> tableList = new List<CrmName>();
-
-            tableList = CrmHelper.GetTablesName(this.link.Text, this.username.Text, this.password.Password);
-
-            if(tableList==null || tableList.Count == 0)
+            try
             {
-                return;
-            }
-            else
-            {
-                foreach (CrmName table in tableList)
+                List<CrmName> tableList = new List<CrmName>();
+
+                tableList = CrmHelper.GetTablesName(this.link.Text, this.username.Text, this.password.Password);
+
+                if (tableList != null || tableList.Count != 0)
                 {
-                    ComboBoxItem cboi = new ComboBoxItem
+                    foreach (CrmName table in tableList)
                     {
-                        Content = table.displayName,
-                        Tag = table.logicalName
-                    };
-                    this.cboTable.Items.Add(cboi);
+                        ComboBoxItem cboi = new ComboBoxItem
+                        {
+                            Content = table.displayName,
+                            Tag = table.logicalName
+                        };
+                        this.cboTable.Items.Add(cboi);
+                    }
                 }
-            }
+            
+                List<CrmName> viewList = new List<CrmName>();
 
+                viewList = CrmHelper.GetViewsName(this.link.Text, this.username.Text, this.password.Password);
 
-            List<CrmName> viewList = new List<CrmName>();
-
-            viewList = CrmHelper.GetViewsName(this.link.Text, this.username.Text, this.password.Password);
-
-            if (viewList == null || viewList.Count == 0)
-            {
-                return;
-            }
-            else
-            {
-                foreach (CrmName view in viewList)
+                if (viewList != null || viewList.Count != 0)
                 {
-                    ComboBoxItem cboi = new ComboBoxItem
+                    foreach (CrmName view in viewList)
                     {
-                        Content = view.displayName,
-                        Tag = view.logicalName
-                    };
-                    this.cboView.Items.Add(cboi);
+                        ComboBoxItem cboi = new ComboBoxItem
+                        {
+                            Content = view.displayName,
+                            Tag = view.logicalName
+                        };
+                        this.cboView.Items.Add(cboi);
+                    }
                 }
+
+                MessageBox.Show("Connection succesfull! Select a View or an Entity.");
+            }
+            catch (Exception exception)
+            {
+                MessageBox.Show("Connection failed! Try again or change connections properties!");
             }
         }
 
@@ -174,15 +158,22 @@ namespace PeakboardExtensionMicrosoftDynamics365
         private void btnTable_Click(object sender, RoutedEventArgs e)
         {
             this.columns.Items.Clear();
-
-            List<CrmName> columns = CrmHelper.GetTableColumns(this.link.Text, this.username.Text, this.password.Password, ((ComboBoxItem)this.cboTable.SelectedItem).Tag.ToString());
-            foreach (CrmName c in columns)
+            try
             {
-                CheckBox cb = new CheckBox();
-                cb.Content = c.displayName;
-                cb.Tag = c.logicalName;
-                this.columns.Items.Add(cb);
+                List<CrmName> columns = CrmHelper.GetTableColumns(this.link.Text, this.username.Text, this.password.Password, ((ComboBoxItem)this.cboTable.SelectedItem).Tag.ToString());
+                foreach (CrmName c in columns)
+                {
+                    CheckBox cb = new CheckBox();
+                    cb.Content = c.displayName;
+                    cb.Tag = c.logicalName;
+                    this.columns.Items.Add(cb);
+                }
             }
+            catch(Exception exception)
+            {
+                MessageBox.Show("An error occurred while trying to load Columns for the selected Entity. Please try again.");
+            }
+            
         }
     }
 }
