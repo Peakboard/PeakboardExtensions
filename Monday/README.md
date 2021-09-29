@@ -44,7 +44,8 @@ You can also try your queries here : https://monday.com/developers/v2/try-it-you
 If you want to retrieve the data by selecting a board, once you have enterred your connection properties, click on the "Connect" button. It should retrieve all the boards from your account in the dropdown list.
 
 ![image](https://user-images.githubusercontent.com/82028654/135249463-9505cba2-08f5-4bc4-b69c-b92ed8caa097.png)
-You can now select the group. Then click on the "Load Data" button on the top-right corner.
+
+You can now select a group. Then click on the "Load Data" button on the top-right corner.
 
 *A board is composed of one or different groups, by default it is set to "All Groups" in order to retrieve all the data from the board.*
 
