@@ -22,7 +22,7 @@ namespace PeakboardExtensionDB2
                     new CustomListPropertyDefinition() { Name = "Database", Value = "sys" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "peakboard" },
                     new CustomListPropertyDefinition() { Name = "Password", Value = "", Masked = true},
-                    new CustomListPropertyDefinition() { Name = "SQL Statement", Value = "select * from testtable", EvalParameters = true, MultiLine = true },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "select * from testtable", EvalParameters = true, MultiLine = true },
                 },
             };
         }
@@ -34,7 +34,7 @@ namespace PeakboardExtensionDB2
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            data.Properties.TryGetValue("SQL Statement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
+            data.Properties.TryGetValue("SQLStatement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
 
             var cols = new CustomListColumnCollection();
             var con = GetConnection(data);
@@ -90,7 +90,7 @@ namespace PeakboardExtensionDB2
         private DataTable GetDB2Table(CustomListData data)
         {
             DB2Connection con = GetConnection(data);
-            data.Properties.TryGetValue("SQL Statement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
+            data.Properties.TryGetValue("SQLStatement", StringComparison.OrdinalIgnoreCase, out var SQLStatement);
 
             DB2DataAdapter da = new DB2DataAdapter(new DB2Command(SQLStatement, con));
             DataTable db2result = new DataTable();
