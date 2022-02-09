@@ -19,3 +19,6 @@ This is a ready-to-use extension for Yarooms meetings.
 
 # MySql
 This is a ready-to-use extension for MySql databases.
+
+# PostgreSQL
+This is a ready-to-use extension for PostgreSQL databases.

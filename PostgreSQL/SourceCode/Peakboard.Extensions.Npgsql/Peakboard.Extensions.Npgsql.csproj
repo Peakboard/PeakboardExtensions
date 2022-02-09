@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="elephant64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="elephant64.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="3.2.7" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
