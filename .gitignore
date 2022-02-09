@@ -37,6 +37,9 @@ DB2/SourceCode/.vs
 DB2/SourceCode/packages
 DB2/SourceCode/obj
 DB2/SourceCode/bin
+PostgreSQL/SourceCode/Peakboard.Extensions.Npgsql/bin
+PostgreSQL/SourceCode/Peakboard.Extensions.Npgsql/obj
+PostgreSQL/SourceCode/.vs
 
 # User-specific files
 *.rsuser
