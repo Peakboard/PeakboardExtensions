@@ -82,13 +82,18 @@ namespace Peakboard.Extensions.Npgsql
                 columns.Add(customListColumn);
             }
 
+            connection.Close();
+            reader.Close();
+
             return columns;
         }
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             DataTable dataTable = new DataTable();
-            dataTable.Load(ReadStatement(data, OpenConnection(data)));
+            NpgsqlConnection connection = OpenConnection(data);
+            NpgsqlDataReader dataReader = ReadStatement(data, connection);
+            dataTable.Load(dataReader);
 
             var items = new CustomListObjectElementCollection();
 
@@ -101,6 +106,10 @@ namespace Peakboard.Extensions.Npgsql
             }
 
             this.Log?.Info(string.Format("Ingres extension fetched {0} rows.", items.Count));
+
+            connection.Close();
+            dataTable.Dispose();
+            dataReader.Close();
 
             return items;
         }
