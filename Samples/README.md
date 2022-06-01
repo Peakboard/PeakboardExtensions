@@ -15,3 +15,5 @@ This is a sample to show, how a typical database extension works. It's fully fun
 # Airport Weather Conditions
 This sample shows, how to create your own dialog and your own UI. The user can download weather information from various airports in Germany.
 
+# Custom Function
+This sample shows how to create a simple lua function to create a MD5 hash.
