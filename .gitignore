@@ -1,4 +1,8 @@
-﻿Samples/CatFacts/.vs
+/bin/
+/obj/
+*.vs
+/packages/
+Samples/CatFacts/.vs
 Samples/CatFacts/bin
 Samples/CatFacts/obj
 Samples/CatFacts/packages
@@ -97,3 +101,4 @@ MySQL/merker.txt
 DB2/SourceCode/PeakboardExtensionDB2/bin
 DB2/SourceCode/PeakboardExtensionDB2/obj
 DB2/merker.txt
+*/bin/*
