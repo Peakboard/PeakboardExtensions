@@ -1,7 +1,7 @@
 bin/
 obj/
 *.vs
-/packages/
+packages/
 
 # User-specific files
 *.rsuser
@@ -9,32 +9,14 @@ obj/
 *.user
 *.userosscache
 *.sln.docstates
-Samples/CatFacts/SourceCode/.vs
-Samples/SQLServer/SourceCode/.vs
-Ingres/SourceCode/IngresTestConsole/bin
-Ingres/SourceCode/IngresTestConsole/obj
-Ingres/SourceCode/PeakboardExtensionIngres/bin
-Ingres/SourceCode/PeakboardExtensionIngres/obj
 Ingres/merker.txt
-Yarooms/SourceCode/.vs
-Yarooms/SourceCode/YaroomsTestConsole/bin
-Yarooms/SourceCode/YaroomsTestConsole/obj
-Yarooms/SourceCode/PeakboardExtensionYarooms/obj
-Yarooms/SourceCode/packages
 Yarooms/Binaries/Extension.xml
 Yarooms/Binaries/Newtonsoft.Json.dll
 Yarooms/Binaries/Newtonsoft.Json.xml
 Yarooms/Binaries/PeakboardExtensionYarooms.dll
 Yarooms/Binaries/PeakboardExtensionYarooms.pdb
 Yarooms/merker.txt
-Yarooms/SourceCode/PeakboardExtensionYarooms/bin
 Eventbank/merker.txt
-Eventbank/SourceCode/PeakboardExtensionEventbank/.vs
-Eventbank/SourceCode/PeakboardExtensionEventbank/bin
-Eventbank/SourceCode/PeakboardExtensionEventbank/obj
-Eventbank/SourceCode/packages
-Eventbank/SourceCode/EvenbankTestConsole/obj
-Eventbank/SourceCode/EvenbankTestConsole/bin
 MySQL/Binary/BouncyCastle.Crypto.dll
 MySQL/Binary/Extension.xml
 MySQL/Binary/Google.Protobuf.dll
