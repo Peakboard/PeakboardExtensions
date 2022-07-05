@@ -18,6 +18,7 @@ namespace PeakboardExtensionMySql
                 PropertyInputPossible = true,
                 PropertyInputDefaults = {
                     new CustomListPropertyDefinition() { Name = "Host", Value = "xxx.compute.amazonaws.com" },
+                    new CustomListPropertyDefinition() { Name = "Port", Value = "3306" },
                     new CustomListPropertyDefinition() { Name = "Database", Value = "sys" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "peakboard" },
                     new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="" },
@@ -99,11 +100,12 @@ namespace PeakboardExtensionMySql
         private void CheckProperties(CustomListData data)
         {
             data.Properties.TryGetValue("Host", StringComparison.OrdinalIgnoreCase, out var DBServer);
+            data.Properties.TryGetValue("Port", StringComparison.OrdinalIgnoreCase, out var Port);
             data.Properties.TryGetValue("Database", StringComparison.OrdinalIgnoreCase, out var DBName);
             data.Properties.TryGetValue("Username", StringComparison.OrdinalIgnoreCase, out var Username);
             data.Properties.TryGetValue("Password", StringComparison.OrdinalIgnoreCase, out var Password);
 
-            if (string.IsNullOrWhiteSpace(DBServer) || string.IsNullOrWhiteSpace(DBName) || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
+            if (string.IsNullOrWhiteSpace(DBServer) || string.IsNullOrWhiteSpace(Port) || string.IsNullOrWhiteSpace(DBName) || string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Password))
             {
                 throw new InvalidOperationException("Invalid properties. Please check carefully!");
             }
@@ -112,11 +114,12 @@ namespace PeakboardExtensionMySql
         private MySqlConnection GetConnection(CustomListData data)
         {
             data.Properties.TryGetValue("Host", StringComparison.OrdinalIgnoreCase, out var Host);
+            data.Properties.TryGetValue("Port", StringComparison.OrdinalIgnoreCase, out var Port);
             data.Properties.TryGetValue("Database", StringComparison.OrdinalIgnoreCase, out var Database);
             data.Properties.TryGetValue("Username", StringComparison.OrdinalIgnoreCase, out var Username);
             data.Properties.TryGetValue("Password", StringComparison.OrdinalIgnoreCase, out var Password);
 
-            MySqlConnection con = new MySqlConnection(string.Format("server={0};userid={2};password={3};database={1}", Host, Database, Username, Password));
+            MySqlConnection con = new MySqlConnection(string.Format($"server={Host};port={Port};userid={Username};password={Password};database={Database}"));
             con.Open();
 
             return con;
