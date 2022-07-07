@@ -32,7 +32,8 @@ namespace PeakboardExtensionNetworkFiles
             return new CustomListColumnCollection
             {
                 new CustomListColumn("Path", CustomListColumnTypes.String),
-                new CustomListColumn("Name", CustomListColumnTypes.String)
+                new CustomListColumn("Name", CustomListColumnTypes.String),
+                new CustomListColumn("LastModified", CustomListColumnTypes.String),
             };
         }
 
@@ -50,7 +51,8 @@ namespace PeakboardExtensionNetworkFiles
             {
                 foreach (var file in Directory.GetFiles(nc.NetworkName, "*", checkSubfolders == "True" ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
                 {
-                    items.Add(new CustomListObjectElement() {{"Path", file}, {"Name", Path.GetFileName(file)}});
+                    var modified = File.GetLastWriteTime(file);
+                    items.Add(new CustomListObjectElement() {{"Path", file}, {"Name", Path.GetFileName(file)}, { "Last modified", modified.ToString("yyyyMMddHHmmss") } });
                 }
             }
 
