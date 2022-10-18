@@ -63,18 +63,13 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
                     foreach (var c in entities)
                     {
-                        if (c.DisplayName.LocalizedLabels.Count() > 1)
+                        CrmName crmName = new CrmName
                         {
-                            CrmName crmName = new CrmName
-                            {
-                                displayName = c.DisplayName.UserLocalizedLabel.Label,
-                                logicalName = c.LogicalName
-                            };
-                            tableList.Add(crmName);
-                        }
+                            displayName = c.DisplayName.UserLocalizedLabel?.Label ?? c.LogicalName,
+                            logicalName = c.LogicalName
+                        };
+                        tableList.Add(crmName);
                     }
-
-                    
                 }
                 catch(Exception exception)
                 {
@@ -202,16 +197,13 @@ namespace PeakboardExtensionMicrosoftDynamics365
                 
                 foreach (var c in qe.ColumnSet.Columns)
                 {
-                    if (ec.Entities[0].Attributes.Contains(c))
+                    if (ec.Entities[0].Attributes.Contains(c) && ec.Entities[0].Attributes?[c] is Money)
                     {
-                        if (ec.Entities[0].Attributes[c] is Money)
-                        {
-                            columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.Number));
-                        }
-                        else
-                        {
-                            columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
-                        }
+                        columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.Number));
+                    }
+                    else
+                    {
+                        columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
                     }
                 }
             }
@@ -266,16 +258,13 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
                     foreach (var c in qe.ColumnSet.Columns)
                     {
-                        if (ec.Entities[0].Attributes.Contains(c))
+                        if (ec.Entities[0].Attributes.Contains(c) && ec.Entities[0].Attributes?[c] is Money)
                         {
-                            if (ec.Entities[0].Attributes[c] is Money)
-                            {
-                                columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.Number));
-                            }
-                            else
-                            {
-                                columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
-                            }
+                            columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.Number));
+                        }
+                        else
+                        {
+                            columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
                         }
                     }
                 }
@@ -426,8 +415,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
                 {
                     return null;
                 }
-                
-                
 
                 if (int.Parse(maxRows) > ec.Entities.Count)
                 {
@@ -440,43 +427,43 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     {
                         string newString = "";
 
-                        if (ec.Entities.Count == 0 || !ec.Entities[i].Attributes.Contains(column))
-                        {
-                            newString = "";
-                        }
-                        else
-                        {
-                            if (ec.Entities[i].Attributes[column] is OptionSetValue)
-                            {
-                                OptionSetValue o = new OptionSetValue();
-                                o = (OptionSetValue)ec.Entities[i].Attributes[column];
-                                newString = o.Value.ToString();
-                            }
-                            else if (ec.Entities[i].Attributes[column] is AliasedValue)
-                            {
-                                AliasedValue o = new AliasedValue();
-                                o = (AliasedValue)ec.Entities[i].Attributes[column];
-                                newString = o.Value.ToString();
-                            }
-                            else if (ec.Entities[i].Attributes[column] is EntityReference)
-                            {
-                                EntityReference o = new EntityReference();
-                                o = (EntityReference)ec.Entities[i].Attributes[column];
-                                newString = o.Name.ToString();
-                            }
-                            else if (ec.Entities[i].Attributes[column] is Money)
-                            {
-                                Money o = new Money();
-                                o = (Money)ec.Entities[i].Attributes[column];
-                                newString = o.Value.ToString();
-                            }
-                            else
-                            {
-                                newString = ec.Entities[i].Attributes[column].ToString();
-                            }
-                        }
+						if (ec.Entities.Count == 0 || !ec.Entities[i].Attributes.Contains(column))
+						{
+							newString = "";
+						}
+						else
+						{
+							if (ec.Entities[i].Attributes[column] is OptionSetValue)
+							{
+								OptionSetValue o = new OptionSetValue();
+								o = (OptionSetValue)ec.Entities[i].Attributes[column];
+								newString = o.Value.ToString();
+							}
+							else if (ec.Entities[i].Attributes[column] is AliasedValue)
+							{
+								AliasedValue o = new AliasedValue();
+								o = (AliasedValue)ec.Entities[i].Attributes[column];
+								newString = o.Value.ToString();
+							}
+							else if (ec.Entities[i].Attributes[column] is EntityReference)
+							{
+								EntityReference o = new EntityReference();
+								o = (EntityReference)ec.Entities[i].Attributes[column];
+								newString = o.Name?.ToString() ?? "";
+							}
+							else if (ec.Entities[i].Attributes[column] is Money)
+							{
+								Money o = new Money();
+								o = (Money)ec.Entities[i].Attributes[column];
+								newString = o.Value.ToString();
+							}
+							else
+							{
+								newString = ec.Entities[i].Attributes[column].ToString();
+							}
+						}
 
-                        item.Add(column, newString);
+						item.Add(column, newString);
                     }
                     itemsCollection.Add(item);
                 }
