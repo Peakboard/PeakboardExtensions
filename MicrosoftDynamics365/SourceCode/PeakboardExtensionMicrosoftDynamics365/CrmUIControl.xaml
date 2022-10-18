@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <TextBlock Grid.Column="0" Grid.Row="0" Text="Organization Service Link" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="0" Text="Url" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="0" Name="link" Text="" VerticalContentAlignment="Center" Margin="3"/>
         <TextBlock Grid.Column="0" Grid.Row="1" Text="Username" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="1" Name="username" Text="" VerticalContentAlignment="Center" Margin="3"/>
@@ -35,7 +35,7 @@
         <RadioButton Grid.Column="0" Grid.Row="5" Name="rbView" Content="View" VerticalAlignment="Center" Margin="3" GroupName="TableOrView" Checked="rbView_Checked"/>
         <ComboBox Grid.Column="1" Grid.Row="5" Margin="3" Name="cboView" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" ></ComboBox>
         <RadioButton Grid.Column="0" Grid.Row="6" Name="rbEntity" Content="Entity / Table" VerticalAlignment="Center" Margin="3,25,3,3" GroupName="TableOrView" Checked="rbEntity_Checked"/>
-        <ComboBox Grid.Column="1" Grid.Row="6" Margin="3,25,3,3" Name="cboTable" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" ></ComboBox>
+        <ComboBox Grid.Column="1" Grid.Row="6" Margin="3,25,3,3" Name="cboTable" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True"  SelectionChanged="cboTable_SelectionChanged"></ComboBox>
         <Button Grid.Column="1" Grid.Row="7" Margin="3" Width="100" HorizontalAlignment="Right" Content="Search Columns" Name="btnTable" IsEnabled="False" Click="btnTable_Click" ></Button>
         <TextBlock Grid.Column="0" Grid.Row="8" Text="Attributes / Columns" IsEnabled="False" Margin="3"/>
         <ListBox Grid.Column="1" Grid.Row="8" Name="columns" VerticalContentAlignment="Center" Margin="3" Height="205" ScrollViewer.VerticalScrollBarVisibility="Visible"></ListBox>

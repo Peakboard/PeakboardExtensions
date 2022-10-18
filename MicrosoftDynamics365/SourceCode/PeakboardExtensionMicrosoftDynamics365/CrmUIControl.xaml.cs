@@ -175,5 +175,10 @@ namespace PeakboardExtensionMicrosoftDynamics365
             }
             
         }
-    }
+
+		private void cboTable_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+            this.columns.Items.Clear();
+        }
+	}
 }
