@@ -56,7 +56,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     logicalName = logicalName.Substring(0, logicalName.Length - 1);
                     displayName = displayName.Substring(0, displayName.Length - 1);
                 }
-
             }
             else if (rbView.IsChecked == true)
             {
