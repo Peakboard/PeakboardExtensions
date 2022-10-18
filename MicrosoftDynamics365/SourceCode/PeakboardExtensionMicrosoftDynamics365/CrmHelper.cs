@@ -145,11 +145,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
                     foreach (var c in entities.Attributes)
                     {
-                        if (c.DisplayName.LocalizedLabels.Count() > 1)
+                        if (c.DisplayName.LocalizedLabels.Count() > 0)
                         {
                             CrmName crmName = new CrmName
                             {
-                                displayName = c.DisplayName.UserLocalizedLabel.Label,
+                                displayName = c.DisplayName.UserLocalizedLabel?.Label ?? c.LogicalName,
                                 logicalName = c.LogicalName
                             };
                             columns.Add(crmName);
