@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Tooling.Connector;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,35 +20,103 @@ namespace MicrosoftDynamics365TestConsole
     {
         static void Main(string[] args)
         {
-            IOrganizationService _service = null;
-            try
-            {
-                ClientCredentials clientCredentials = new ClientCredentials();
-                clientCredentials.UserName.UserName = "";
-                clientCredentials.UserName.Password = "";
 
-                // Copy and Paste Organization Service Endpoint Address URL
-                _service = new OrganizationServiceProxy(new Uri(""),
-                 null, clientCredentials, null);
-                if (_service != null)
-                {
-                    Guid userid = ((WhoAmIResponse)_service.Execute(new WhoAmIRequest())).UserId;
-                    if (userid != Guid.Empty)
-                    {
-                        Console.WriteLine("Connection Successful!...");
-                        RetrieveContact(_service, userid);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("Failed to Established Connection!!!");
-                }
-            }
-            catch (Exception ex)
+			string userName = "";
+			string password = "";
+			string url = "";
+
+			string _CrmConnectionString = $@"Url = {url};AuthType = OAuth;UserName = {userName};Password = {password};AppId = 51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri = app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto";
+
+            CrmServiceClient crmConn = new CrmServiceClient(_CrmConnectionString);
+
+            WhoAmIRequest request = new WhoAmIRequest();
+            WhoAmIResponse response = (WhoAmIResponse)
+            crmConn.Execute(request);
+
+            RetrieveAllEntitiesRequest metaDataRequest = new RetrieveAllEntitiesRequest();
+            RetrieveAllEntitiesResponse metaDataResponse = new RetrieveAllEntitiesResponse();
+            metaDataRequest.EntityFilters = EntityFilters.Entity;
+            metaDataResponse = (RetrieveAllEntitiesResponse)crmConn.Execute(metaDataRequest);
+
+            var entities = metaDataResponse.EntityMetadata;
+
+            foreach (var c in entities)
             {
-                Console.WriteLine("Exception caught - " + ex.Message);
+                if (c.DisplayName.LocalizedLabels.Count() > 1)
+                {
+                    //CrmName crmName = new CrmName
+                    //{
+                    //    displayName = c.DisplayName.UserLocalizedLabel.Label,
+                    //    logicalName = c.LogicalName
+                    //};
+                    //tableList.Add(crmName);
+                    Console.WriteLine(c.DisplayName.UserLocalizedLabel.Label);
+                    Console.WriteLine(c.LogicalName);
+                }
             }
-            Console.ReadKey();
+
+            Console.ReadLine();
+
+
+
+            //RetrieveEntityRequest retrieveEntityRequest = new RetrieveEntityRequest
+            //{
+            //    EntityFilters = EntityFilters.All,
+            //    LogicalName = "account"
+            //};
+
+            //RetrieveEntityResponse retrieveAccountEntityResponse = (RetrieveEntityResponse)crmConn.Execute(retrieveEntityRequest);
+            //EntityMetadata AccountEntity = retrieveAccountEntityResponse.EntityMetadata;
+
+            //Console.WriteLine("Account entity metadata:");
+            //Console.WriteLine(AccountEntity.SchemaName);
+            //Console.WriteLine(AccountEntity.DisplayName.UserLocalizedLabel.Label);
+            //Console.WriteLine(AccountEntity.EntityColor);
+
+            //Console.WriteLine("Account entity attributes:");
+            //foreach (object attribute in AccountEntity.Attributes)
+            //{
+            //    AttributeMetadata a = (AttributeMetadata)attribute;
+            //    Console.WriteLine(a.LogicalName);
+            //}
+            //Console.ReadLine();
+
+
+
+
+
+
+            //IOrganizationService _service = null;
+            //try
+            //{
+            //	ClientCredentials clientCredentials = new ClientCredentials();
+            //	clientCredentials.UserName.UserName = "patrick.theobald@peakboard.com";
+            //	clientCredentials.UserName.Password = "Hellraiser78!";
+
+
+            //	// Copy and Paste Organization Service Endpoint Address URL
+            //	//_service = new OrganizationServiceProxy(new Uri("https://peakboard-test.api.crm4.dynamics.com/XRMServices/2011/Organization.svc"),
+            //	// null, clientCredentials, null);
+
+            //	if (_service != null)
+            //	{
+            //		Guid userid = ((WhoAmIResponse)_service.Execute(new WhoAmIRequest())).UserId;
+            //		if (userid != Guid.Empty)
+            //		{
+            //			Console.WriteLine("Connection Successful!...");
+            //			RetrieveContact(_service, userid);
+            //		}
+            //	}
+            //	else
+            //	{
+            //		Console.WriteLine("Failed to Established Connection!!!");
+            //	}
+            //}
+            //catch (Exception ex)
+            //{
+            //	Console.WriteLine("Exception caught - " + ex.Message);
+            //}
+            //Console.ReadKey();
         }
 
 

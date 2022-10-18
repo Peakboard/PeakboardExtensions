@@ -4,6 +4,7 @@ using Microsoft.Xrm.Sdk.Client;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
 using Microsoft.Xrm.Sdk.Query;
+using Microsoft.Xrm.Tooling.Connector;
 using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
@@ -16,39 +17,34 @@ namespace PeakboardExtensionMicrosoftDynamics365
 {
     public class CrmHelper
     {
-        public static IOrganizationService TryConnection(string link, string username, string password)
+        public static CrmServiceClient TryConnection(string link, string username, string password)
         {
-            IOrganizationService service = null;
+            string _CrmConnectionString = $@"Url = {link};AuthType = OAuth;UserName = {username};Password = {password};AppId = 51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri = app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto";
+            CrmServiceClient crmConnection = new CrmServiceClient(_CrmConnectionString);
             try
             {
-                ClientCredentials clientCredentials = new ClientCredentials();
-                clientCredentials.UserName.UserName = username;
-                clientCredentials.UserName.Password = password;
+                WhoAmIRequest request = new WhoAmIRequest();
+                WhoAmIResponse response = (WhoAmIResponse)
+                crmConnection.Execute(request);
 
-                if (Uri.TryCreate(link, UriKind.RelativeOrAbsolute, out Uri url))
-                {
-                    service = new OrganizationServiceProxy(url, null, clientCredentials, null);
-                }
-                else
+                if (response.UserId == null)
                 {
                     return null;
                 }
-
             }
             catch (Exception ex)
             {
                 return null;
             }
-            
 
-            return service;
+            return crmConnection;
         }
 
         public static List<CrmName> GetTablesName(string link, string username, string password)
         {
             List<CrmName> tableList = new List<CrmName>();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -93,7 +89,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             List<CrmName> viewList = new List<CrmName>();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -101,8 +97,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
             }
             else
             {
-                
-
                 try
                 {
                     QueryExpression personalViews = new QueryExpression("savedquery");
@@ -127,8 +121,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     return null;
                 }
 
-                
-
                 var sortedList = viewList.OrderBy(x => x.displayName).ToList();
                 return sortedList;
             }
@@ -138,7 +130,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             List<CrmName> columns=new List<CrmName>();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -185,7 +177,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             CustomListColumnCollection columnCollection = new CustomListColumnCollection();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -231,7 +223,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             CustomListColumnCollection columnCollection = new CustomListColumnCollection();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -300,7 +292,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
@@ -410,7 +402,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
 
-            IOrganizationService service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password);
 
             if (service == null)
             {
