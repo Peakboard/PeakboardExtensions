@@ -220,7 +220,6 @@ namespace PeakboardExtensionWerma
                 }
             }
 
-            File.AppendAllText("c:/temp/test.txt", $@"\n\n{AppDomain.CurrentDomain.BaseDirectory}\WermaUtilities\WIN-CLI.exe /server {host.Split('\\').First()} /switchcontrol ""macid:{macID}"" {channel} {action}");
             var command = $@"{AppDomain.CurrentDomain.BaseDirectory}\WermaUtilities\WIN-CLI.exe /server {host.Split('\\').First()} /switchcontrol ""macid:{macID}"" {channel} {action}";
 
             Log?.Info(string.Format(command));
