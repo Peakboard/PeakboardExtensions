@@ -182,7 +182,7 @@ namespace PeakboardExtensionWerma
 
                 this.Log?.Info(string.Format("nameofchannel: {0} -> switchlighton", channelName));
 
-                StartCommand(channelName,action, macID);
+                StartCommand(data, channelName, action, macID);
             }
             else
             {
@@ -192,7 +192,7 @@ namespace PeakboardExtensionWerma
             return returnContext;
         }
 
-        protected void StartCommand(string channel, string action, string macID)
+        protected void StartCommand(CustomListData data, string channel, string action, string macID)
         {
             if(action.ToLower()=="off")
             {
@@ -207,22 +207,37 @@ namespace PeakboardExtensionWerma
                 action = "2";
             }
 
-            string command = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + @"\..\Local\Peakboard\Extensions\Werma\WermaUtilities\WIN-CLI.exe /switchcontrol " + "\"macid:"+ macID + "\" " + channel + " " + action;
+            data.Properties.TryGetValue("Host", StringComparison.OrdinalIgnoreCase, out var host);
+            host = host.Split('/')[0];
 
-            this.Log?.Info(string.Format(command));
+            // WERMA want to write some temp data here. Seams they have a bug which does not recognize the folder is missing
+            if (!Directory.Exists(@"C:\ProgramData\WERMA"))
+            {
+                Directory.CreateDirectory(@"C:\ProgramData\WERMA");
+                if (!Directory.Exists(@"C:\ProgramData\WERMA\WERMA-WIN-3.0"))
+                {
+                    Directory.CreateDirectory(@"C:\ProgramData\WERMA\WERMA-WIN-3.0");
+                }
+            }
+
+            File.AppendAllText("c:/temp/test.txt", $@"\n\n{AppDomain.CurrentDomain.BaseDirectory}\WermaUtilities\WIN-CLI.exe /server {host.Split('\\').First()} /switchcontrol ""macid:{macID}"" {channel} {action}");
+            var command = $@"{AppDomain.CurrentDomain.BaseDirectory}\WermaUtilities\WIN-CLI.exe /server {host.Split('\\').First()} /switchcontrol ""macid:{macID}"" {channel} {action}";
+
+            Log?.Info(string.Format(command));
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
             startInfo.FileName = "cmd.exe";
             startInfo.Arguments = "/K " + command;
-            startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            startInfo.WindowStyle = ProcessWindowStyle.Hidden;
 
             Process process = new Process();
             process.StartInfo = startInfo;
 
             process.Start();
-            process.WaitForExit(10000);
+            process.WaitForExit(2000);
             process.Kill();
-        }
 
+            Directory.Delete(@"C:\ProgramData\WERMA", true);
+        }
     }
 }
