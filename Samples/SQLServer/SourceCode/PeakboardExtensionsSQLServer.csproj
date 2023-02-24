@@ -31,7 +31,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.14" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.15" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
