@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
+using System.Runtime.Remoting.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -11,7 +14,7 @@ namespace PeakboardExtensionGraph
     {
         
         private static HttpClient _httpClient;
-        private static RequestBuilder _builder;
+        public static RequestBuilder _builder;
 
         private static string accessToken;
         private static string refreshToken;
@@ -52,6 +55,15 @@ namespace PeakboardExtensionGraph
             _builder = new RequestBuilder(accessToken);
 
             return true;
+        }
+
+        public static async Task InitGraphInRuntime(string token)
+        {
+            // Initialize via refresh token (in runtime)
+            refreshToken = token;
+            _httpClient = new HttpClient();
+            await RefreshTokensAsync();
+            _builder = new RequestBuilder(accessToken);
         }
 
         private static async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)
@@ -173,22 +185,35 @@ namespace PeakboardExtensionGraph
 
         public static async Task CheckTokenLifetimeAsync()
         {
+            // check if token expired
             long temp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             if ((temp - millis) / 1000 > Int32.Parse(tokenLifetime))
             {
                 Console.Write("Refreshing Tokens...");
+                // refresh tokens
                 await RefreshTokensAsync();
                 Console.WriteLine("Done!");
             }
         }
 
         public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
-        {
+        {   
+            // build request
             var request = _builder.GetRequest(key, parameters);
+            
+            // call graph api
             var response = await _httpClient.SendAsync(request);
+            
+            // convert to string and return
             string jsonString = await response.Content.ReadAsStringAsync();
 
             return jsonString;
+        }
+
+        public static string GetRefreshToken()
+        {
+            if (refreshToken != null) return refreshToken;
+            throw new NullReferenceException("Refresh-Token not initialized yet");
         }
 
     }

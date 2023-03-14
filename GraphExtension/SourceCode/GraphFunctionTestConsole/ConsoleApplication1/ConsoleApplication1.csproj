@@ -69,6 +69,12 @@
       <None Include="App.config" />
       <None Include="packages.config" />
     </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\..\PeakboardExtensionGraph\PeakboardExtensionGraph\PeakboardExtensionGraph.csproj">
+        <Project>{768d17c6-0e92-4a25-b1f5-85a5abb26ba4}</Project>
+        <Name>PeakboardExtensionGraph</Name>
+      </ProjectReference>
+    </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
          Other similar extension points exist, see Microsoft.Common.targets.
