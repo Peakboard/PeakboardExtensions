@@ -1,0 +1,43 @@
+<controls:CustomListUserControlBase x:Class="PeakboardExtensionGraph.GraphUIControl"
+                                    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                                    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+                                    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+                                    xmlns:local="clr-namespace:PeakboardExtensionGraph"
+                                    xmlns:controls="clr-namespace:Peakboard.ExtensionKit;assembly=Peakboard.ExtensionKit"
+                                    mc:Ignorable="d" Background="#F5F5F6">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="350" />
+            <ColumnDefinition Width="85" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Column="0" Grid.Row="0" Text="Url" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="0" Name="link" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="1" Text="Username" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="1" Name="username" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="2" Text="Password" Margin="3"/>
+        <PasswordBox Grid.Column="1" Grid.Row="2" Name="password" Password="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="3" Text="Max Rows" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="3" Name="maxRows" VerticalContentAlignment="Center" Margin="3"/>
+        <Button Grid.Column="1" Grid.Row="4" Name="btnConnect" Content="Connect" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnConnect_Click"></Button>
+        <RadioButton Grid.Column="0" Grid.Row="5" Name="rbView" Content="View" VerticalAlignment="Center" Margin="3" GroupName="TableOrView" Checked="rbView_Checked"/>
+        <ComboBox Grid.Column="1" Grid.Row="5" Margin="3" Name="cboView" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" ></ComboBox>
+        <RadioButton Grid.Column="0" Grid.Row="6" Name="rbEntity" Content="Entity / Table" VerticalAlignment="Center" Margin="3,25,3,3" GroupName="TableOrView" Checked="rbEntity_Checked"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Margin="3,25,3,3" Name="cboTable" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True"  SelectionChanged="cboTable_SelectionChanged"></ComboBox>
+        <Button Grid.Column="1" Grid.Row="7" Margin="3" Width="100" HorizontalAlignment="Right" Content="Search Columns" Name="btnTable" IsEnabled="False" Click="btnTable_Click" ></Button>
+        <TextBlock Grid.Column="0" Grid.Row="8" Text="Attributes / Columns" IsEnabled="False" Margin="3"/>
+        <ListBox Grid.Column="1" Grid.Row="8" Name="columns" VerticalContentAlignment="Center" Margin="3" Height="205" ScrollViewer.VerticalScrollBarVisibility="Visible"></ListBox>
+    </Grid>
+</controls:CustomListUserControlBase>
