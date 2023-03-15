@@ -64,7 +64,7 @@
         <Compile Include="ContactList.cs" />
         <Compile Include="GraphExtension.cs" />
         <Compile Include="GraphHelper.cs" />
-        <Compile Include="GraphUIControl.xaml.cs" />
+        <Compile Include="MessageList.cs" />
         <Compile Include="MsGraphCustomList.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RequestBuilder.cs" />
@@ -96,9 +96,6 @@
         <Content Include="Extension.xml">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-    </ItemGroup>
-    <ItemGroup>
-      <Page Include="GraphUIControl.xaml" />
     </ItemGroup>
 
 </Project>
