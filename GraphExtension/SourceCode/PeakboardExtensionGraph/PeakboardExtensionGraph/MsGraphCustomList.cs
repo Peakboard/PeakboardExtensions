@@ -2,6 +2,7 @@
 using System.IO;
 using System.Windows;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionGraph
@@ -145,6 +146,7 @@ namespace PeakboardExtensionGraph
 
             // parse response to PB table
             JsonTextReader reader = new JsonTextReader(new StringReader(response));
+            JObject jObject = JObject.Parse(response); 
             bool start = false;
             string lastValue = "";
             while (reader.Read())
@@ -154,7 +156,7 @@ namespace PeakboardExtensionGraph
                 else if (start && reader.TokenType == JsonToken.StartObject)
                 {
                     var item = new CustomListObjectElement();
-                    ItemsWalkThroughObject(reader, "root", item);
+                    ItemsWalkThroughObject(reader, "root", item, jObject);
                     items.Add(item);
                 }
             }
@@ -167,7 +169,7 @@ namespace PeakboardExtensionGraph
                     if (reader.TokenType == JsonToken.StartObject)
                     {
                         var item = new CustomListObjectElement();
-                        ItemsWalkThroughObject(reader, "root", item);
+                        ItemsWalkThroughObject(reader, "root", item, jObject);
                         items.Add(item);
                     }
                 }
@@ -251,7 +253,7 @@ namespace PeakboardExtensionGraph
             }
         }
         
-        private void ItemsWalkThroughObject(JsonReader reader, string objPrefix, CustomListObjectElement item)
+        private void ItemsWalkThroughObject(JsonReader reader, string objPrefix, CustomListObjectElement item, JObject obj)
         {
             var lastName = "";
             var value = false;
@@ -266,12 +268,13 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.StartObject)
                 {
                     value = false;
-                    ItemsWalkThroughObject(reader, $"{objPrefix}-{lastName}", item);
+                    ItemsWalkThroughObject(reader, $"{objPrefix}-{lastName}", item, obj);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    var arr = WalkThroughArray(reader);
-                    item.Add($"{objPrefix}-{lastName}-Array", $"'{lastName}': [ {arr} ]");
+                    //var arr = WalkThroughArray(reader);
+                    SkipArray(reader);
+                    item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                 {
@@ -311,7 +314,7 @@ namespace PeakboardExtensionGraph
                 }
                 else if (reader.Value != null && value)
                 {
-                    arr += $"'{lastname}': '{reader.Value}', ";
+                    arr += $"\"{lastname}\": \"{reader.Value}\", ";
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
