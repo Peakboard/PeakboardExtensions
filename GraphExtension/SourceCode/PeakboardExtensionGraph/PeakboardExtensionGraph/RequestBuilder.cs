@@ -10,15 +10,16 @@ namespace PeakboardExtensionGraph
     public class RequestBuilder
     {
         private string _accessToken;
-        private string path = @"C:\Users\Yannis\Documents\Peakboard\queries.json";
+        private string _path = @"C:\Users\Yannis\Documents\Peakboard\queries.json";
     
         private const string BaseUrl = "https://graph.microsoft.com/v1.0/me";
         private Dictionary<string, string> _queries;
 
-        public RequestBuilder(string accessToken)
+        public RequestBuilder(string accessToken, string path)
         {
             _accessToken = accessToken;
             _queries = JsonConvert.DeserializeObject<Dictionary<string, string>>(readJson(path));
+            _path = path;
         }
 
         private string readJson(string p)

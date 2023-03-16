@@ -28,7 +28,7 @@ namespace PeakboardExtensionGraph
         private const string ClientID = "067207ed-41a4-4402-b97f-b977babe0ec9"; 
         private const string TenantID = "b4ff9807-402f-42b8-a89d-428363c55de7";
         
-        public static async Task<bool> InitGraph(Func<string, string, Task> prompt)
+        public static async Task<bool> InitGraph(string path, Func<string, string, Task> prompt)
         {
             _httpClient = new HttpClient();
             
@@ -52,18 +52,18 @@ namespace PeakboardExtensionGraph
 
             // init authentication provider
             
-            _builder = new RequestBuilder(accessToken);
+            _builder = new RequestBuilder(accessToken, path);
 
             return true;
         }
 
-        public static async Task InitGraphInRuntime(string token)
+        public static async Task InitGraphInRuntime(string token, string path)
         {
             // Initialize via refresh token (in runtime)
             refreshToken = token;
             _httpClient = new HttpClient();
             await RefreshTokensAsync();
-            _builder = new RequestBuilder(accessToken);
+            _builder = new RequestBuilder(accessToken, path);
         }
 
         private static async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)

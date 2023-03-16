@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using System.Windows;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
 
@@ -13,6 +14,7 @@ namespace PeakboardExtensionGraph
     public class MsGraphCustomList : CustomListBase
     {
         private bool _initialized = false;
+        private string _path = @"C:\Users\YannisHartmann\Documents\queries.json";
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -25,9 +27,17 @@ namespace PeakboardExtensionGraph
                     new CustomListPropertyDefinition() { Name = "ClientID", Value = "" },
                     new CustomListPropertyDefinition() { Name = "TenantID", Value = "" },
                     new CustomListPropertyDefinition() { Name = "Data", Value = "contacts" },
-                    new CustomListPropertyDefinition() { Name = "RefreshToken", Value = ""}
+                    new CustomListPropertyDefinition() { Name = "RefreshToken", Value = ""},
+                    new CustomListPropertyDefinition() { Name = "Path", Value = @"C:\Users\YannisHartmann\Documents\auth.txt" },
+                    new CustomListPropertyDefinition() { Name = "QueryPath", Value = @"C:\Users\YannisHartmann\Documents\queries.json"}
                 },
             };
+        }
+        
+        protected override FrameworkElement GetControlOverride()
+        {
+            // return an instance of the UI user control
+            return new GraphUIControl();
         }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
@@ -123,16 +133,17 @@ namespace PeakboardExtensionGraph
 
         private void InitializeGraph(CustomListData data)
         {
-            string refreshToken;
-            data.Properties.TryGetValue("RefreshToken", out refreshToken);
+            string refreshToken = data.Parameter.Split(';')[6];
+            data.Properties.TryGetValue("Path", StringComparison.OrdinalIgnoreCase, out var path);
+            data.Properties.TryGetValue("QueryPath", StringComparison.OrdinalIgnoreCase, out var queries);
             
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
             {
                 // if not (in designer) initialize by authentication
-                var task = GraphHelper.InitGraph((code, url) =>
+                var task = GraphHelper.InitGraph(queries,(code, url) =>
                 {
-                    StreamWriter writer = new StreamWriter(@"C:\Users\Yannis\Documents\Peakboard\auth.txt");
+                    StreamWriter writer = new StreamWriter(path);
                     writer.WriteLine(code);
                     writer.Close();
                     Process.Start(url);
@@ -140,14 +151,14 @@ namespace PeakboardExtensionGraph
                 });
                 task.Wait();
 
-                StreamWriter writer1 = new StreamWriter(@"C:\Users\Yannis\Documents\Peakboard\auth.txt");
+                StreamWriter writer1 = new StreamWriter(path);
                 writer1.WriteLine(GraphHelper.GetRefreshToken());
                 writer1.Close();
             }
             else
             {
                 // if available initialize by refresh token (in runtime)
-                var task = GraphHelper.InitGraphInRuntime(refreshToken);
+                var task = GraphHelper.InitGraphInRuntime(refreshToken, _path);
                 task.Wait();
                 
             }
