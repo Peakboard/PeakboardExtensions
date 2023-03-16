@@ -22,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition />
         </Grid.RowDefinitions>
         <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="0" Name="ClientId" Text="067207ed-41a4-4402-b97f-b977babe0ec9" VerticalContentAlignment="Center" Margin="3"/>
@@ -39,5 +40,11 @@
         <TextBlock Grid.Column="0" Grid.Row="7" Text="Top" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="7" Name="Top" Text="" VerticalContentAlignment="Center" Margin="3"/>
         <TextBox Grid.Column="0" Grid.Row="8" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
+        <ComboBox Grid.Column="0" Grid.Row="9" HorizontalAlignment="Stretch" Name="Types" Text="RequestType" Margin="3,3,3,10">
+            <ComboBoxItem Uid="/messages">Mail</ComboBoxItem>
+            <ComboBoxItem Uid="/contacts">Contacts</ComboBoxItem>
+            <ComboBoxItem Uid="/people">People</ComboBoxItem>
+            <ComboBoxItem Uid="/calendarview">Calendar</ComboBoxItem>
+        </ComboBox>
     </Grid>
 </controls:CustomListUserControlBase>

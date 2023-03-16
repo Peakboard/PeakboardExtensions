@@ -16,6 +16,12 @@ namespace PeakboardExtensionGraph
 
         protected override string GetParameterOverride()
         {
+            var selection = "";
+            foreach (var item in Types.Items)
+            {
+                
+            }
+            
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{RequestData.Text};{Select.Text};{Orderby.Text};{Top.Text};{RefreshToken.Text}";
         }
 
