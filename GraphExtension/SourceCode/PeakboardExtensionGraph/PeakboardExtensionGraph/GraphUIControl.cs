@@ -16,7 +16,7 @@ namespace PeakboardExtensionGraph
 
         protected override string GetParameterOverride()
         {
-            return $"{clientID.Text};{tenantID.Text};{requestData.Text};{select.Text};{orderby.Text};{top.Text};{refreshToken.Text}";
+            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{RequestData.Text};{Select.Text};{Orderby.Text};{Top.Text};{RefreshToken.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -24,26 +24,26 @@ namespace PeakboardExtensionGraph
             if (String.IsNullOrEmpty(parameter)) return;
             
             var paramArr = parameter.Split(';');
-            clientID.Text = paramArr[0];
-            tenantID.Text = paramArr[1];
-            requestData.Text = paramArr[2];
-            select.Text = paramArr[3];
-            orderby.Text = paramArr[4];
-            top.Text = paramArr[5];
-            refreshToken.Text = paramArr[6];
+            ClientId.Text = paramArr[0];
+            TenantId.Text = paramArr[1];
+            Permissions.Text = paramArr[2];
+            RequestData.Text = paramArr[3];
+            Select.Text = paramArr[4];
+            Orderby.Text = paramArr[5];
+            Top.Text = paramArr[6];
+            RefreshToken.Text = paramArr[7];
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
         {
-            var path = @"C:\Users\YannisHartmann\Documents\queries.json";
             EdgeDriver driver =
                 new EdgeDriver(@"C:\Users\YannisHartmann\Documents\Graph\MS_Graph\Edge_Driver\edgedriver_win64");
-            await GraphHelper.InitGraph(path, (code, url) =>
+            await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
             {
                 NavigateBrowser(driver, code, url);
                 return Task.FromResult(0);
             });
-            this.refreshToken.Text = GraphHelper.GetRefreshToken();
+            this.RefreshToken.Text = GraphHelper.GetRefreshToken();
         }
 
         private void NavigateBrowser(WebDriver driver, string code, string url)
