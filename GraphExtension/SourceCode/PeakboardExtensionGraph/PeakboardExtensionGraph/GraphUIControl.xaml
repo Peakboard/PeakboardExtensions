@@ -1,0 +1,41 @@
+<controls:CustomListUserControlBase x:Class="PeakboardExtensionGraph.GraphUIControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:PeakboardExtensionGraph"
+             xmlns:controls="clr-namespace:Peakboard.ExtensionKit;assembly=Peakboard.ExtensionKit"
+             mc:Ignorable="d" Background="#F5F5F6">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="350" />
+            <ColumnDefinition Width="85" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="0" Name="clientID" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="1" Text="Tenant ID" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="1" Name="tenantID" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <Button Grid.Column="1" Grid.Row="2" Name="btnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnAuth_Click"></Button>
+        <TextBlock Grid.Column="0" Grid.Row="3" Text="Request Data" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="3" Name="requestData" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="4" Text="Selected Fields (empty = all)" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="4" Name="select" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="5" Text="Order by" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="5" Name="orderby" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="6" Text="Top" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="6" Name="top" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBox Grid.Column="0" Grid.Row="7" Visibility="Hidden" Name="refreshToken" Text="" Margin="3"/>
+    </Grid>
+</controls:CustomListUserControlBase>
