@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using Newtonsoft.Json;
+
 using System.Net.Http;
 using System.Net.Http.Headers;
 
@@ -10,24 +9,21 @@ namespace PeakboardExtensionGraph
     public class RequestBuilder
     {
         private string _accessToken;
-        private string _path = @"C:\Users\Yannis\Documents\Peakboard\queries.json";
-    
         private const string BaseUrl = "https://graph.microsoft.com/v1.0/me";
         private Dictionary<string, string> _queries;
 
-        public RequestBuilder(string accessToken, string path)
+        public RequestBuilder(string accessToken)
         {
             _accessToken = accessToken;
-            _queries = JsonConvert.DeserializeObject<Dictionary<string, string>>(readJson(path));
-            _path = path;
-        }
-
-        private string readJson(string p)
-        {
-            var streamReader = new StreamReader(p);
-            string value = streamReader.ReadToEnd();
-            streamReader.Close();
-            return value;
+            _queries = new Dictionary<string, string>()
+            {
+                { "mail", "/messages" },
+                { "calendar", "/calendarview" },
+                { "people", "/people" },
+                { "contacts", "/contacts" },
+                { "todos", "/todo/lists/{0}/tasks" },
+                { "todolists", "/todo/lists" }
+            };
         }
 
         public HttpRequestMessage GetRequest(string key = null, RequestParameters parameters = null)
@@ -45,12 +41,21 @@ namespace PeakboardExtensionGraph
             if(parameters != null)
             {
                 queryParams = "?";
-                if (parameters.Filter != null)
+                
+                if (key == "calendar")
+                {
+                    // add required parameter for calendar view request
+                    var start = DateTime.Now.ToString("yyyy-MM-ddThh:mm:ssZ");
+                    var end = DateTime.Now.AddDays(7).ToString("yyyy-MM-ddThh:mm:ssZ");
+                    queryParams += $"startdatetime={start}&enddatetime={end}";
+                }
+                
+                if (!string.IsNullOrEmpty(parameters.Filter))
                 {
                     queryParams += $"$filter={parameters.Filter}";
                 }
 
-                if (parameters.OrderBy != null)
+                if (!string.IsNullOrEmpty(parameters.OrderBy))
                 {
                     if (queryParams != "?")
                     {
@@ -70,33 +75,26 @@ namespace PeakboardExtensionGraph
                     queryParams += $"$skip={parameters.Skip}";
                 }
 
-                if (parameters.Top != 0)
+                if (parameters.Top > 0)
                 {
                     if (queryParams != "?")
                     {
                         queryParams += "&";
                     }
 
-                    queryParams += $"top={parameters.Top}";
+                    queryParams += $"$top={parameters.Top}";
                 }
 
-                if (parameters.Select != null)
+                if (!string.IsNullOrEmpty(parameters.Select))
                 {
                     if (queryParams != "?")
                     {
                         queryParams += "&";
                     }
 
-                    queryParams += "$select=";
-                    foreach (var field in parameters.Select)
-                    {
-                        queryParams += $"{field},";
-                    }
-
-                    queryParams.Remove(queryParams.Length-1);
+                    queryParams += $"$select={parameters.Select}";
                 }
             }
-            
             
             var request = new HttpRequestMessage
             {

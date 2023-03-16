@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
-using System.Reflection;
-using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
@@ -13,8 +9,7 @@ namespace PeakboardExtensionGraph
     [Serializable]
     public class MsGraphCustomList : CustomListBase
     {
-        private bool _initialized = false;
-        private string _path = @"C:\Users\YannisHartmann\Documents\queries.json";
+        private bool _initialized;
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -23,14 +18,6 @@ namespace PeakboardExtensionGraph
                 Name = "MsGraph List",
                 Description = "Returns data from MySql database",
                 PropertyInputPossible = true,
-                PropertyInputDefaults = {
-                    new CustomListPropertyDefinition() { Name = "ClientID", Value = "" },
-                    new CustomListPropertyDefinition() { Name = "TenantID", Value = "" },
-                    new CustomListPropertyDefinition() { Name = "Data", Value = "contacts" },
-                    new CustomListPropertyDefinition() { Name = "RefreshToken", Value = ""},
-                    new CustomListPropertyDefinition() { Name = "Path", Value = @"C:\Users\YannisHartmann\Documents\auth.txt" },
-                    new CustomListPropertyDefinition() { Name = "QueryPath", Value = @"C:\Users\YannisHartmann\Documents\queries.json"}
-                },
             };
         }
         
@@ -46,14 +33,39 @@ namespace PeakboardExtensionGraph
             { 
                 InitializeGraph(data);
             }
+            var checkTask = GraphHelper.CheckIfTokenExpiredAsync();
+            checkTask.Wait();
             
-            data.Properties.TryGetValue("Data", StringComparison.OrdinalIgnoreCase, out var type);
-            var task = GraphHelper.MakeGraphCall(type);
+            // get parameter for graph call
+            string type = data.Parameter.Split(';')[3];     // request type
+            string select = data.Parameter.Split(';')[4];   // select   
+            string orderBy = data.Parameter.Split(';')[5];  // order by
+            string topString = data.Parameter.Split(';')[6];// top
+            int top = 10;
+            
+            try
+            {
+                top = Int32.Parse(topString);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+
+            // make graph call
+            var task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+            {
+                OrderBy = orderBy,
+                Select = select,
+                Top = top
+            });
             task.Wait();
             var response = task.Result;
 
             var cols = new CustomListColumnCollection();
             
+            // parse json to PB Columns
             JsonTextReader reader = new JsonTextReader(new StringReader(response));
             bool start = false;
             string lastValue = "";
@@ -87,18 +99,51 @@ namespace PeakboardExtensionGraph
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
+            // check if GraphHelper & RequestBuilder are initialized
             if (!_initialized)
             { 
                 InitializeGraph(data);
             }
+            
+            // check if access token expired
+            var checkTask = GraphHelper.CheckIfTokenExpiredAsync();
+            checkTask.Wait();
+            
+            // update refresh token in parameter if renewed
+            if (checkTask.Result)
+            {
+                UpdateRefreshToken(GraphHelper.GetRefreshToken(), data);
+            }
 
-            data.Properties.TryGetValue("Data", StringComparison.OrdinalIgnoreCase, out var type);
-            var task = GraphHelper.MakeGraphCall(type);
+            // get parameter for graph call
+            string type = data.Parameter.Split(';')[3];     // request type
+            string select = data.Parameter.Split(';')[4];   // select   
+            string orderBy = data.Parameter.Split(';')[5];  // order by
+            string topString = data.Parameter.Split(';')[6];// top
+            int top = 10;
+            
+            try
+            {
+                top = Int32.Parse(topString);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+            
+            // make graph call
+            var task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+            {
+                OrderBy = orderBy,
+                Select = select,
+                Top = top
+            });
             task.Wait();
             var response = task.Result;
 
             var items = new CustomListObjectElementCollection();
 
+            // parse response to PB table
             JsonTextReader reader = new JsonTextReader(new StringReader(response));
             bool start = false;
             string lastValue = "";
@@ -133,32 +178,24 @@ namespace PeakboardExtensionGraph
 
         private void InitializeGraph(CustomListData data)
         {
-            string refreshToken = data.Parameter.Split(';')[6];
-            data.Properties.TryGetValue("Path", StringComparison.OrdinalIgnoreCase, out var path);
-            data.Properties.TryGetValue("QueryPath", StringComparison.OrdinalIgnoreCase, out var queries);
-            
+            // get refresh token from parameter
+            string refreshToken = data.Parameter.Split(';')[7];
+
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
             {
-                // if not (in designer) initialize by authentication
-                var task = GraphHelper.InitGraph(queries,(code, url) =>
-                {
-                    StreamWriter writer = new StreamWriter(path);
-                    writer.WriteLine(code);
-                    writer.Close();
-                    Process.Start(url);
-                    return Task.FromResult(0);
-                });
-                task.Wait();
-
-                StreamWriter writer1 = new StreamWriter(path);
-                writer1.WriteLine(GraphHelper.GetRefreshToken());
-                writer1.Close();
+                // if refresh token isn't available -> user did not authenticate
+                throw new NullReferenceException("Refresh token not initialized");
             }
             else
             {
+                // get parameter for azure app
+                string clientId = data.Parameter.Split(';')[0];
+                string tenantId = data.Parameter.Split(';')[1];
+                string permissions = data.Parameter.Split(';')[2];
+                
                 // if available initialize by refresh token (in runtime)
-                var task = GraphHelper.InitGraphInRuntime(refreshToken, _path);
+                var task = GraphHelper.InitGraphWithRefreshToken(refreshToken, clientId, tenantId, permissions);
                 task.Wait();
                 
             }
@@ -233,7 +270,7 @@ namespace PeakboardExtensionGraph
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    var arr = WalkThroughArray(reader, $"{objPrefix}-{lastName}-Array", item);
+                    var arr = WalkThroughArray(reader);
                     item.Add($"{objPrefix}-{lastName}-Array", $"'{lastName}': [ {arr} ]");
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
@@ -260,7 +297,7 @@ namespace PeakboardExtensionGraph
             }
         }
         
-        private string WalkThroughArray(JsonReader reader, string objPrefix, CustomListObjectElement item)
+        private string WalkThroughArray(JsonReader reader)
         {
             bool value = false;
             string lastname = "";
@@ -278,7 +315,7 @@ namespace PeakboardExtensionGraph
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    WalkThroughArray(reader, objPrefix, item);
+                    WalkThroughArray(reader);
                 }
                 else if (reader.TokenType == JsonToken.EndArray)
                 {
@@ -306,6 +343,22 @@ namespace PeakboardExtensionGraph
                     return;
                 }
             }
+        }
+
+
+        public void UpdateRefreshToken(string token, CustomListData data)
+        {
+            // replace refresh token in parameter if renewed
+            var values = data.Parameter.Split(';');
+            values[7] = token;
+            string result = values[0];
+            
+            for(int i = 1; i < values.Length; i++)
+            {
+                result += $";{values[i]}";
+            }
+
+            data.Parameter = result;
         }
 
         

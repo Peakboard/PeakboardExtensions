@@ -24,18 +24,20 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="0" Name="clientID" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="0" Name="ClientId" Text="067207ed-41a4-4402-b97f-b977babe0ec9" VerticalContentAlignment="Center" Margin="3"/>
         <TextBlock Grid.Column="0" Grid.Row="1" Text="Tenant ID" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="1" Name="tenantID" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <Button Grid.Column="1" Grid.Row="2" Name="btnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnAuth_Click"></Button>
-        <TextBlock Grid.Column="0" Grid.Row="3" Text="Request Data" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="3" Name="requestData" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBlock Grid.Column="0" Grid.Row="4" Text="Selected Fields (empty = all)" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="4" Name="select" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBlock Grid.Column="0" Grid.Row="5" Text="Order by" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="5" Name="orderby" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBlock Grid.Column="0" Grid.Row="6" Text="Top" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="6" Name="top" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBox Grid.Column="0" Grid.Row="7" Visibility="Hidden" Name="refreshToken" Text="" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="1" Name="TenantId" Text="b4ff9807-402f-42b8-a89d-428363c55de7" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="2" Text="Permissions" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="2" Name="Permissions" Text="user.read offline_access" VerticalContentAlignment="Center" Margin="3"/>
+        <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnAuth_Click"></Button>
+        <TextBlock Grid.Column="0" Grid.Row="4" Text="Request Data" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="4" Name="RequestData" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="5" Text="Selected Fields (empty = all)" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="5" Name="Select" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="6" Text="Order by" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="6" Name="Orderby" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="7" Text="Top" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="7" Name="Top" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBox Grid.Column="0" Grid.Row="8" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
     </Grid>
 </controls:CustomListUserControlBase>
