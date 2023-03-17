@@ -187,7 +187,7 @@ namespace PeakboardExtensionGraph
             if (string.IsNullOrEmpty(refreshToken))
             {
                 // if refresh token isn't available -> user did not authenticate
-                throw new NullReferenceException("Refresh token not initialized");
+                throw new NullReferenceException("Refresh token not initialized: User did not authenticate");
             }
             else
             {
@@ -233,7 +233,6 @@ namespace PeakboardExtensionGraph
                 }
                 else if(value)
                 {
-                    Console.WriteLine($"{reader.TokenType} {objPrefix}-{lastName} = {reader.Value ?? "null"}"); 
                     CustomListColumn newCol;
                     if (reader.TokenType == JsonToken.Boolean)
                     {
@@ -347,8 +346,7 @@ namespace PeakboardExtensionGraph
                 }
             }
         }
-
-
+        
         public void UpdateRefreshToken(string token, CustomListData data)
         {
             // replace refresh token in parameter if renewed
