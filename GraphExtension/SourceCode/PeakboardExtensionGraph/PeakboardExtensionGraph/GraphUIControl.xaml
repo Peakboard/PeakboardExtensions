@@ -2,15 +2,14 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:PeakboardExtensionGraph"
              xmlns:controls="clr-namespace:Peakboard.ExtensionKit;assembly=Peakboard.ExtensionKit"
              mc:Ignorable="d" Background="#F5F5F6">
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="150" />
+            <ColumnDefinition Width="180" />
             <ColumnDefinition Width="350" />
-            <ColumnDefinition Width="85" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -22,29 +21,33 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
+        <!-- Client ID -->
         <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="0" Name="ClientId" Text="067207ed-41a4-4402-b97f-b977babe0ec9" VerticalContentAlignment="Center" Margin="3"/>
+        <!-- Tenant ID -->
         <TextBlock Grid.Column="0" Grid.Row="1" Text="Tenant ID" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="1" Name="TenantId" Text="b4ff9807-402f-42b8-a89d-428363c55de7" VerticalContentAlignment="Center" Margin="3"/>
+        <!-- Permissions -->
         <TextBlock Grid.Column="0" Grid.Row="2" Text="Permissions" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="2" Name="Permissions" Text="user.read offline_access" VerticalContentAlignment="Center" Margin="3"/>
+        <!-- Authenticate Button -->
         <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnAuth_Click"></Button>
+        <!-- Request Data -->
         <TextBlock Grid.Column="0" Grid.Row="4" Text="Request Data" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="4" Name="RequestData" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <ComboBox Grid.Column="1" Grid.Row="4" VerticalContentAlignment="Center" Name="RequestBox" Margin="3,3,3,10" IsEditable="True" SelectionChanged="RequestBox_SelectionChanged"></ComboBox>
+        <!-- Select -->
         <TextBlock Grid.Column="0" Grid.Row="5" Text="Selected Fields (empty = all)" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="5" Name="Select" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <ComboBox Grid.Column="1" Grid.Row="5" Name="SelectBox" VerticalContentAlignment="Center" Margin="3,3,3,10"/>
+        <!-- Order by -->
         <TextBlock Grid.Column="0" Grid.Row="6" Text="Order by" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="6" Name="Orderby" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Name="OrderByBox" VerticalContentAlignment="Center" Margin="3,3,3,10"/>
+        <!-- Top -->
         <TextBlock Grid.Column="0" Grid.Row="7" Text="Top" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="7" Name="Top" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <!-- Refresh Token -->
         <TextBox Grid.Column="0" Grid.Row="8" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
-        <ComboBox Grid.Column="0" Grid.Row="9" HorizontalAlignment="Stretch" Name="Types" Text="RequestType" Margin="3,3,3,10">
-            <ComboBoxItem Uid="/messages">Mail</ComboBoxItem>
-            <ComboBoxItem Uid="/contacts">Contacts</ComboBoxItem>
-            <ComboBoxItem Uid="/people">People</ComboBoxItem>
-            <ComboBoxItem Uid="/calendarview">Calendar</ComboBoxItem>
-        </ComboBox>
     </Grid>
 </controls:CustomListUserControlBase>

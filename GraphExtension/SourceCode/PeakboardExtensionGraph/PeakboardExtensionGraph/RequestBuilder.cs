@@ -26,13 +26,8 @@ namespace PeakboardExtensionGraph
             };
         }
 
-        public HttpRequestMessage GetRequest(string key = null, RequestParameters parameters = null)
+        public HttpRequestMessage GetRequest(string suffix = null, RequestParameters parameters = null)
         {
-            var suffix = "";
-            if(key != null)
-            {
-                _queries.TryGetValue(key, out suffix);
-            }
 
             string url = BaseUrl + suffix;
 
@@ -42,7 +37,7 @@ namespace PeakboardExtensionGraph
             {
                 queryParams = "?";
                 
-                if (key == "calendar")
+                if (suffix == "/calendarview")
                 {
                     // add required parameter for calendar view request
                     var start = DateTime.Now.ToString("yyyy-MM-ddThh:mm:ssZ");
@@ -62,7 +57,7 @@ namespace PeakboardExtensionGraph
                         queryParams += "&";
                     }
 
-                    queryParams += $"$orderBy={parameters.OrderBy}";
+                    queryParams += $"$orderby={parameters.OrderBy}";
                 }
 
                 if (parameters.Skip != 0)
