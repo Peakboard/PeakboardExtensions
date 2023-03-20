@@ -84,6 +84,8 @@ namespace PeakboardExtensionGraph
                     queryParams += $"$select={parameters.Select}";
                 }
             }
+
+            queryParams = queryParams == "?" ? "" : queryParams;
             
             // build valid http request
             var request = new HttpRequestMessage

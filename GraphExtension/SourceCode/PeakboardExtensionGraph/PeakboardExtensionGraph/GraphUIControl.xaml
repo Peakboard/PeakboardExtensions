@@ -51,8 +51,11 @@
         <ComboBox Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderByBox" HorizontalAlignment="Right" VerticalContentAlignment="Center" Width="300" Margin="3,3,3,10"/>
         <ToggleButton Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderButton" HorizontalAlignment="Left" Margin="3 3 3 10" Width="40" Content="Asc" Click="OrderButton_Click"></ToggleButton>
         <!-- Top -->
-        <TextBlock Grid.Column="0" Grid.Row="8" Text="Top" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="8" IsEnabled="False" Name="Top" Text="" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBlock Grid.Column="1" Grid.Row="8" Text="Top" HorizontalAlignment="Left" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="8" Name="Top" IsEnabled="False" HorizontalAlignment="Left" Width="130" Text="" VerticalContentAlignment="Center" Margin="30 3 3 3"/>
+        <!-- Skip -->
+        <TextBlock Grid.Column="1" Grid.Row="8" Text="Skip" HorizontalAlignment="Center" Margin="50 3 3 3"/>
+        <TextBox Grid.Column="1" Grid.Row="8" Name="Skip" IsEnabled="False" HorizontalAlignment="Right" Width="130" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3"/>
         <!-- Refresh Token -->
         <TextBox Grid.Column="0" Grid.Row="9" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
     </Grid>
