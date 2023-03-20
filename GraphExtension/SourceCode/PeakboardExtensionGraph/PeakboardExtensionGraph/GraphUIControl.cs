@@ -79,7 +79,7 @@ namespace PeakboardExtensionGraph
                 orderBy = orderBy.Remove(orderBy.Length - 1);
             }
 
-            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Top.Text};{RefreshToken.Text}";
+            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Top.Text};{Skip.Text};{RefreshToken.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -94,7 +94,8 @@ namespace PeakboardExtensionGraph
             //Select.Text = paramArr[4];
             //Orderby.Text = paramArr[5];
             Top.Text = paramArr[6];
-            RefreshToken.Text = paramArr[7];
+            Skip.Text = paramArr[7];
+            RefreshToken.Text = paramArr[8];
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
@@ -115,12 +116,23 @@ namespace PeakboardExtensionGraph
                 };
                 EdgeDriver driver =
                     new EdgeDriver(paths[0]);
-                await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
+                try
                 {
-                    // open webbrowser
-                    NavigateBrowser(driver, code, url);
-                    return Task.FromResult(0);
-                });
+                    await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
+                    {
+                        // open webbrowser
+                        NavigateBrowser(driver, code, url);
+                        return Task.FromResult(0);
+                    });
+                    driver.Close();
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                    driver.Close();
+                    return;
+                }
+                
             }
             this.RefreshToken.Text = GraphHelper.GetRefreshToken();
             
@@ -136,6 +148,7 @@ namespace PeakboardExtensionGraph
             OrderByBox.IsEnabled = true;
             OrderButton.IsEnabled = true;
             Top.IsEnabled = true;
+            Skip.IsEnabled = true;
             CustomCheckBox.IsEnabled = true;
         }
 

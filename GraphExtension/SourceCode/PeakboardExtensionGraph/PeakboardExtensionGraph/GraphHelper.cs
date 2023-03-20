@@ -40,7 +40,7 @@ namespace PeakboardExtensionGraph
             bool success = false;
             int requestAttempts = 0;
             Thread.Sleep(3000);
-            while (!success && requestAttempts < 20)
+            while (!success && requestAttempts < 40)
             {
                 // try to receive tokens 20 times
                 success = await GetTokensAsync(deviceCode);

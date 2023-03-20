@@ -38,15 +38,27 @@ namespace PeakboardExtensionGraph
             checkTask.Wait();
             
             // get parameter for graph call
-            string type = data.Parameter.Split(';')[3];     // request type
-            string select = data.Parameter.Split(';')[4];   // select   
-            string orderBy = data.Parameter.Split(';')[5];  // order by
-            string topString = data.Parameter.Split(';')[6];// top
-            int top = 10;
+            string type = data.Parameter.Split(';')[3];         // request type
+            string select = data.Parameter.Split(';')[4];       // select   
+            string orderBy = data.Parameter.Split(';')[5];      // order by
+            string topString = data.Parameter.Split(';')[6];    // top
+            string skipString = data.Parameter.Split(';')[7];   // skip
+            int top = 0;
+            int skip = 0;
             
             try
             {
                 top = Int32.Parse(topString);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+            
+            try
+            {
+                skip = Int32.Parse(skipString);
+
             }
             catch (Exception)
             {
@@ -58,7 +70,8 @@ namespace PeakboardExtensionGraph
             {
                 OrderBy = orderBy,
                 Select = select,
-                Top = top
+                Top = top,
+                Skip = skip
             });
             task.Wait();
             var response = task.Result;
@@ -100,15 +113,28 @@ namespace PeakboardExtensionGraph
             }
 
             // get parameter for graph call
-            string type = data.Parameter.Split(';')[3];     // request type
-            string select = data.Parameter.Split(';')[4];   // select   
-            string orderBy = data.Parameter.Split(';')[5];  // order by
-            string topString = data.Parameter.Split(';')[6];// top
-            int top = 10;
+            string type = data.Parameter.Split(';')[3];         // request type
+            string select = data.Parameter.Split(';')[4];       // select   
+            string orderBy = data.Parameter.Split(';')[5];      // order by
+            string topString = data.Parameter.Split(';')[6];    // top
+            string skipString = data.Parameter.Split(';')[7];   // skip
+            
+            int top = 0;
+            int skip = 0;
             
             try
             {
                 top = Int32.Parse(topString);
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+
+            try
+            {
+                skip = Int32.Parse(skipString);
+
             }
             catch (Exception)
             {
@@ -120,7 +146,8 @@ namespace PeakboardExtensionGraph
             {
                 OrderBy = orderBy,
                 Select = select,
-                Top = top
+                Top = top,
+                Skip = skip
             });
             task.Wait();
             var response = task.Result;
@@ -147,7 +174,7 @@ namespace PeakboardExtensionGraph
         private void InitializeGraph(CustomListData data)
         {
             // get refresh token from parameter
-            string refreshToken = data.Parameter.Split(';')[7];
+            string refreshToken = data.Parameter.Split(';')[8];
 
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
@@ -325,7 +352,7 @@ namespace PeakboardExtensionGraph
         {
             // replace refresh token in parameter if renewed
             var values = data.Parameter.Split(';');
-            values[7] = token;
+            values[8] = token;
             string result = values[0];
             
             for(int i = 1; i < values.Length; i++)
