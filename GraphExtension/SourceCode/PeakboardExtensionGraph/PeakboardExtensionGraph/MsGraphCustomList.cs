@@ -25,7 +25,7 @@ namespace PeakboardExtensionGraph
         protected override FrameworkElement GetControlOverride()
         {
             // return an instance of the UI user control
-            return new GraphUIControl();
+            return new GraphUiControl();
         }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
@@ -53,7 +53,6 @@ namespace PeakboardExtensionGraph
                 // ignored
             }
 
-
             // make graph call
             var task = GraphHelper.MakeGraphCall(type, new RequestParameters()
             {
@@ -67,30 +66,14 @@ namespace PeakboardExtensionGraph
             var cols = new CustomListColumnCollection();
             
             // parse json to PB Columns
-            JsonTextReader reader = new JsonTextReader(new StringReader(response));
-            bool start = false;
-            string lastValue = "";
+            JsonTextReader reader = PreparedReader(response);
+
             while (reader.Read())
             {
-                if (reader.TokenType == JsonToken.PropertyName) lastValue = reader.Value.ToString();
-                else if (reader.TokenType == JsonToken.StartArray && lastValue == "value") start = true;
-                else if (start && reader.TokenType == JsonToken.StartObject)
+                if (reader.TokenType == JsonToken.StartObject)
                 {
                     ColumnsWalkThroughObject(reader, "root", cols);
                     break;
-                }
-            }
-
-            if (!start)
-            {
-                reader = new JsonTextReader(new StringReader(response));
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonToken.StartObject)
-                    {
-                        ColumnsWalkThroughObject(reader, "root", cols);
-                        break;
-                    }
                 }
             }
 
@@ -145,15 +128,12 @@ namespace PeakboardExtensionGraph
             var items = new CustomListObjectElementCollection();
 
             // parse response to PB table
-            JsonTextReader reader = new JsonTextReader(new StringReader(response));
-            JObject jObject = JObject.Parse(response); 
-            bool start = false;
-            string lastValue = "";
+            JsonTextReader reader = PreparedReader(response);
+            JObject jObject = JObject.Parse(response);
+
             while (reader.Read())
             {
-                if (reader.TokenType == JsonToken.PropertyName) lastValue = reader.Value.ToString();
-                else if (reader.TokenType == JsonToken.StartArray && lastValue == "value") start = true;
-                else if (start && reader.TokenType == JsonToken.StartObject)
+                if (reader.TokenType == JsonToken.StartObject)
                 {
                     var item = new CustomListObjectElement();
                     ItemsWalkThroughObject(reader, "root", item, jObject);
@@ -161,20 +141,6 @@ namespace PeakboardExtensionGraph
                 }
             }
             
-            if (!start)
-            {
-                reader = new JsonTextReader(new StringReader(response));
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonToken.StartObject)
-                    {
-                        var item = new CustomListObjectElement();
-                        ItemsWalkThroughObject(reader, "root", item, jObject);
-                        items.Add(item);
-                    }
-                }
-            }
-
             return items;
         }
 
@@ -213,26 +179,34 @@ namespace PeakboardExtensionGraph
             {
                 if (reader.TokenType == JsonToken.PropertyName)
                 {
-                    lastName = reader.Value.ToString();
+                    // store property name and set value true
+                    // next token is either the value or a nested object/array
+                    lastName = (string)reader.Value ?? "";
                     value = true;
                 }
                 else if (reader.TokenType == JsonToken.StartObject)
                 {
+                    // nested object starts -> walk through recursively
+                    // object Prefix is passed on to ensure unique designation
+                    // terminology is root-nestedObject-nestedObjectInNestedObject-...
                     value = false;
                     ColumnsWalkThroughObject(reader, $"{objPrefix}-{lastName}", cols);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
+                    // nested array starts -> skip array
                     cols.Add(new CustomListColumn($"{objPrefix}-{lastName}-Array", CustomListColumnTypes.String));
                     SkipArray(reader);
                     value = false;
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                 {
+                    // nested object ends -> return to upper recursion layer
                     return;
                 }
-                else if(value)
+                else if(value && !lastName.Contains("odata"))
                 {
+                    // primitive property -> add CustomListColumn with corresponding type
                     CustomListColumn newCol;
                     if (reader.TokenType == JsonToken.Boolean)
                     {
@@ -261,26 +235,31 @@ namespace PeakboardExtensionGraph
             {
                 if (reader.TokenType == JsonToken.PropertyName)
                 {
-                    lastName = reader.Value.ToString();
+                    // store property name and set value true
+                    // next token is either the value or a nested object/array
+                    lastName = (string)reader.Value ?? "";
                     value = true;
                 }
                 else if (reader.TokenType == JsonToken.StartObject)
                 {
+                    // nested object starts -> walk through recursively
                     value = false;
                     ItemsWalkThroughObject(reader, $"{objPrefix}-{lastName}", item, obj);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    //var arr = WalkThroughArray(reader);
+                    // nested array starts -> store entire array json into column and skip the array
                     SkipArray(reader);
                     item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                 {
+                    // nested object ends -> return to upper recursion layer
                     return;
                 }
-                else if(value)
+                else if(value && !lastName.Contains("odata"))
                 {
+                    // primitive property -> store the value in corresponding column
                     if (reader.TokenType == JsonToken.Boolean || reader.TokenType == JsonToken.Float ||
                         reader.TokenType == JsonToken.Integer)
                     {
@@ -289,62 +268,57 @@ namespace PeakboardExtensionGraph
                     else
                     {
                         string objectValue = reader.Value?.ToString();
+                        // if value is bigger than 1024 chars -> cut at 1024
                         if (objectValue?.Length - 1024 > 0)
                         { 
-                            objectValue.Remove(1024);
+                            objectValue = objectValue.Remove(1024);
                         }
                         item.Add($"{objPrefix}-{lastName}", objectValue);
                     }
                 }
             }
         }
-        
-        private string WalkThroughArray(JsonReader reader)
-        {
-            bool value = false;
-            string lastname = "";
-            string arr = "";
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.PropertyName)
-                {
-                    value = true;
-                    lastname = reader.Value.ToString();
-                }
-                else if (reader.Value != null && value)
-                {
-                    arr += $"\"{lastname}\": \"{reader.Value}\", ";
-                }
-                else if (reader.TokenType == JsonToken.StartArray)
-                {
-                    WalkThroughArray(reader);
-                }
-                else if (reader.TokenType == JsonToken.EndArray)
-                {
-                    if (arr.Length > 2)
-                    {
-                        arr.Remove(arr.Length - 2);
-                    }
-                    return arr;
-                }
-            }
-
-            return arr;
-        }
 
         private void SkipArray(JsonReader reader)
         {
+            // skip nested array in json string
             while (reader.Read())
             {
                 if (reader.TokenType == JsonToken.StartArray)
                 {
+                    // nested arrays in nested array are skipped separately 
                     SkipArray(reader);
                 }
                 else if (reader.TokenType == JsonToken.EndArray)
                 {
+                    // return if nested array ends
                     return;
                 }
             }
+        }
+        
+        private JsonTextReader PreparedReader(string response)
+        {
+            // prepare reader for recursive walk trough
+            var reader = new JsonTextReader(new StringReader(response));
+            bool prepared = false;
+
+            while (reader.Read() && !prepared)
+            {
+                if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "value")
+                {
+                    // if json contains value array -> collection response with several objects
+                    // parsing starts after the array starts
+                    prepared = true;
+                }
+            }
+            if(!prepared)
+            {
+                // no value array -> response contains single object which starts immediately
+                reader = new JsonTextReader(new StringReader(response));
+            }
+
+            return reader;
         }
         
         public void UpdateRefreshToken(string token, CustomListData data)
