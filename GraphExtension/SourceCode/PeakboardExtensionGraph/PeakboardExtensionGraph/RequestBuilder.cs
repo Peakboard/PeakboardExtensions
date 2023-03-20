@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-
 using System.Net.Http;
 using System.Net.Http.Headers;
 
@@ -10,29 +8,20 @@ namespace PeakboardExtensionGraph
     {
         private string _accessToken;
         private const string BaseUrl = "https://graph.microsoft.com/v1.0/me";
-        private Dictionary<string, string> _queries;
 
         public RequestBuilder(string accessToken)
         {
             _accessToken = accessToken;
-            _queries = new Dictionary<string, string>()
-            {
-                { "mail", "/messages" },
-                { "calendar", "/calendarview" },
-                { "people", "/people" },
-                { "contacts", "/contacts" },
-                { "todos", "/todo/lists/{0}/tasks" },
-                { "todolists", "/todo/lists" }
-            };
         }
 
         public HttpRequestMessage GetRequest(string suffix = null, RequestParameters parameters = null)
         {
-
+            // append url suffix e.g. https://graph.microsoft.com/v1.0/me + /messages
             string url = BaseUrl + suffix;
 
             string queryParams = "";
 
+            // append query params into url
             if(parameters != null)
             {
                 queryParams = "?";
@@ -45,11 +34,13 @@ namespace PeakboardExtensionGraph
                     queryParams += $"startdatetime={start}&enddatetime={end}";
                 }
                 
+                // append filter
                 if (!string.IsNullOrEmpty(parameters.Filter))
                 {
                     queryParams += $"$filter={parameters.Filter}";
                 }
-
+                
+                // append sorting order
                 if (!string.IsNullOrEmpty(parameters.OrderBy))
                 {
                     if (queryParams != "?")
@@ -59,7 +50,8 @@ namespace PeakboardExtensionGraph
 
                     queryParams += $"$orderby={parameters.OrderBy}";
                 }
-
+                
+                // append skipped entries
                 if (parameters.Skip != 0)
                 {
                     if (queryParams != "?")
@@ -70,6 +62,7 @@ namespace PeakboardExtensionGraph
                     queryParams += $"$skip={parameters.Skip}";
                 }
 
+                // append number of requested entries
                 if (parameters.Top > 0)
                 {
                     if (queryParams != "?")
@@ -80,6 +73,7 @@ namespace PeakboardExtensionGraph
                     queryParams += $"$top={parameters.Top}";
                 }
 
+                // append selected fields
                 if (!string.IsNullOrEmpty(parameters.Select))
                 {
                     if (queryParams != "?")
@@ -91,12 +85,14 @@ namespace PeakboardExtensionGraph
                 }
             }
             
+            // build valid http request
             var request = new HttpRequestMessage
             {
                 RequestUri = new Uri(url+queryParams),
                 Method = HttpMethod.Get
             };
         
+            // append authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", _accessToken);
 
             return request;

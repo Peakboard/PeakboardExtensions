@@ -11,15 +11,15 @@ namespace PeakboardExtensionGraph
     {
         
         private static HttpClient _httpClient;
-        public static RequestBuilder Builder;
+        private static RequestBuilder _builder;
 
         private static string _accessToken;
         private static string _refreshToken;
         private static string _tokenLifetime;
         private static long _millis;
 
-        private const string AUTHORIZATION_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/devicecode";
-        private const string TOKEN_ENDPOINT_URL = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
+        private const string AuthorizationUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/devicecode";
+        private const string TokenEndpointUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
 
         private static string _allScopeAuthorizations = "user.read offline_access";
         private static string _clientId = "067207ed-41a4-4402-b97f-b977babe0ec9"; 
@@ -51,7 +51,7 @@ namespace PeakboardExtensionGraph
             if (requestAttempts == 20) throw new Exception("Failed to receive tokens 20 times. Aborting...");
 
             // init request builder
-            Builder = new RequestBuilder(_accessToken);
+            _builder = new RequestBuilder(_accessToken);
 
             return true;
         }
@@ -67,13 +67,13 @@ namespace PeakboardExtensionGraph
             _refreshToken = token;
             _httpClient = new HttpClient();
             await RefreshTokensAsync();
-            Builder = new RequestBuilder(_accessToken);
+            _builder = new RequestBuilder(_accessToken);
         }
 
         private static async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)
         {
             // generate url for http request
-            string url = string.Format(AUTHORIZATION_URL, _tenantId);
+            string url = string.Format(AuthorizationUrl, _tenantId);
             
             // generate body for http request
             var values = new Dictionary<string, string>
@@ -111,7 +111,7 @@ namespace PeakboardExtensionGraph
         private static async Task<bool> GetTokensAsync(string deviceCode)
         {
             // generate url for http request
-            string url = string.Format(TOKEN_ENDPOINT_URL, _tenantId);
+            string url = string.Format(TokenEndpointUrl, _tenantId);
             
             // generate body for http request
             var values = new Dictionary<string, string>
@@ -156,7 +156,7 @@ namespace PeakboardExtensionGraph
         private static async Task RefreshTokensAsync()
         {
             // generate url for http request
-            string url = String.Format(TOKEN_ENDPOINT_URL, _tenantId);
+            string url = String.Format(TokenEndpointUrl, _tenantId);
             
             // generate body for http requestd
             var values = new Dictionary<string, string>
@@ -181,7 +181,7 @@ namespace PeakboardExtensionGraph
                 tokenResponse.TryGetValue("expires_in", out _tokenLifetime);
             }
 
-            Builder?.RefreshToken(_accessToken);
+            _builder?.RefreshToken(_accessToken);
 
             _millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
@@ -203,7 +203,7 @@ namespace PeakboardExtensionGraph
         public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
         {   
             // build request
-            var request = Builder.GetRequest(key, parameters);
+            var request = _builder.GetRequest(key, parameters);
             
             // call graph api
             var response = await _httpClient.SendAsync(request);
