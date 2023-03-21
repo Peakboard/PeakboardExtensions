@@ -82,7 +82,7 @@ namespace PeakboardExtensionODataV4
 		}
 		public static CustomListObjectElementCollection GetItemsFromEntity(string _url, string _entityUrl, string _entityPropertyList, int _maxRows, string _authentication, string _queryOption)
 		{
-			string finalUrl = "";
+			string finalUrl = string.Empty;
 
 			if(_maxRows==0)
 			{
@@ -136,9 +136,8 @@ namespace PeakboardExtensionODataV4
 				}
 				itemsCollection.Add(item);
 			}
+
 			return itemsCollection;
 		}
-
-		
 	}
 }

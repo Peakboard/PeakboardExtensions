@@ -28,13 +28,11 @@ namespace PeakboardExtensionODataV4
 			cboQueryOptionType.SelectedIndex = 0;
 		}
 
-
-
 		protected override string GetParameterOverride()
 		{
-			string entitySet = "";
-			string entityProperties = "";
-			string authentication;
+			string entitySet = string.Empty;
+			string entityProperties = string.Empty;
+            string authentication;
 			string queryOptionValue;
 
 			if (this.cboEntity.Items.Contains((ComboBoxItem)this.cboEntity.SelectedItem))
@@ -55,17 +53,7 @@ namespace PeakboardExtensionODataV4
 			}
 
 			authentication = GetAuthenticationString();
-
 			queryOptionValue = GetQueryOptionString();
-
-			//string queryOption = "";
-
-			//if (this.cboQueryOption.Items.Contains((ComboBoxItem)this.cboQueryOption.SelectedItem))
-			//{
-			//	queryOption = ((ComboBoxItem)this.cboQueryOption.SelectedItem).Tag.ToString();
-			//}
-
-
 
 			return $"{this.url.Text};{entitySet};{this.maxRows.Text};{entityProperties};{authentication};{queryOptionValue}";
 		}
@@ -78,12 +66,6 @@ namespace PeakboardExtensionODataV4
 			}
 
 			this.url.Text = parameter.Split(';')[0];
-			//this.maxRows.Text = parameter.Split(';')[2];
-		}
-
-		protected override void ValidateParameterOverride()
-		{
-
 		}
 
 		private void cboAuthentication_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -144,7 +126,6 @@ namespace PeakboardExtensionODataV4
 				{
 					MessageBox.Show("Invalid Authentication properties.");
 				}
-
 			}
 			catch (Exception)
 			{
@@ -152,15 +133,13 @@ namespace PeakboardExtensionODataV4
 			}
 		}
 
-		
-
 		private void cboEntity_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			this.entityProperties.Items.Clear();
 			try
 			{
-				string entityUrl="";
-				if (this.cboEntity.Items.Contains((ComboBoxItem)this.cboEntity.SelectedItem))
+				string entityUrl = string.Empty;
+                if (this.cboEntity.Items.Contains((ComboBoxItem)this.cboEntity.SelectedItem))
 				{
 					entityUrl = ((ComboBoxItem)this.cboEntity.SelectedItem).Tag.ToString();
 				}
@@ -226,89 +205,69 @@ namespace PeakboardExtensionODataV4
 
 		private string GetAuthenticationString()
 		{
-			string finalAuthenticationString = "";
-
-			switch (((ComboBoxItem)this.cboAuthentication.SelectedItem).Tag.ToString())
+            switch (((ComboBoxItem)this.cboAuthentication.SelectedItem).Tag.ToString())
 			{
 				case "none":
-					finalAuthenticationString = "none";
-					break;
+					return "none";
 				case "basic":
 					if (!String.IsNullOrEmpty(this.username.Text) && !String.IsNullOrEmpty(this.password.Password))
 					{
-						finalAuthenticationString = "basic/" + this.username.Text + ":" + this.password.Password;
+						return "basic/" + username.Text + ":" + password.Password;
 					}
 					else
 					{
-						finalAuthenticationString = "";
+						return string.Empty;
 					}
-					break;
 				case "bearer":
-					if (!String.IsNullOrEmpty(this.token.Text))
+					if (!string.IsNullOrEmpty(this.token.Text))
 					{
-						finalAuthenticationString = "bearer/" + this.token.Text;
+						return "bearer/" + this.token.Text;
 					}
 					else
 					{
-						finalAuthenticationString = "";
+						return string.Empty;
 					}
-					break;
 				default:
-					finalAuthenticationString = "none";
-					break;
+					return "none";
 			}
-
-			return finalAuthenticationString;
 		}
 
 		private string GetQueryOptionString()
 		{
-			string finalQueryOption = "";
-
 			switch (((ComboBoxItem)this.cboQueryOptionType.SelectedItem).Tag.ToString())
 			{
 				case "none":
-					finalQueryOption = "";
-					break;
+					return string.Empty;
 				case "orderby":
 					if (!String.IsNullOrEmpty(this.queryOrderBy.Text))
 					{
-						finalQueryOption = "$orderby=" + this.queryOrderBy.Text;
+						return "$orderby=" + this.queryOrderBy.Text;
 					}
 					else
 					{
-						finalQueryOption = "";
-					}
-					break;
+                        return string.Empty;
+                    }
 				case "filter":
 					if (!String.IsNullOrEmpty(this.queryFilter.Text))
 					{
-						finalQueryOption = "$filter=" + this.queryFilter.Text;
+						return "$filter=" + this.queryFilter.Text;
 					}
 					else
 					{
-						finalQueryOption = "";
-					}
-					break;
+                        return string.Empty;
+                    }
 				case "search":
 					if (!String.IsNullOrEmpty(this.querySearch.Text))
 					{
-						finalQueryOption = "$search=" + this.querySearch.Text;
+						return "$search=" + this.querySearch.Text;
 					}
 					else
 					{
-						finalQueryOption = "";
-					}
-					break;
+                        return string.Empty;
+                    }
 				default:
-					finalQueryOption = "";
-					break;
+                    return string.Empty;
 			}
-
-			return finalQueryOption;
 		}
-
-
-		
 	}
 }
