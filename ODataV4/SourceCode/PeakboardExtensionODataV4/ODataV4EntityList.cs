@@ -65,19 +65,13 @@ namespace PeakboardExtensionODataV4
 		protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
 		{
 			CustomListColumnCollection columnCollection = new CustomListColumnCollection();
-
-			var url = data.Parameter.Split(';')[0];
-			var entityUrl = data.Parameter.Split(';')[1];
 			var entityProperties = data.Parameter.Split(';')[3];
-
 			string[] entityPropertiesList = entityProperties.Split(',');
 
-			//List<string> columns = ODataV4Service.GetColumnsFromEntity(url, entityUrl);
 			foreach (string column in entityPropertiesList)
 			{
 				columnCollection.Add(new CustomListColumn(column, CustomListColumnTypes.String));
 			}
-			
 
 			return columnCollection;
 		}
