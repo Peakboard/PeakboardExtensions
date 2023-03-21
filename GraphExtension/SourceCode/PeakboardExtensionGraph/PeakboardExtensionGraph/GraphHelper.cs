@@ -25,6 +25,7 @@ namespace PeakboardExtensionGraph
         private static string _clientId = "067207ed-41a4-4402-b97f-b977babe0ec9"; 
         private static string _tenantId = "b4ff9807-402f-42b8-a89d-428363c55de7";
         
+        // TODO: Remove redundant tasks
         public static async Task<bool> InitGraph(string clientId, string tenantId, string permissions, Func<string, string, Task> prompt)
         {
             _httpClient = new HttpClient();
