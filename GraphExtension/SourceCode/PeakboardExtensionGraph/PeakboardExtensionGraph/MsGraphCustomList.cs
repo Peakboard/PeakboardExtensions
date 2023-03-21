@@ -338,6 +338,11 @@ namespace PeakboardExtensionGraph
                     // parsing starts after the array starts
                     prepared = true;
                 }
+                else if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
+                {
+                    // if json contains an error field -> deserialize to Error Object & throw exception
+                    GraphHelper.DeserializeError(response);
+                }
             }
             if(!prepared)
             {

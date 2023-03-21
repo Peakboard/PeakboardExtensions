@@ -32,9 +32,9 @@ namespace PeakboardExtensionGraph
         {
             string data;
             // request data is either custom link or selected dropdown entry
-            if (CustomCheckBox.IsChecked == true)
+            if (CustomCallCheckBox.IsChecked == true)
             {
-                data = CustomCall.Text;
+                data = CustomCallTextBox.Text;
             }
             else
             {
@@ -124,12 +124,10 @@ namespace PeakboardExtensionGraph
                         NavigateBrowser(driver, code, url);
                         return Task.FromResult(0);
                     });
-                    driver.Close();
                 }
                 catch (Exception e)
                 {
                     MessageBox.Show(e.Message);
-                    driver.Close();
                     return;
                 }
                 
@@ -149,20 +147,46 @@ namespace PeakboardExtensionGraph
             OrderButton.IsEnabled = true;
             Top.IsEnabled = true;
             Skip.IsEnabled = true;
-            CustomCheckBox.IsEnabled = true;
+            CustomCallCheckBox.IsEnabled = true;
         }
 
-        private async void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
+        private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
+            UpdateDropdowns(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+        }
+
+        private async void UpdateDropdowns(string data)
+        {
+            // lock dropdowns
+            SelectBox.IsEnabled = false;
+            OrderByBox.IsEnabled = false;
+            
             // make a graph call and update select & order by combo boxes
-            string data = ((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString();
             var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
             {
                 Top = 1
             });
+
+            try
+            {
+                // catch potential exception caused by graph call error
+                // TODO: Add select all / none ?
+                UpdateSelectBox(response);
+                UpdateOrderByBox(response);
+            }
+            catch (Exception e)
+            {
+                // reset UI
+                MessageBox.Show(e.Message);
+                RequestBox.IsEnabled = true;
+                CustomCallCheckBox.IsChecked = false;
+                CustomCallTextBox.IsEnabled = false;
+                CustomCallCheckButton.IsEnabled = false;
+            }
             
-            UpdateSelectBox(response);
-            UpdateOrderByBox(response);
+            // unlock dropdowns
+            SelectBox.IsEnabled = true;
+            OrderByBox.IsEnabled = true;
         }
 
         private void UpdateSelectBox(string response)
@@ -261,13 +285,21 @@ namespace PeakboardExtensionGraph
             {
                 if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "value")
                 {
+                    // if json contains value array -> collection response with several objects
+                    // parsing starts after the array starts
                     reader.Read();
                     reader.Read();
                     prepared = true;
                 }
+                else if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
+                {
+                    // if json contains an error field -> deserialize to Error Object & throw exception
+                    GraphHelper.DeserializeError(response);
+                }
             }
             if(!prepared)
             {
+                // no value array -> response contains single object which starts immediately
                 reader = new JsonTextReader(new StringReader(response));
                 reader.Read();
             }
@@ -288,8 +320,8 @@ namespace PeakboardExtensionGraph
         private void InitComboBoxes()
         {
             // Add every Dictionary entry to Request Combobox
-            RequestBox.Items.Clear();
-            
+            RequestBox.Items.Clear(); // TODO: Find out why this is throwing exception
+
             RequestBox.Items.Add(new ComboBoxItem()
             {
                 Content = "Me",
@@ -411,35 +443,30 @@ namespace PeakboardExtensionGraph
             }
         }
 
-        private void RequestButton_Click(object sender, RoutedEventArgs e)
+        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
             // checkbox to enable / disable custom api call
-            if (CustomCheckBox.IsChecked == true)
+            if (CustomCallCheckBox.IsChecked == true)
             {
-                CustomCall.IsEnabled = true;
-                CustomCheckButton.IsEnabled = true;
+                CustomCallTextBox.IsEnabled = true;
+                CustomCallCheckButton.IsEnabled = true;
                 RequestBox.IsEnabled = false;
             }
             else
             {
-                CustomCall.IsEnabled = false;
-                CustomCheckButton.IsEnabled = false;
+                CustomCallTextBox.IsEnabled = false;
+                CustomCallCheckButton.IsEnabled = false;
                 RequestBox.IsEnabled = true;
+                UpdateDropdowns(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
 
-        private async void CheckButton_Click(object sender, RoutedEventArgs e)
+        private void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
         {
             // button to update select & request combo boxes for custom api call
-            string data = CustomCall.Text;
-            var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
-            {
-                Top = 1
-            });
-            
-            UpdateSelectBox(response);
-            UpdateOrderByBox(response);
+            UpdateDropdowns(CustomCallTextBox.Text);
         }
+        
     }
     
 }

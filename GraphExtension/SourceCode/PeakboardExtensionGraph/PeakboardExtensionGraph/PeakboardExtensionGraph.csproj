@@ -74,6 +74,7 @@
           <DependentUpon>GraphUIControl.xaml</DependentUpon>
         </Compile>
         <Compile Include="MsGraphCustomList.cs" />
+        <Compile Include="MsGraphError.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RequestBuilder.cs" />
         <Compile Include="RequestParameters.cs" />

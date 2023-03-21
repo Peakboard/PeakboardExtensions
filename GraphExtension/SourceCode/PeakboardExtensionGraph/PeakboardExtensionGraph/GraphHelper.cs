@@ -48,7 +48,7 @@ namespace PeakboardExtensionGraph
                 requestAttempts++;
             }
             // abort if no success
-            if (requestAttempts == 20) throw new Exception("Failed to receive tokens 20 times. Aborting...");
+            if (requestAttempts == 40) throw new Exception("Failed to receive tokens 40 times. Aborting...");
 
             // init request builder
             _builder = new RequestBuilder(_accessToken);
@@ -87,7 +87,6 @@ namespace PeakboardExtensionGraph
             // make http request to get device code for authentication
             HttpResponseMessage response = await _httpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(jsonString);
             var authorizationResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             
             // get device code and authentication message
@@ -203,13 +202,14 @@ namespace PeakboardExtensionGraph
         public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
         {   
             // build request
-            var request = _builder.GetRequest(key, parameters);
+            var request = _builder.GetRequest(out var url, key, parameters);
             
             // call graph api
             var response = await _httpClient.SendAsync(request);
             
             // convert to string and return
             string jsonString = await response.Content.ReadAsStringAsync();
+            
 
             return jsonString;
         }
@@ -218,6 +218,18 @@ namespace PeakboardExtensionGraph
         {
             if (_refreshToken != null) return _refreshToken;
             throw new NullReferenceException("Refresh-Token not initialized yet");
+        }
+
+        public static void DeserializeError(string json)
+        {
+            var error = JsonConvert.DeserializeObject<RootMsGraphError>(json)?.Error;
+
+            if (error?.Message == null || error.Code == null)
+            {
+                throw new MsGraphException($"Unknown Microsoft Graph Error: {json}");
+            }
+            throw new MsGraphException($"Microsoft Graph Error: {error.Code}: {error.Message}");
+
         }
 
     }
