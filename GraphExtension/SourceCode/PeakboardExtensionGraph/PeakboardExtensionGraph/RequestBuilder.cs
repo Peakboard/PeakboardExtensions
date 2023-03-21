@@ -14,7 +14,8 @@ namespace PeakboardExtensionGraph
             _accessToken = accessToken;
         }
 
-        public HttpRequestMessage GetRequest(string suffix = null, RequestParameters parameters = null)
+        public HttpRequestMessage GetRequest(out string requestUrl,
+            string suffix = null, RequestParameters parameters = null)
         {
             // append url suffix e.g. https://graph.microsoft.com/v1.0/me + /messages
             string url = BaseUrl + suffix;
@@ -97,6 +98,7 @@ namespace PeakboardExtensionGraph
             // append authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", _accessToken);
 
+            requestUrl = url + queryParams;
             return request;
         }
 
