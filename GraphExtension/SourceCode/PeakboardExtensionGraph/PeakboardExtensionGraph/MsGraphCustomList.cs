@@ -41,8 +41,11 @@ namespace PeakboardExtensionGraph
             string type = data.Parameter.Split(';')[3];         // request type
             string select = data.Parameter.Split(';')[4];       // select   
             string orderBy = data.Parameter.Split(';')[5];      // order by
-            string topString = data.Parameter.Split(';')[6];    // top
-            string skipString = data.Parameter.Split(';')[7];   // skip
+            string filter = data.Parameter.Split(';')[6];       // filter
+            bool eventual = data.Parameter.Split(';')[7] == "true";
+            string topString = data.Parameter.Split(';')[8];    // top
+            string skipString = data.Parameter.Split(';')[9];   // skip
+            
             int top = 0;
             int skip = 0;
             
@@ -116,8 +119,11 @@ namespace PeakboardExtensionGraph
             string type = data.Parameter.Split(';')[3];         // request type
             string select = data.Parameter.Split(';')[4];       // select   
             string orderBy = data.Parameter.Split(';')[5];      // order by
-            string topString = data.Parameter.Split(';')[6];    // top
-            string skipString = data.Parameter.Split(';')[7];   // skip
+            string filter = data.Parameter.Split(';')[6];       // filter
+            bool eventual = data.Parameter.Split(';')[7] == "true";
+            string topString = data.Parameter.Split(';')[8];    // top
+            string skipString = data.Parameter.Split(';')[9];   // skip
+            
             
             int top = 0;
             int skip = 0;
@@ -147,7 +153,9 @@ namespace PeakboardExtensionGraph
                 OrderBy = orderBy,
                 Select = select,
                 Top = top,
-                Skip = skip
+                Skip = skip,
+                Filter = filter,
+                ConsistencyLevelEventual = eventual
             });
             task.Wait();
             var response = task.Result;
@@ -174,7 +182,7 @@ namespace PeakboardExtensionGraph
         private void InitializeGraph(CustomListData data)
         {
             // get refresh token from parameter
-            string refreshToken = data.Parameter.Split(';')[8];
+            string refreshToken = data.Parameter.Split(';')[10];
 
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
@@ -357,7 +365,7 @@ namespace PeakboardExtensionGraph
         {
             // replace refresh token in parameter if renewed
             var values = data.Parameter.Split(';');
-            values[8] = token;
+            values[10] = token;
             string result = values[0];
             
             for(int i = 1; i < values.Length; i++)

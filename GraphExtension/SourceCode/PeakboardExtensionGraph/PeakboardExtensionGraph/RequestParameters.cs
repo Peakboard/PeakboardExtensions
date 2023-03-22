@@ -1,4 +1,6 @@
-﻿namespace PeakboardExtensionGraph
+﻿using System.Dynamic;
+
+namespace PeakboardExtensionGraph
 {
     public class RequestParameters
     {
@@ -7,5 +9,6 @@
         public string OrderBy { get; set; }
         public int Skip = 0;
         public string Filter { get; set; }
+        public bool ConsistencyLevelEventual { get; set; }
     }
 }
