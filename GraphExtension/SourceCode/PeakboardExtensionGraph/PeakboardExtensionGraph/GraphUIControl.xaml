@@ -23,6 +23,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition />
         </Grid.RowDefinitions>
         <!-- Client ID -->
         <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
@@ -48,15 +49,32 @@
         <ComboBox Grid.Column="1" Grid.Row="6" IsEnabled="False" Name="SelectBox" VerticalContentAlignment="Center" Margin="3,3,3,3"/>
         <!-- Order by -->
         <TextBlock Grid.Column="0" Grid.Row="7" Text="Order by" Margin="3"/>
-        <ComboBox Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderByBox" HorizontalAlignment="Right" VerticalContentAlignment="Center" Width="300" Margin="3,3,3,10"/>
-        <ToggleButton Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderButton" HorizontalAlignment="Left" Margin="3 3 3 10" Width="40" Content="Asc" Click="OrderButton_Click"></ToggleButton>
-        <!-- Top -->
-        <TextBlock Grid.Column="1" Grid.Row="8" Text="Top" HorizontalAlignment="Left" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="8" Name="Top" IsEnabled="False" HorizontalAlignment="Left" Width="130" Text="" VerticalContentAlignment="Center" Margin="30 3 3 3"/>
+        <ComboBox Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderByBox" HorizontalAlignment="Right" VerticalContentAlignment="Center" Width="280" Margin="3,3,3,10"/>
+        <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="7" Margin="3 3 3 10" HorizontalAlignment="Left" Width="60">
+            <ComboBoxItem Content="Desc" IsSelected="True"></ComboBoxItem>
+            <ComboBoxItem Content="Asc" IsSelected="False"></ComboBoxItem>
+        </ComboBox>
+        <!-- Filter -->
+        <TextBlock Grid.Column="0" Grid.Row="8" Text="Filter" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="8" Name="Filter" IsEnabled="False" HorizontalAlignment="Left" Width="270" Margin="3 3 3 3"></TextBox>
+        <TextBlock Grid.Column="1" Grid.Row="8" Text="Eventual" HorizontalAlignment="Center" Margin="260 3 3 3"></TextBlock>
+        <CheckBox Grid.Column="1" Grid.Row="8" Name="ConsistencyBox" HorizontalAlignment="Right" IsEnabled="False" Margin="3 4 3 3"></CheckBox>
+        <!-- Top --> 
+        <TextBlock Grid.Column="1" Grid.Row="9" Text="Top" HorizontalAlignment="Left" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="9" Name="Top" IsEnabled="False" HorizontalAlignment="Left" Width="130" Text="" VerticalContentAlignment="Center" Margin="30 3 3 3"/>
         <!-- Skip -->
-        <TextBlock Grid.Column="1" Grid.Row="8" Text="Skip" HorizontalAlignment="Center" Margin="50 3 3 3"/>
-        <TextBox Grid.Column="1" Grid.Row="8" Name="Skip" IsEnabled="False" HorizontalAlignment="Right" Width="130" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3"/>
+        <TextBlock Grid.Column="1" Grid.Row="9" Text="Skip" HorizontalAlignment="Center" Margin="50 3 3 3"/>
+        <TextBox Grid.Column="1" Grid.Row="9" Name="Skip" IsEnabled="False" HorizontalAlignment="Right" Width="130" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3"/>
         <!-- Refresh Token -->
-        <TextBox Grid.Column="0" Grid.Row="9" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
+        <TextBox Grid.Column="0" Grid.Row="10" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
+        <!--<TabControl Grid.Column="1" Grid.Row="11" Margin="3">
+            <TabItem Header="Select">
+                <ListBox Height="100"></ListBox>
+            </TabItem>
+            <TabItem Header="Order by">
+                <ListBox Height="100"></ListBox>
+            </TabItem>
+            
+        </TabControl>-->
     </Grid>
 </controls:CustomListUserControlBase>

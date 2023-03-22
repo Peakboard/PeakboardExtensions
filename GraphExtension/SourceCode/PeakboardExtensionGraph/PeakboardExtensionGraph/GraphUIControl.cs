@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -23,6 +25,11 @@ namespace PeakboardExtensionGraph
 
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
+
+        private string _chosenRequest = "";
+        private string[] _chosenAttributes = { "" };
+        private string[] _chosenOrder = { "" };
+        private bool _uiInitialized = false;
         public GraphUiControl()
         {
             InitializeComponent();
@@ -61,7 +68,7 @@ namespace PeakboardExtensionGraph
                 if (cboi.IsChecked == true)
                 {
                     // add 'desc' if descending order is selected
-                    if ((string)OrderButton.Content == "Desc")
+                    if ((string)((ComboBoxItem)OrderByMode.SelectedItem).Content == "Desc")
                         orderBy += $"{cboi.Content} desc,";
                     else
                         orderBy += $"{cboi.Content},";
@@ -79,7 +86,8 @@ namespace PeakboardExtensionGraph
                 orderBy = orderBy.Remove(orderBy.Length - 1);
             }
 
-            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Top.Text};{Skip.Text};{RefreshToken.Text}";
+            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
+                   $"{Top.Text};{Skip.Text};{RefreshToken.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -90,12 +98,15 @@ namespace PeakboardExtensionGraph
             ClientId.Text = paramArr[0];
             TenantId.Text = paramArr[1];
             Permissions.Text = paramArr[2];
-            //RequestData.Text = paramArr[3];
-            //Select.Text = paramArr[4];
-            //Orderby.Text = paramArr[5];
-            Top.Text = paramArr[6];
-            Skip.Text = paramArr[7];
-            RefreshToken.Text = paramArr[8];
+            // TODO: safe custom call
+            _chosenRequest = paramArr[3];
+            _chosenAttributes = paramArr[4].Split(',');
+            _chosenOrder = paramArr[5].Split(',');
+            Filter.Text = paramArr[6];
+            ConsistencyBox.IsChecked = (paramArr[7] == "true");
+            Top.Text = paramArr[8];
+            Skip.Text = paramArr[9];
+            RefreshToken.Text = paramArr[10];
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
@@ -108,20 +119,14 @@ namespace PeakboardExtensionGraph
             }
             else
             {
-                // initialize with user code if no refresh token available
-                var paths = new[]
-                {
-                    @"C:\\Users\\Yannis\\Documents\\Peakboard\\Edge_Driver\\edgedriver_win64",
-                    @"C:\Users\YannisHartmann\Documents\Graph\MS_Graph\Edge_Driver\edgedriver_win64"
-                };
-                EdgeDriver driver =
-                    new EdgeDriver(paths[0]);
+                Process process;
                 try
                 {
                     await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
                     {
                         // open webbrowser
-                        NavigateBrowser(driver, code, url);
+                        process = Process.Start(url);
+                        Clipboard.SetText(code);
                         return Task.FromResult(0);
                     });
                 }
@@ -144,10 +149,11 @@ namespace PeakboardExtensionGraph
             RequestBox.IsEnabled = true;
             SelectBox.IsEnabled = true;
             OrderByBox.IsEnabled = true;
-            OrderButton.IsEnabled = true;
+            OrderByMode.IsEnabled = true;
             Top.IsEnabled = true;
             Skip.IsEnabled = true;
             CustomCallCheckBox.IsEnabled = true;
+            Filter.IsEnabled = true;
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -187,6 +193,14 @@ namespace PeakboardExtensionGraph
             // unlock dropdowns
             SelectBox.IsEnabled = true;
             OrderByBox.IsEnabled = true;
+
+            if (!_uiInitialized)
+            {
+                _chosenAttributes = new string[]{};
+                _chosenOrder = new string[]{};
+                _chosenRequest = "";
+                _uiInitialized = true;
+            }
         }
 
         private void UpdateSelectBox(string response)
@@ -220,7 +234,8 @@ namespace PeakboardExtensionGraph
                 var cboi = new CheckBox()
                 {
                     Content = attr,
-                    IsChecked = false
+                    // if attributes where saved before mark them as selected
+                    IsChecked = _chosenAttributes.Contains(attr)
                 };
                 SelectBox.Items.Add(cboi);
             }
@@ -269,7 +284,8 @@ namespace PeakboardExtensionGraph
                 var cboi = new CheckBox()
                 {
                     Content = attr,
-                    IsChecked = false
+                    // if attributes where saved before mark them as selected
+                    IsChecked = _chosenOrder.Contains(attr)
                 };
                 OrderByBox.Items.Add(cboi);
             }
@@ -306,17 +322,7 @@ namespace PeakboardExtensionGraph
 
             return reader;
         }
-
-        private void NavigateBrowser(WebDriver driver, string code, string url)
-        {
-            // navigate to microsoft graph website
-            driver.Navigate().GoToUrl(url);
-    
-            // input authentication code
-            IWebElement textfield = driver.FindElement(By.Id("otc"));
-            textfield.SendKeys(code);
-        }
-
+        
         private void InitComboBoxes()
         {
             // Add every Dictionary entry to Request Combobox
@@ -328,7 +334,7 @@ namespace PeakboardExtensionGraph
                 Tag = "",
                 IsSelected = true
             });
-            
+
             foreach (var option in _options)
             {
                 var boi = new ComboBoxItem()
@@ -336,6 +342,10 @@ namespace PeakboardExtensionGraph
                     Content = option.Key,
                     Tag = option.Value,
                 };
+                if (option.Value == _chosenRequest)
+                {
+                    boi.IsSelected = true;
+                }
                 RequestBox.Items.Add(boi);
             }
             
@@ -430,19 +440,6 @@ namespace PeakboardExtensionGraph
             }
         }
 
-        private void OrderButton_Click(object sender, RoutedEventArgs e)
-        {
-            // button to switch between ascending and descending sorting order
-            if (OrderButton.IsChecked == true)
-            {
-                OrderButton.Content = "Desc";
-            }
-            else
-            {
-                OrderButton.Content = "Asc";
-            }
-        }
-
         private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
             // checkbox to enable / disable custom api call
@@ -451,12 +448,20 @@ namespace PeakboardExtensionGraph
                 CustomCallTextBox.IsEnabled = true;
                 CustomCallCheckButton.IsEnabled = true;
                 RequestBox.IsEnabled = false;
+                
+                // disable until check button is clicked to prevent errors from choosing attributes of a previous request 
+                SelectBox.IsEnabled = false;
+                OrderByBox.IsEnabled = false;
+                Filter.IsEnabled = false;
+                ConsistencyBox.IsEnabled = false;
             }
             else
             {
                 CustomCallTextBox.IsEnabled = false;
                 CustomCallCheckButton.IsEnabled = false;
                 RequestBox.IsEnabled = true;
+                Filter.IsEnabled = true;
+                ConsistencyBox.IsEnabled = true;
                 UpdateDropdowns(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
@@ -465,6 +470,8 @@ namespace PeakboardExtensionGraph
         {
             // button to update select & request combo boxes for custom api call
             UpdateDropdowns(CustomCallTextBox.Text);
+            Filter.IsEnabled = true;
+            ConsistencyBox.IsEnabled = true;
         }
         
     }
