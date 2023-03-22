@@ -99,7 +99,7 @@ namespace PeakboardExtensionGraph
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", _accessToken);
             if (parameters.ConsistencyLevelEventual)
             {
-                // not implemented yet
+                // TODO
             }
 
             requestUrl = url + queryParams;
