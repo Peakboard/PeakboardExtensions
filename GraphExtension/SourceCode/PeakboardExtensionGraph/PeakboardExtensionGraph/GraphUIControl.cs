@@ -8,8 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Edge;
+
 
 namespace PeakboardExtensionGraph
 {
@@ -52,26 +51,26 @@ namespace PeakboardExtensionGraph
             string orderBy = "";
             
             // put each selected field into one comma separated string
-            foreach (var item in SelectBox.Items)
+            foreach (var item in SelectList.Items)
             {
-                var cboi = (CheckBox)item;
-                if (cboi.IsChecked == true)
+                var lboi = (ListBoxItem)item;
+                if (lboi.IsSelected)
                 {
-                    select += $"{cboi.Content},";
+                    select += $"{lboi.Content},";
                 }
             }
             
             // put each orderBy field into one comma separated string
-            foreach (var orderItem in OrderByBox.Items)
+            foreach (var orderItem in OrderList.Items)
             {
-                var cboi = (CheckBox)orderItem;
-                if (cboi.IsChecked == true)
+                var lboi = (ListBoxItem)orderItem;
+                if (lboi.IsSelected)
                 {
                     // add 'desc' if descending order is selected
                     if ((string)((ComboBoxItem)OrderByMode.SelectedItem).Content == "Desc")
-                        orderBy += $"{cboi.Content} desc,";
+                        orderBy += $"{lboi.Content} desc,";
                     else
-                        orderBy += $"{cboi.Content},";
+                        orderBy += $"{lboi.Content},";
                 }
             }
             
@@ -98,10 +97,16 @@ namespace PeakboardExtensionGraph
             ClientId.Text = paramArr[0];
             TenantId.Text = paramArr[1];
             Permissions.Text = paramArr[2];
-            // TODO: safe custom call
-            _chosenRequest = paramArr[3];
-            _chosenAttributes = paramArr[4].Split(',');
-            _chosenOrder = paramArr[5].Split(',');
+            
+            if(!_uiInitialized)
+            {
+                // TODO
+                _chosenRequest = paramArr[3];
+                _chosenAttributes = paramArr[4].Split(',');
+                _chosenOrder = paramArr[5].Split(',');
+                _uiInitialized = true;
+            }
+            
             Filter.Text = paramArr[6];
             ConsistencyBox.IsChecked = (paramArr[7] == "true");
             Top.Text = paramArr[8];
@@ -119,13 +124,12 @@ namespace PeakboardExtensionGraph
             }
             else
             {
-                Process process;
                 try
                 {
                     await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
                     {
                         // open webbrowser
-                        process = Process.Start(url);
+                        Process.Start(url);
                         Clipboard.SetText(code);
                         return Task.FromResult(0);
                     });
@@ -147,8 +151,8 @@ namespace PeakboardExtensionGraph
             
             // enable UI components
             RequestBox.IsEnabled = true;
-            SelectBox.IsEnabled = true;
-            OrderByBox.IsEnabled = true;
+            SelectList.IsEnabled = true;
+            OrderList.IsEnabled = true;
             OrderByMode.IsEnabled = true;
             Top.IsEnabled = true;
             Skip.IsEnabled = true;
@@ -158,15 +162,15 @@ namespace PeakboardExtensionGraph
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
-            UpdateDropdowns(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+            UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
         }
 
-        private async void UpdateDropdowns(string data)
+        private async void UpdateLists(string data)
         {
             // lock dropdowns
-            SelectBox.IsEnabled = false;
-            OrderByBox.IsEnabled = false;
-            
+            SelectList.IsEnabled = false;
+            OrderList.IsEnabled = false;
+
             // make a graph call and update select & order by combo boxes
             var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
             {
@@ -177,8 +181,8 @@ namespace PeakboardExtensionGraph
             {
                 // catch potential exception caused by graph call error
                 // TODO: Add select all / none ?
-                UpdateSelectBox(response);
-                UpdateOrderByBox(response);
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
             }
             catch (Exception e)
             {
@@ -191,19 +195,12 @@ namespace PeakboardExtensionGraph
             }
             
             // unlock dropdowns
-            SelectBox.IsEnabled = true;
-            OrderByBox.IsEnabled = true;
-
-            if (!_uiInitialized)
-            {
-                _chosenAttributes = new string[]{};
-                _chosenOrder = new string[]{};
-                _chosenRequest = "";
-                _uiInitialized = true;
-            }
+            SelectList.IsEnabled = true;
+            OrderList.IsEnabled = true;
+            
         }
 
-        private void UpdateSelectBox(string response)
+        private void UpdateSelectList(string response)
         {
             var reader = PreparedReader(response);
             // delete old entries
@@ -228,20 +225,20 @@ namespace PeakboardExtensionGraph
             _selectAttributes.Sort();
             
             // clear combo box and append every entry from the list into the combo box
-            SelectBox.Items.Clear();
+            SelectList.Items.Clear();
             foreach (var attr in _selectAttributes)
             {
-                var cboi = new CheckBox()
+                var lboi = new ListBoxItem()
                 {
-                    Content = attr,
+                    Content = attr + _chosenAttributes.Contains(attr),
                     // if attributes where saved before mark them as selected
-                    IsChecked = _chosenAttributes.Contains(attr)
+                    IsSelected = _chosenAttributes.Contains(attr)
                 };
-                SelectBox.Items.Add(cboi);
+                SelectList.Items.Add(lboi);
             }
         }
 
-        private void UpdateOrderByBox(string response)
+        private void UpdateOrderByList(string response)
         {
             var reader = PreparedReader(response);
             bool value = false;
@@ -278,16 +275,16 @@ namespace PeakboardExtensionGraph
             _orderByAttributes.Sort();
             
             // clear combo box and append every entry from the list into the combo box
-            OrderByBox.Items.Clear();
+            OrderList.Items.Clear();
             foreach (var attr in _orderByAttributes)
             {
-                var cboi = new CheckBox()
+                var lboi = new ListBoxItem()
                 {
                     Content = attr,
                     // if attributes where saved before mark them as selected
-                    IsChecked = _chosenOrder.Contains(attr)
+                    IsSelected = _chosenOrder.Contains(attr)
                 };
-                OrderByBox.Items.Add(cboi);
+                OrderList.Items.Add(lboi);
             }
         }
 
@@ -328,6 +325,37 @@ namespace PeakboardExtensionGraph
             // Add every Dictionary entry to Request Combobox
             RequestBox.Items.Clear(); // TODO: Find out why this is throwing exception
 
+            if (_chosenRequest != "")
+            {
+                RestoreParameter();
+            }
+            else
+            {
+                RequestBox.Items.Add(new ComboBoxItem()
+                {
+                    Content = "Me",
+                    Tag = "",
+                    IsSelected = true
+                });
+
+                foreach (var option in _options)
+                {
+                    var boi = new ComboBoxItem()
+                    {
+                        Content = option.Key,
+                        Tag = option.Value,
+                    };
+                    RequestBox.Items.Add(boi);
+                }
+            }
+            
+            _chosenAttributes = new string[]{""};
+            _chosenOrder = new string[]{""};
+            _chosenRequest = "";
+        }
+
+        private void RestoreParameter()
+        {
             RequestBox.Items.Add(new ComboBoxItem()
             {
                 Content = "Me",
@@ -348,7 +376,16 @@ namespace PeakboardExtensionGraph
                 }
                 RequestBox.Items.Add(boi);
             }
-            
+
+            if (!_options.ContainsValue(_chosenRequest))
+            {
+                CustomCallCheckBox.IsChecked = true;
+                CustomCallTextBox.Text = _chosenRequest;
+                UpdateLists(_chosenRequest);
+                Filter.IsEnabled = true;
+                ConsistencyBox.IsEnabled = true;
+            }
+            UpdateLists(_chosenRequest);
         }
         
         private void OrderByWalkThroughObject(JsonReader reader, string objPrefix)
@@ -450,8 +487,8 @@ namespace PeakboardExtensionGraph
                 RequestBox.IsEnabled = false;
                 
                 // disable until check button is clicked to prevent errors from choosing attributes of a previous request 
-                SelectBox.IsEnabled = false;
-                OrderByBox.IsEnabled = false;
+                SelectList.IsEnabled = false;
+                OrderList.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
             }
@@ -462,14 +499,14 @@ namespace PeakboardExtensionGraph
                 RequestBox.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
-                UpdateDropdowns(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+                UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
 
         private void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
         {
             // button to update select & request combo boxes for custom api call
-            UpdateDropdowns(CustomCallTextBox.Text);
+            UpdateLists(CustomCallTextBox.Text);
             Filter.IsEnabled = true;
             ConsistencyBox.IsEnabled = true;
         }

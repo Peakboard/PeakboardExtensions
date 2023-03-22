@@ -41,16 +41,21 @@
         <ComboBox Grid.Column="1" Grid.Row="4" IsEnabled="False" VerticalContentAlignment="Center" Name="RequestBox" Margin="3,3,3,3" SelectionChanged="RequestBox_SelectionChanged"></ComboBox>
         <!-- Custom Call -->
         <TextBlock Grid.Column="0" Grid.Row="5" HorizontalAlignment="Left" Text="Custom Call" Margin="3"/>
-        <CheckBox Grid.Column="0" Grid.Row="5" IsEnabled="False" Name="CustomCallCheckBox"  HorizontalAlignment="Center" Margin="-20 5 3 3" Click="CustomCallCheckBox_Click"/>
+        <CheckBox Grid.Column="0" Grid.Row="5" IsEnabled="False" Name="CustomCallCheckBox"  HorizontalAlignment="Center" Margin="-20 4 3 3" Click="CustomCallCheckBox_Click"/>
         <TextBox Grid.Column="1" Grid.Row="5" IsEnabled="False" Name="CustomCallTextBox" Width="290" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3 3 3 3"></TextBox>
         <Button Grid.Column="1" Grid.Row="5" IsEnabled="False" Name="CustomCallCheckButton" Content="Check" Width="50" HorizontalAlignment="Right" Margin="3" Click="CustomCallCheckButton_Click"></Button>
-        <!-- Select -->
-        <TextBlock Grid.Column="0" Grid.Row="6" Text="Selected Fields (empty = all)" Margin="3"/>
-        <ComboBox Grid.Column="1" Grid.Row="6" IsEnabled="False" Name="SelectBox" VerticalContentAlignment="Center" Margin="3,3,3,3"/>
-        <!-- Order by -->
-        <TextBlock Grid.Column="0" Grid.Row="7" Text="Order by" Margin="3"/>
-        <ComboBox Grid.Column="1" Grid.Row="7" IsEnabled="False" Name="OrderByBox" HorizontalAlignment="Right" VerticalContentAlignment="Center" Width="280" Margin="3,3,3,10"/>
-        <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="7" Margin="3 3 3 10" HorizontalAlignment="Left" Width="60">
+        <!-- Select & Order by Tabs -->
+        <TabControl Grid.Column="1" Grid.Row="6" Margin="3">
+            <TabItem Header="Select">
+                <ListBox Height="100" SelectionMode="Multiple" Name="SelectList"></ListBox>
+            </TabItem>
+            <TabItem Header="Order by">
+                <ListBox Height="100" SelectionMode="Multiple" Name="OrderList"></ListBox>
+            </TabItem>
+        </TabControl>
+        <!-- Desc / Asc -->
+        <TextBlock Grid.Column="1" Grid.Row="7" Text="sorting" HorizontalAlignment="Right" Margin="3 4 70 3"/>
+        <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="7" Margin="3 3 3 10" HorizontalAlignment="Right" Width="60">
             <ComboBoxItem Content="Desc" IsSelected="True"></ComboBoxItem>
             <ComboBoxItem Content="Asc" IsSelected="False"></ComboBoxItem>
         </ComboBox>
@@ -67,14 +72,5 @@
         <TextBox Grid.Column="1" Grid.Row="9" Name="Skip" IsEnabled="False" HorizontalAlignment="Right" Width="130" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3"/>
         <!-- Refresh Token -->
         <TextBox Grid.Column="0" Grid.Row="10" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
-        <!--<TabControl Grid.Column="1" Grid.Row="11" Margin="3">
-            <TabItem Header="Select">
-                <ListBox Height="100"></ListBox>
-            </TabItem>
-            <TabItem Header="Order by">
-                <ListBox Height="100"></ListBox>
-            </TabItem>
-            
-        </TabControl>-->
     </Grid>
 </controls:CustomListUserControlBase>
