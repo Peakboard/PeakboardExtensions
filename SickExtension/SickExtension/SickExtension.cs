@@ -14,7 +14,7 @@ namespace SickExtension
         {
             return new ExtensionDefinition
             {
-                ID = "Peakboard.Extensions.SickExtension",
+                ID = "Sick",
                 Name = "Sick",
                 Description = "This is an Extension for accessing a Sick sensor.",
                 Version = "1.0",
