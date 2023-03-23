@@ -45,6 +45,7 @@ namespace PeakboardExtensionGraph
             bool eventual = data.Parameter.Split(';')[7] == "true";
             string topString = data.Parameter.Split(';')[8];    // top
             string skipString = data.Parameter.Split(';')[9];   // skip
+            string customCall = data.Parameter.Split(';')[12];  // custom call
             
             int top = 0;
             int skip = 0;
@@ -74,7 +75,9 @@ namespace PeakboardExtensionGraph
                 OrderBy = orderBy,
                 Select = select,
                 Top = top,
-                Skip = skip
+                Skip = skip,
+                Filter = filter,
+                ConsistencyLevelEventual = eventual
             });
             task.Wait();
             var response = task.Result;
@@ -123,7 +126,7 @@ namespace PeakboardExtensionGraph
             bool eventual = data.Parameter.Split(';')[7] == "true";
             string topString = data.Parameter.Split(';')[8];    // top
             string skipString = data.Parameter.Split(';')[9];   // skip
-            
+            string customCall = data.Parameter.Split(';')[12];   // custom call
             
             int top = 0;
             int skip = 0;
