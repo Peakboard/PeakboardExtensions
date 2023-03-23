@@ -16,6 +16,7 @@ namespace PeakboardExtensionGraph
     {
         private readonly Dictionary<string, string> _options = new Dictionary<string, string>
         {
+            {"Me", ""},
             {"Calendar", "/calendarview"},
             {"Contacts", "/contacts"},
             {"Mail", "/messages"},
@@ -24,11 +25,12 @@ namespace PeakboardExtensionGraph
 
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
+        private string _customEntities = "";
 
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
-        private bool _uiInitialized = false;
+        private bool _uiInitialized;
         public GraphUiControl()
         {
             InitializeComponent();
@@ -36,17 +38,9 @@ namespace PeakboardExtensionGraph
 
         protected override string GetParameterOverride()
         {
-            string data;
+            string data = ((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString();
             // request data is either custom link or selected dropdown entry
-            if (CustomCallCheckBox.IsChecked == true)
-            {
-                data = CustomCallTextBox.Text;
-            }
-            else
-            {
-                data = ((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString();
-            }
-            
+
             string select = "";
             string orderBy = "";
             
@@ -86,11 +80,14 @@ namespace PeakboardExtensionGraph
             }
 
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{RefreshToken.Text}";
+                   $"{Top.Text};{Skip.Text};{RefreshToken.Text};{_customEntities};{CustomCallTextBox.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
         {
+            // TODO: Asc / Desc speichern
+            // TODO: remove desc from _chosenAttributes 
+            
             if (String.IsNullOrEmpty(parameter)) return;
             
             var paramArr = parameter.Split(';');
@@ -100,11 +97,9 @@ namespace PeakboardExtensionGraph
             
             if(!_uiInitialized)
             {
-                // TODO
                 _chosenRequest = paramArr[3];
                 _chosenAttributes = paramArr[4].Split(',');
                 _chosenOrder = paramArr[5].Split(',');
-                _uiInitialized = true;
             }
             
             Filter.Text = paramArr[6];
@@ -112,11 +107,15 @@ namespace PeakboardExtensionGraph
             Top.Text = paramArr[8];
             Skip.Text = paramArr[9];
             RefreshToken.Text = paramArr[10];
+            _customEntities = paramArr[11];
+            CustomCallTextBox.Text = paramArr[12];
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
         {
-            if (RefreshToken.Text != "")
+
+            await InitalizeUi();
+            /*if (RefreshToken.Text != "")
             {
                 // initialize with refresh token if possible
                 await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
@@ -146,7 +145,11 @@ namespace PeakboardExtensionGraph
             if (RequestBox.Items.Count == 0)
             {
                 // initialize combo boxes for graph calls
+                MessageBox.Show(_chosenAttributes.Length + " " + _chosenOrder.Length);
                 InitComboBoxes();
+                _chosenAttributes = new string[]{""};
+                _chosenOrder = new string[]{""};
+                _chosenRequest = "";
             }
             
             // enable UI components
@@ -157,7 +160,70 @@ namespace PeakboardExtensionGraph
             Top.IsEnabled = true;
             Skip.IsEnabled = true;
             CustomCallCheckBox.IsEnabled = true;
+            Filter.IsEnabled = true;*/
+        }
+
+        private async Task InitalizeUi()
+        {
+            if (RefreshToken.Text != "")
+            {
+                // initialize with refresh token if possible
+                await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
+                    Permissions.Text);
+            }
+            else
+            {
+                try
+                {
+                    await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
+                    {
+                        // open webbrowser
+                        Process.Start(url);
+                        Clipboard.SetText(code);
+                        return Task.FromResult(0);
+                    });
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show(e.Message);
+                    return;
+                }
+                
+            }
+            this.RefreshToken.Text = GraphHelper.GetRefreshToken();
+
+            string[] entities = _customEntities.Split(' ');
+
+            // add saved custom entities into dictionary so they are added to the Request dropdown
+            foreach (var entity in entities)
+            {
+                if (entity != "" && !_options.Values.Contains(entity))
+                {
+                    _options.Add(entity.Split('/')[1], entity);
+                    // TODO: better naming & error handling
+                }
+            }
+            
+            if (RequestBox.Items.Count == 0)
+            {
+                // initialize combo boxes for graph calls
+                InitComboBoxes();
+            }
+            
+            // enable UI components
+            RequestBox.IsEnabled = true;
+            CustomEntityText.IsEnabled = true;
+            CustomEntityButton.IsEnabled = true;
+            SelectList.IsEnabled = true;
+            OrderList.IsEnabled = true;
+            OrderByMode.IsEnabled = true;
+            Top.IsEnabled = true;
+            Skip.IsEnabled = true;
+            CustomCallCheckBox.IsEnabled = true;
             Filter.IsEnabled = true;
+            ConsistencyBox.IsEnabled = true;
+            
+            _uiInitialized = true;
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -170,6 +236,7 @@ namespace PeakboardExtensionGraph
             // lock dropdowns
             SelectList.IsEnabled = false;
             OrderList.IsEnabled = false;
+            RequestBox.IsEnabled = false;
 
             // make a graph call and update select & order by combo boxes
             var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
@@ -195,9 +262,13 @@ namespace PeakboardExtensionGraph
             }
             
             // unlock dropdowns
-            SelectList.IsEnabled = true;
+            SelectList.IsEnabled = true; 
             OrderList.IsEnabled = true;
+            RequestBox.IsEnabled = true;
             
+            _chosenRequest = "";
+            _chosenAttributes = new [] { "" };
+            _chosenOrder = new [] { "" };
         }
 
         private void UpdateSelectList(string response)
@@ -226,12 +297,13 @@ namespace PeakboardExtensionGraph
             
             // clear combo box and append every entry from the list into the combo box
             SelectList.Items.Clear();
+           
             foreach (var attr in _selectAttributes)
             {
                 var lboi = new ListBoxItem()
                 {
-                    Content = attr + _chosenAttributes.Contains(attr),
-                    // if attributes where saved before mark them as selected
+                    Content = attr,
+                    // if attributes were saved before mark them as selected
                     IsSelected = _chosenAttributes.Contains(attr)
                 };
                 SelectList.Items.Add(lboi);
@@ -325,69 +397,19 @@ namespace PeakboardExtensionGraph
             // Add every Dictionary entry to Request Combobox
             RequestBox.Items.Clear(); // TODO: Find out why this is throwing exception
 
-            if (_chosenRequest != "")
-            {
-                RestoreParameter();
-            }
-            else
-            {
-                RequestBox.Items.Add(new ComboBoxItem()
-                {
-                    Content = "Me",
-                    Tag = "",
-                    IsSelected = true
-                });
-
-                foreach (var option in _options)
-                {
-                    var boi = new ComboBoxItem()
-                    {
-                        Content = option.Key,
-                        Tag = option.Value,
-                    };
-                    RequestBox.Items.Add(boi);
-                }
-            }
-            
-            _chosenAttributes = new string[]{""};
-            _chosenOrder = new string[]{""};
-            _chosenRequest = "";
-        }
-
-        private void RestoreParameter()
-        {
-            RequestBox.Items.Add(new ComboBoxItem()
-            {
-                Content = "Me",
-                Tag = "",
-                IsSelected = true
-            });
-
             foreach (var option in _options)
             {
                 var boi = new ComboBoxItem()
                 {
                     Content = option.Key,
                     Tag = option.Value,
+                    IsSelected = option.Value == _chosenRequest
                 };
-                if (option.Value == _chosenRequest)
-                {
-                    boi.IsSelected = true;
-                }
                 RequestBox.Items.Add(boi);
             }
-
-            if (!_options.ContainsValue(_chosenRequest))
-            {
-                CustomCallCheckBox.IsChecked = true;
-                CustomCallTextBox.Text = _chosenRequest;
-                UpdateLists(_chosenRequest);
-                Filter.IsEnabled = true;
-                ConsistencyBox.IsEnabled = true;
-            }
-            UpdateLists(_chosenRequest);
+            
         }
-        
+
         private void OrderByWalkThroughObject(JsonReader reader, string objPrefix)
         {
             // used to get every primitive property of a graph response
@@ -484,33 +506,59 @@ namespace PeakboardExtensionGraph
             {
                 CustomCallTextBox.IsEnabled = true;
                 CustomCallCheckButton.IsEnabled = true;
-                RequestBox.IsEnabled = false;
                 
-                // disable until check button is clicked to prevent errors from choosing attributes of a previous request 
+                RequestBox.IsEnabled = false;
                 SelectList.IsEnabled = false;
                 OrderList.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
+                CustomEntityText.IsEnabled = false;
+                CustomEntityButton.IsEnabled = false;
             }
             else
             {
                 CustomCallTextBox.IsEnabled = false;
                 CustomCallCheckButton.IsEnabled = false;
+                
                 RequestBox.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
+                CustomEntityText.IsEnabled = true;
+                CustomEntityButton.IsEnabled = true;
                 UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
 
-        private void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
+        private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
         {
-            // button to update select & request combo boxes for custom api call
-            UpdateLists(CustomCallTextBox.Text);
-            Filter.IsEnabled = true;
-            ConsistencyBox.IsEnabled = true;
+            // check if custom call works
+            try
+            {
+                await GraphHelper.MakeGraphCall(CustomCallTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+                return;
+            }
+
+            MessageBox.Show("Everything seems to be fine...");
         }
-        
+
+        private void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            if(CustomEntityText.Text != "")
+            {
+                RequestBox.Items.Add(new ComboBoxItem()
+                {
+                    Content = CustomEntityText.Text,
+                    Tag = CustomEntityText.Text,
+                    IsSelected = true
+                });
+                _customEntities += $"{CustomEntityText.Text} ";
+                CustomEntityText.Text = "";
+            }
+        }
     }
     
 }
