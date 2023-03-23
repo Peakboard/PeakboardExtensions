@@ -100,6 +100,19 @@ namespace PeakboardExtensionGraph
                 _chosenRequest = paramArr[3];
                 _chosenAttributes = paramArr[4].Split(',');
                 _chosenOrder = paramArr[5].Split(',');
+
+                if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
+                {
+                    // set sorting order to ascending
+                    ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
+                }
+                else
+                {
+                    for (int i = 0; i < _chosenOrder.Length; i++)
+                    {
+                        _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
+                    }
+                }
             }
             
             Filter.Text = paramArr[6];
@@ -538,17 +551,27 @@ namespace PeakboardExtensionGraph
             }
             catch (Exception ex)
             {
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Invalid call: {ex.Message}");
                 return;
             }
 
             MessageBox.Show("Everything seems to be fine...");
         }
 
-        private void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
         {
             if(CustomEntityText.Text != "")
             {
+                try
+                {
+                    await GraphHelper.MakeGraphCall(CustomEntityText.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Invalid Entity: {ex.Message} Entity: {CustomEntityText.Text}");
+                    return;
+                }
+                
                 RequestBox.Items.Add(new ComboBoxItem()
                 {
                     Content = CustomEntityText.Text,
