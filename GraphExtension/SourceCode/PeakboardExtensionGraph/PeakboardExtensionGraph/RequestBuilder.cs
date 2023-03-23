@@ -97,7 +97,7 @@ namespace PeakboardExtensionGraph
         
             // append authorization header
             request.Headers.Authorization = new AuthenticationHeaderValue("bearer", _accessToken);
-            if (parameters.ConsistencyLevelEventual)
+            if (parameters != null && parameters.ConsistencyLevelEventual)
             {
                 // TODO
             }

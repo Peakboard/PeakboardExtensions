@@ -41,7 +41,8 @@
         <ComboBox Grid.Column="1" Grid.Row="4" IsEnabled="False" VerticalContentAlignment="Center" Name="RequestBox" Margin="3,3,3,3" SelectionChanged="RequestBox_SelectionChanged"></ComboBox>
         <!-- Add Entity -->
         <TextBlock Grid.Column="0" Grid.Row="5" Text="Add entity" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="5" Name="CustomEntityText" IsEnabled="False" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3" Width="290"/>
+        <TextBox Grid.Column="1" Grid.Row="5" Name="CustomEntityText" IsEnabled="False" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3" Width="290">
+        </TextBox>
         <Button Grid.Column="1" Grid.Row="5" Name="CustomEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Add" Width="50" Margin="3" Click="CustomEntityButton_OnClick"/>
         <!-- Custom Call -->
         <TextBlock Grid.Column="0" Grid.Row="6" HorizontalAlignment="Left" Text="Custom Call" Margin="3"/>
