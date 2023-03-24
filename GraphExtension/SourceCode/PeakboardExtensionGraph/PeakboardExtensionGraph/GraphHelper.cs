@@ -26,6 +26,7 @@ namespace PeakboardExtensionGraph
         private static string _tenantId = "b4ff9807-402f-42b8-a89d-428363c55de7";
         
         // TODO: Remove redundant tasks
+        // TODO: Log graph errors?
         public static async Task<bool> InitGraph(string clientId, string tenantId, string permissions, Func<string, string, Task> prompt)
         {
             _httpClient = new HttpClient();
@@ -52,7 +53,7 @@ namespace PeakboardExtensionGraph
             if (requestAttempts == 40) throw new Exception("Failed to receive tokens 40 times. Aborting...");
 
             // init request builder
-            _builder = new RequestBuilder(_accessToken);
+            _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0/me");
 
             return true;
         }
@@ -67,8 +68,8 @@ namespace PeakboardExtensionGraph
             // Initialize via refresh token (in runtime)
             _refreshToken = token;
             _httpClient = new HttpClient();
-            await RefreshTokensAsync();
-            _builder = new RequestBuilder(_accessToken);
+            await RefreshAccessAsync();
+            _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0/me");
         }
 
         private static async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)
@@ -153,7 +154,7 @@ namespace PeakboardExtensionGraph
             }
         }
 
-        private static async Task RefreshTokensAsync()
+        private static async Task RefreshAccessAsync()
         {
             // generate url for http request
             string url = String.Format(TokenEndpointUrl, _tenantId);
@@ -193,7 +194,7 @@ namespace PeakboardExtensionGraph
             if ((temp - _millis) / 1000 > Int32.Parse(_tokenLifetime))
             {
                 // refresh tokens
-                await RefreshTokensAsync();
+                await RefreshAccessAsync();
                 return true;
             }
 

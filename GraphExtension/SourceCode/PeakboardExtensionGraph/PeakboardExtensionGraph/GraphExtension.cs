@@ -23,6 +23,7 @@ namespace PeakboardExtensionGraph
             return new CustomListCollection
             {
                 new MsGraphCustomList(),
+                new MsGraphAppOnlyCustomList()
             };
         }
     }

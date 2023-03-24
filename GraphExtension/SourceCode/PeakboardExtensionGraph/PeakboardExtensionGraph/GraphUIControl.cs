@@ -337,7 +337,7 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.StartObject)
                 {
                     value = false;
-                    OrderByWalkThroughObject(reader, lastname);
+                    JsonHelper.OrderByWalkThroughObject(reader, lastname, _orderByAttributes);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
@@ -415,53 +415,6 @@ namespace PeakboardExtensionGraph
                 RequestBox.Items.Add(boi);
             }
             
-        }
-
-        private void OrderByWalkThroughObject(JsonReader reader, string objPrefix)
-        {
-            // used to get every primitive property of a graph response
-            string lastName = "";
-            bool value = false;
-
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.PropertyName)
-                {
-                    // store name of property and set value true
-                    lastName = (string)reader.Value ?? "";
-                    value = true;
-                }
-                else if (reader.TokenType == JsonToken.StartObject)
-                {
-                    // if object starts after value is set true
-                    // -> property isn't primitive
-                    // value is set false and object gets walked recursively
-                    // prefix is modified to ensure correct designation for graph call
-                    value = false;
-                    OrderByWalkThroughObject(reader, $"{objPrefix}/{lastName}");
-                }
-                else if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // if array starts after value is set true
-                    // -> property isn't primitive
-                    // value is set false and array gets skipped
-                    value = false;
-                    JsonHelper.SkipArray(reader);
-                }
-                else if (reader.TokenType == JsonToken.EndObject)
-                {
-                    // nested object ends -> return to upper recursion layer
-                    return;
-                }
-                else if (value)
-                {
-                    // if no array or object starts after value is set
-                    // -> property is primitive
-                    // property gets designated correctly and added to _orderByAttributes list
-                    _orderByAttributes.Add($"{objPrefix}/{lastName}");
-                    value = false;
-                }
-            }
         }
 
         private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)

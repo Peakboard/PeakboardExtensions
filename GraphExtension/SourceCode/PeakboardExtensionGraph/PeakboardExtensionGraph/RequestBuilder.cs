@@ -7,18 +7,19 @@ namespace PeakboardExtensionGraph
     public class RequestBuilder
     {
         private string _accessToken;
-        private const string BaseUrl = "https://graph.microsoft.com/v1.0/me";
+        private readonly string _baseUrl;
 
-        public RequestBuilder(string accessToken)
+        public RequestBuilder(string accessToken, string url)
         {
             _accessToken = accessToken;
+            _baseUrl = url;
         }
 
         public HttpRequestMessage GetRequest(out string requestUrl,
             string suffix = null, RequestParameters parameters = null)
         {
             // append url suffix e.g. https://graph.microsoft.com/v1.0/me + /messages
-            string url = BaseUrl + suffix;
+            string url = _baseUrl + suffix;
 
             string queryParams = "";
 

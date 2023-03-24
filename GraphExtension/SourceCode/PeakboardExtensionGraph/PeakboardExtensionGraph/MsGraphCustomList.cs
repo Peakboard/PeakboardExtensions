@@ -16,9 +16,9 @@ namespace PeakboardExtensionGraph
         {
             return new CustomListDefinition
             {
-                ID = $"MsGraphCustomList",
-                Name = "MsGraph List",
-                Description = "Returns data from MySql database",
+                ID = $"MsGraphUserAuthCustomList",
+                Name = "Microsoft Graph UserAuth List",
+                Description = "Returns data from MS-Graph API",
                 PropertyInputPossible = true,
             };
         }
@@ -51,24 +51,8 @@ namespace PeakboardExtensionGraph
             int top = 0;
             int skip = 0;
             
-            try
-            {
-                top = Int32.Parse(topString);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-            
-            try
-            {
-                skip = Int32.Parse(skipString);
-
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            try { top = Int32.Parse(topString); } catch (Exception) { /*ignored*/ }
+            try { skip = Int32.Parse(skipString); } catch (Exception) { /*ignored*/ }
 
             // make graph call
             Task<string> task;
@@ -103,7 +87,7 @@ namespace PeakboardExtensionGraph
             {
                 if (reader.TokenType == JsonToken.StartObject)
                 {
-                    ColumnsWalkThroughObject(reader, "root", cols);
+                    JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
                     break;
                 }
             }
@@ -143,24 +127,8 @@ namespace PeakboardExtensionGraph
             int top = 0;
             int skip = 0;
             
-            try
-            {
-                top = Int32.Parse(topString);
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
-
-            try
-            {
-                skip = Int32.Parse(skipString);
-
-            }
-            catch (Exception)
-            {
-                // ignored
-            }
+            try { top = Int32.Parse(topString); } catch (Exception) { /*ignored*/ }
+            try { skip = Int32.Parse(skipString); } catch (Exception) { /*ignored*/ }
             
             // make graph call
             Task<string> task;
@@ -197,7 +165,7 @@ namespace PeakboardExtensionGraph
                 if (reader.TokenType == JsonToken.StartObject)
                 {
                     var item = new CustomListObjectElement();
-                    ItemsWalkThroughObject(reader, "root", item, jObject);
+                    JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
                     items.Add(item);
                 }
             }
@@ -229,115 +197,6 @@ namespace PeakboardExtensionGraph
                 
             }
             _initialized = true;
-        }
-        
-        private void ColumnsWalkThroughObject(JsonReader reader, string objPrefix, CustomListColumnCollection cols)
-        {
-            var lastName = "";
-            var value = false;
-        
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.PropertyName)
-                {
-                    // store property name and set value true
-                    // next token is either the value or a nested object/array
-                    lastName = (string)reader.Value ?? "";
-                    value = true;
-                }
-                else if (reader.TokenType == JsonToken.StartObject)
-                {
-                    // nested object starts -> walk through recursively
-                    // object Prefix is passed on to ensure unique designation
-                    // terminology is root-nestedObject-nestedObjectInNestedObject-...
-                    value = false;
-                    ColumnsWalkThroughObject(reader, $"{objPrefix}-{lastName}", cols);
-                }
-                else if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // nested array starts -> skip array
-                    cols.Add(new CustomListColumn($"{objPrefix}-{lastName}-Array", CustomListColumnTypes.String));
-                    JsonHelper.SkipArray(reader);
-                    value = false;
-                }
-                else if (reader.TokenType == JsonToken.EndObject)
-                {
-                    // nested object ends -> return to upper recursion layer
-                    return;
-                }
-                else if(value && !lastName.Contains("odata"))
-                {
-                    // primitive property -> add CustomListColumn with corresponding type
-                    CustomListColumn newCol;
-                    if (reader.TokenType == JsonToken.Boolean)
-                    {
-                        newCol = new CustomListColumn($"{objPrefix}-{lastName}", CustomListColumnTypes.Boolean);
-                    }
-                    else if (reader.TokenType == JsonToken.Integer || reader.TokenType == JsonToken.Float)
-                    {
-                        newCol = new CustomListColumn($"{objPrefix}-{lastName}", CustomListColumnTypes.Number);
-                    }
-                    else
-                    {
-                        newCol = new CustomListColumn($"{objPrefix}-{lastName}", CustomListColumnTypes.String);
-                    }
-                    cols.Add(newCol);
-                    value = false;
-                }
-            }
-        }
-        
-        private void ItemsWalkThroughObject(JsonReader reader, string objPrefix, CustomListObjectElement item, JObject obj)
-        {
-            var lastName = "";
-            var value = false;
-        
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.PropertyName)
-                {
-                    // store property name and set value true
-                    // next token is either the value or a nested object/array
-                    lastName = (string)reader.Value ?? "";
-                    value = true;
-                }
-                else if (reader.TokenType == JsonToken.StartObject)
-                {
-                    // nested object starts -> walk through recursively
-                    value = false;
-                    ItemsWalkThroughObject(reader, $"{objPrefix}-{lastName}", item, obj);
-                }
-                else if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // nested array starts -> store entire array json into column and skip the array
-                    JsonHelper.SkipArray(reader);
-                    item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
-                }
-                else if (reader.TokenType == JsonToken.EndObject)
-                {
-                    // nested object ends -> return to upper recursion layer
-                    return;
-                }
-                else if(value && !lastName.Contains("odata"))
-                {
-                    // primitive property -> store the value in corresponding column
-                    if (reader.TokenType == JsonToken.Boolean || reader.TokenType == JsonToken.Float ||
-                        reader.TokenType == JsonToken.Integer)
-                    {
-                           item.Add($"{objPrefix}-{lastName}", reader.Value);
-                    }
-                    else
-                    {
-                        string objectValue = reader.Value?.ToString();
-                        // if value is bigger than 1024 chars -> cut at 1024
-                        if (objectValue?.Length - 1024 > 0)
-                        { 
-                            objectValue = objectValue.Remove(1024);
-                        }
-                        item.Add($"{objPrefix}-{lastName}", objectValue);
-                    }
-                }
-            }
         }
 
         private JsonTextReader PreparedReader(string response)
