@@ -67,10 +67,13 @@
     <ItemGroup>
         <Compile Include="GraphExtension.cs" />
         <Compile Include="GraphHelper.cs" />
+        <Compile Include="GraphHelperAppOnly.cs" />
+        <Compile Include="GraphHelperBase.cs" />
         <Compile Include="GraphUIControl.cs">
           <DependentUpon>GraphUIControl.xaml</DependentUpon>
         </Compile>
         <Compile Include="JsonHelper.cs" />
+        <Compile Include="MsGraphAppOnlyCustomList.cs" />
         <Compile Include="MsGraphCustomList.cs" />
         <Compile Include="MsGraphError.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
