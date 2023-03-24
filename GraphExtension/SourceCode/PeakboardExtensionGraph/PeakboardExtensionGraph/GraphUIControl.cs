@@ -125,7 +125,7 @@ namespace PeakboardExtensionGraph
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
         {
 
-            await InitalizeUi();
+            await InitializeUi();
             /*if (RefreshToken.Text != "")
             {
                 // initialize with refresh token if possible
@@ -174,7 +174,7 @@ namespace PeakboardExtensionGraph
             Filter.IsEnabled = true;*/
         }
 
-        private async Task InitalizeUi()
+        private async Task InitializeUi()
         {
             if (RefreshToken.Text != "")
             {
@@ -402,7 +402,7 @@ namespace PeakboardExtensionGraph
         private void InitComboBoxes()
         {
             // Add every Dictionary entry to Request Combobox
-            RequestBox.Items.Clear(); // TODO: Find out why this is throwing exception
+            RequestBox.Items.Clear(); 
 
             foreach (var option in _options)
             {

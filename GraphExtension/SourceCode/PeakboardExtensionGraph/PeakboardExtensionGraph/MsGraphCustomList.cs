@@ -86,7 +86,10 @@ namespace PeakboardExtensionGraph
             }
             else
             {
-                task = GraphHelper.MakeGraphCall(customCall);
+                task = GraphHelper.MakeGraphCall(customCall, new RequestParameters()
+                {
+                    ConsistencyLevelEventual = eventual
+                });
             }
             task.Wait();
             var response = task.Result;
@@ -175,7 +178,10 @@ namespace PeakboardExtensionGraph
             }
             else
             {
-                task = GraphHelper.MakeGraphCall(customCall);
+                task = GraphHelper.MakeGraphCall(customCall, new RequestParameters()
+                {
+                    ConsistencyLevelEventual = eventual
+                });
             }
             task.Wait();
             var response = task.Result;
