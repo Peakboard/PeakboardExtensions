@@ -201,7 +201,7 @@ namespace PeakboardExtensionGraph
         }
 
         public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
-        {   
+        {
             // build request
             var request = _builder.GetRequest(out var url, key, parameters);
             
@@ -210,7 +210,8 @@ namespace PeakboardExtensionGraph
             
             // convert to string and return
             string jsonString = await response.Content.ReadAsStringAsync();
-            
+
+            JsonHelper.FindGraphError(jsonString);
 
             return jsonString;
         }

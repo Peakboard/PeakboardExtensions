@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -70,15 +71,23 @@ namespace PeakboardExtensionGraph
             }
 
             // make graph call
-            var task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+            Task<string> task;
+            if(customCall == "")
             {
-                OrderBy = orderBy,
-                Select = select,
-                Top = top,
-                Skip = skip,
-                Filter = filter,
-                ConsistencyLevelEventual = eventual
-            });
+                task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+                {
+                    OrderBy = orderBy,
+                    Select = select,
+                    Top = top,
+                    Skip = skip,
+                    Filter = filter,
+                    ConsistencyLevelEventual = eventual
+                });
+            }
+            else
+            {
+                task = GraphHelper.MakeGraphCall(customCall);
+            }
             task.Wait();
             var response = task.Result;
 
@@ -151,15 +160,23 @@ namespace PeakboardExtensionGraph
             }
             
             // make graph call
-            var task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+            Task<string> task;
+            if(customCall == "")
             {
-                OrderBy = orderBy,
-                Select = select,
-                Top = top,
-                Skip = skip,
-                Filter = filter,
-                ConsistencyLevelEventual = eventual
-            });
+                task = GraphHelper.MakeGraphCall(type, new RequestParameters()
+                {
+                    OrderBy = orderBy,
+                    Select = select,
+                    Top = top,
+                    Skip = skip,
+                    Filter = filter,
+                    ConsistencyLevelEventual = eventual
+                });
+            }
+            else
+            {
+                task = GraphHelper.MakeGraphCall(customCall);
+            }
             task.Wait();
             var response = task.Result;
 
@@ -234,7 +251,7 @@ namespace PeakboardExtensionGraph
                 {
                     // nested array starts -> skip array
                     cols.Add(new CustomListColumn($"{objPrefix}-{lastName}-Array", CustomListColumnTypes.String));
-                    SkipArray(reader);
+                    JsonHelper.SkipArray(reader);
                     value = false;
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
@@ -287,7 +304,7 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
                     // nested array starts -> store entire array json into column and skip the array
-                    SkipArray(reader);
+                    JsonHelper.SkipArray(reader);
                     item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
@@ -317,24 +334,6 @@ namespace PeakboardExtensionGraph
             }
         }
 
-        private void SkipArray(JsonReader reader)
-        {
-            // skip nested array in json string
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // nested arrays in nested array are skipped separately 
-                    SkipArray(reader);
-                }
-                else if (reader.TokenType == JsonToken.EndArray)
-                {
-                    // return if nested array ends
-                    return;
-                }
-            }
-        }
-        
         private JsonTextReader PreparedReader(string response)
         {
             // prepare reader for recursive walk trough

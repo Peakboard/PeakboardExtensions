@@ -85,9 +85,7 @@ namespace PeakboardExtensionGraph
 
         protected override void SetParameterOverride(string parameter)
         {
-            // TODO: Asc / Desc speichern
-            // TODO: remove desc from _chosenAttributes 
-            
+
             if (String.IsNullOrEmpty(parameter)) return;
             
             var paramArr = parameter.Split(';');
@@ -212,8 +210,7 @@ namespace PeakboardExtensionGraph
             {
                 if (entity != "" && !_options.Values.Contains(entity))
                 {
-                    _options.Add(entity.Split('/')[1], entity);
-                    // TODO: better naming & error handling
+                    _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
             }
             
@@ -222,7 +219,7 @@ namespace PeakboardExtensionGraph
                 // initialize combo boxes for graph calls
                 InitComboBoxes();
             }
-            
+
             // enable UI components
             RequestBox.IsEnabled = true;
             CustomEntityText.IsEnabled = true;
@@ -250,15 +247,15 @@ namespace PeakboardExtensionGraph
             SelectList.IsEnabled = false;
             OrderList.IsEnabled = false;
             RequestBox.IsEnabled = false;
-
-            // make a graph call and update select & order by combo boxes
-            var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
-            {
-                Top = 1
-            });
+            
 
             try
             {
+                // make a graph call and update select & order by combo boxes
+                var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
+                {
+                    Top = 1
+                });
                 // catch potential exception caused by graph call error
                 // TODO: Add select all / none ?
                 UpdateSelectList(response);
@@ -269,9 +266,6 @@ namespace PeakboardExtensionGraph
                 // reset UI
                 MessageBox.Show(e.Message);
                 RequestBox.IsEnabled = true;
-                CustomCallCheckBox.IsChecked = false;
-                CustomCallTextBox.IsEnabled = false;
-                CustomCallCheckButton.IsEnabled = false;
             }
             
             // unlock dropdowns
@@ -299,11 +293,11 @@ namespace PeakboardExtensionGraph
                 }
                 else if (reader.TokenType == JsonToken.StartObject)
                 {
-                    SkipObject(reader);
+                    JsonHelper.SkipObject(reader);
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
-                    SkipArray(reader);
+                    JsonHelper.SkipArray(reader);
                 }
             }
             _selectAttributes.Sort();
@@ -348,7 +342,7 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
                     value = false;
-                    SkipArray(reader);
+                    JsonHelper.SkipArray(reader);
                 }
                 else if (value && !lastname.Contains("@odata") && lastname != "")
                 {
@@ -452,7 +446,7 @@ namespace PeakboardExtensionGraph
                     // -> property isn't primitive
                     // value is set false and array gets skipped
                     value = false;
-                    SkipArray(reader);
+                    JsonHelper.SkipArray(reader);
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                 {
@@ -466,48 +460,6 @@ namespace PeakboardExtensionGraph
                     // property gets designated correctly and added to _orderByAttributes list
                     _orderByAttributes.Add($"{objPrefix}/{lastName}");
                     value = false;
-                }
-            }
-        }
-        
-        private void SkipArray(JsonReader reader)
-        {
-            // skip nested array
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // nested arrays in nested array get skipped separately
-                    SkipArray(reader);
-                }
-                else if (reader.TokenType == JsonToken.EndArray)
-                {
-                    // return to upper recursion layer
-                    return;
-                }
-            }
-        }
-
-        private void SkipObject(JsonReader reader)
-        {
-            // skip nested object
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.StartObject)
-                {
-                    // nested objects in nested object get skipped separately
-                    SkipObject(reader);
-                }
-
-                if (reader.TokenType == JsonToken.StartArray)
-                {
-                    // nested arrays in nested object get skipped separately
-                    SkipArray(reader);
-                }
-                else if (reader.TokenType == JsonToken.EndObject)
-                {
-                    // return to upper recursion layer
-                    return;
                 }
             }
         }
@@ -527,6 +479,9 @@ namespace PeakboardExtensionGraph
                 ConsistencyBox.IsEnabled = false;
                 CustomEntityText.IsEnabled = false;
                 CustomEntityButton.IsEnabled = false;
+                OrderByMode.IsEnabled = false;
+                Top.IsEnabled = false;
+                Skip.IsEnabled = false;
             }
             else
             {
@@ -538,6 +493,9 @@ namespace PeakboardExtensionGraph
                 ConsistencyBox.IsEnabled = true;
                 CustomEntityText.IsEnabled = true;
                 CustomEntityButton.IsEnabled = true;
+                OrderByMode.IsEnabled = true;
+                Top.IsEnabled = true;
+                Skip.IsEnabled = true;
                 UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
@@ -562,23 +520,46 @@ namespace PeakboardExtensionGraph
         {
             if(CustomEntityText.Text != "")
             {
+                string name;
+                string url;
+                // check if entity exists ins Ms Graph
                 try
                 {
-                    await GraphHelper.MakeGraphCall(CustomEntityText.Text);
+                    name = CustomEntityText.Text.Split(' ')[0];
+                    url = CustomEntityText.Text.Split(' ')[1];
+                    var response = await GraphHelper.MakeGraphCall(url);
                 }
                 catch (Exception ex)
                 {
                     MessageBox.Show($"Invalid Entity: {ex.Message} Entity: {CustomEntityText.Text}");
                     return;
                 }
-                
+                AddEntity(name, url);
+            }
+        }
+
+        private void AddEntity(string name, string url)
+        {
+            // check if entity already exists
+            if (_options.ContainsKey(name))
+            {
+                MessageBox.Show("Name already exists");
+            }
+            else if (_options.ContainsValue(url))
+            {
+                MessageBox.Show("Entity already exists");
+            }
+            else
+            {
+                // add entity to Request Dropdown
                 RequestBox.Items.Add(new ComboBoxItem()
                 {
-                    Content = CustomEntityText.Text,
-                    Tag = CustomEntityText.Text,
+                    Content = name,
+                    Tag = url,
                     IsSelected = true
                 });
-                _customEntities += $"{CustomEntityText.Text} ";
+                _options.Add(name, url);
+                _customEntities += $"{name},{url}";
                 CustomEntityText.Text = "";
             }
         }
