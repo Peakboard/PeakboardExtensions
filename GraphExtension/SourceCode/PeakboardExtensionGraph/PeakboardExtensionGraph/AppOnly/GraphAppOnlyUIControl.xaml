@@ -72,7 +72,7 @@
         </TabControl>
         <!-- Desc / Asc -->
         <TextBlock Grid.Column="1" Grid.Row="8" Text="sorting" HorizontalAlignment="Right" Margin="3 4 70 3"/>
-        <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="8" Margin="3 3 3 10" HorizontalAlignment="Right" Width="60">
+        <ComboBox Grid.Column="1" Grid.Row="8" Name="OrderByMode" IsEnabled="False" Margin="3 3 3 10" HorizontalAlignment="Right" Width="60">
             <ComboBoxItem Content="Desc" IsSelected="True"></ComboBoxItem>
             <ComboBoxItem Content="Asc" IsSelected="False"></ComboBoxItem>
         </ComboBox>

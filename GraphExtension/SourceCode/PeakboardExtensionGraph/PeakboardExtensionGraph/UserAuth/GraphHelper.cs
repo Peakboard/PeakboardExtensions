@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,8 +27,7 @@ namespace PeakboardExtensionGraph.UserAuth
         private static string _tenantId = "b4ff9807-402f-42b8-a89d-428363c55de7";
         
         // TODO: Remove redundant tasks
-        // TODO: Log graph errors?
-        public static async Task<bool> InitGraph(string clientId, string tenantId, string permissions, Func<string, string, Task> prompt)
+        public static async Task InitGraph(string clientId, string tenantId, string permissions, Func<string, string, Task> prompt)
         {
             _httpClient = new HttpClient();
             _clientId = clientId;
@@ -54,8 +54,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             // init request builder
             _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0/me");
-
-            return true;
+            
         }
 
         public static async Task InitGraphWithRefreshToken(string token, string clientId, string tenantId, string permissions)
@@ -89,6 +88,12 @@ namespace PeakboardExtensionGraph.UserAuth
             // make http request to get device code for authentication
             HttpResponseMessage response = await _httpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
+
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new MsGraphException($"Authorization failed.\n Status Code: {response.StatusCode}\n Error: {jsonString}");
+            }
+            
             var authorizationResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             
             // get device code and authentication message
@@ -100,6 +105,10 @@ namespace PeakboardExtensionGraph.UserAuth
                 authorizationResponse.TryGetValue("device_code", out deviceCode);
                 authorizationResponse.TryGetValue("verification_uri", out uri);
                 authorizationResponse.TryGetValue("user_code", out userCode);
+            }
+            else
+            {
+                throw new Exception($"Authorization failed:\n {jsonString}");
             }
             
             // execute prompt
@@ -129,7 +138,7 @@ namespace PeakboardExtensionGraph.UserAuth
             string jsonString = await response.Content.ReadAsStringAsync();
             
             // catch error if user didn't authenticate (yet)
-            if (jsonString.Contains("error")) return false;
+            if (response.StatusCode != HttpStatusCode.OK) return false;
 
             try
             {
@@ -175,11 +184,21 @@ namespace PeakboardExtensionGraph.UserAuth
             string jsonString = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
 
+            // check response for error codes
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                throw new MsGraphException($"Failed to regain access.\n Status Code: {response.StatusCode}\n Error: {jsonString}");
+            }
+
             if (tokenResponse != null)
             {
                 tokenResponse.TryGetValue("access_token", out _accessToken);
                 tokenResponse.TryGetValue("refresh_token", out _refreshToken);
                 tokenResponse.TryGetValue("expires_in", out _tokenLifetime);
+            }
+            else
+            {
+                throw new Exception($"Failed to regain access:\n {jsonString}");
             }
 
             _builder?.RefreshToken(_accessToken);
@@ -212,7 +231,10 @@ namespace PeakboardExtensionGraph.UserAuth
             // convert to string and return
             string jsonString = await response.Content.ReadAsStringAsync();
 
-            JsonHelper.FindGraphError(jsonString);
+            if (response.StatusCode != HttpStatusCode.OK)
+            {
+                GraphHelperBase.DeserializeError(jsonString);
+            }
 
             return jsonString;
         }

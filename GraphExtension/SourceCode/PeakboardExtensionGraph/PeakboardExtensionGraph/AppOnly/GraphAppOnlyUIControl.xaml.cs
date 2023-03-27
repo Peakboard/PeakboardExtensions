@@ -7,7 +7,6 @@ using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
-using PeakboardExtensionGraph.UserAuth;
 
 
 namespace PeakboardExtensionGraph.AppOnly
@@ -143,6 +142,7 @@ namespace PeakboardExtensionGraph.AppOnly
             catch (Exception ex)
             {
                 MessageBox.Show($"Unable to connect to Graph: {ex.Message}");
+                return;
             }
             
             string[] entities = _customEntities.Split(' ');
@@ -150,7 +150,7 @@ namespace PeakboardExtensionGraph.AppOnly
             // add saved custom entities into dictionary so they are added to the Request dropdown
             foreach (var entity in entities)
             {
-                if (entity != "" && !_options.Values.Contains(entity))
+                if (entity != "" && !_options.Values.Contains(entity.Split(',')[1]))
                 {
                     _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
@@ -204,6 +204,12 @@ namespace PeakboardExtensionGraph.AppOnly
         {
             if(CustomEntityText.Text != "")
             {
+                if (CustomEntityText.Text.Split(' ').Length != 2)
+                {
+                    MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
+                    return;
+                }
+                
                 string name;
                 string url;
                 // check if entity exists ins Ms Graph
@@ -215,14 +221,14 @@ namespace PeakboardExtensionGraph.AppOnly
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Invalid Entity: {ex.Message} Entity: {CustomEntityText.Text}");
+                    MessageBox.Show($"Invalid Entity: {ex.Message}");
                     return;
                 }
                 AddEntity(name, url);
             }
         }
 
-        private async void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
+        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
@@ -254,7 +260,6 @@ namespace PeakboardExtensionGraph.AppOnly
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
                 Skip.IsEnabled = true;
-                await UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
 
@@ -414,11 +419,6 @@ namespace PeakboardExtensionGraph.AppOnly
                     reader.Read();
                     reader.Read();
                     prepared = true;
-                }
-                else if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
-                {
-                    // if json contains an error field -> deserialize to Error Object & throw exception
-                    GraphHelperBase.DeserializeError(response);
                 }
             }
             if(!prepared)
