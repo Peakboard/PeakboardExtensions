@@ -12,6 +12,7 @@ namespace PeakboardExtensionGraph.UserAuth
     public class MsGraphCustomList : CustomListBase
     {
         private bool _initialized;
+        private GraphHelperUserAuth _graphHelper;
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -37,13 +38,13 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             
             // check if access token expired
-            var expiredTask = GraphHelper.CheckIfTokenExpiredAsync();
+            var expiredTask = _graphHelper.CheckIfTokenExpiredAsync();
             expiredTask.Wait();
             
             // update refresh token in parameter if renewed
             if (expiredTask.Result)
             {
-                UpdateRefreshToken(GraphHelper.GetRefreshToken(), data);
+                UpdateRefreshToken(_graphHelper.GetRefreshToken(), data);
             }
             
             // make graph call
@@ -52,7 +53,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (customCall != "") request = customCall;
 
-            var task = GraphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -83,13 +84,13 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             
             // check if access token expired
-            var expiredTask = GraphHelper.CheckIfTokenExpiredAsync();
+            var expiredTask = _graphHelper.CheckIfTokenExpiredAsync();
             expiredTask.Wait();
             
             // update refresh token in parameter if renewed
             if (expiredTask.Result)
             {
-                UpdateRefreshToken(GraphHelper.GetRefreshToken(), data);
+                UpdateRefreshToken(_graphHelper.GetRefreshToken(), data);
             }
             
             // make graph call
@@ -98,7 +99,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (customCall != "") request = customCall;
 
-            var task = GraphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -140,7 +141,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 string permissions = data.Parameter.Split(';')[2];
                 
                 // if available initialize by refresh token (in runtime)
-                var task = GraphHelper.InitGraphWithRefreshToken(refreshToken, clientId, tenantId, permissions);
+                _graphHelper = new GraphHelperUserAuth(clientId, tenantId, permissions);
+                var task = _graphHelper.InitGraphWithRefreshToken(refreshToken);
                 task.Wait();
                 
             }

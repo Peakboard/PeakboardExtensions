@@ -8,31 +8,25 @@ using Newtonsoft.Json;
 
 namespace PeakboardExtensionGraph.UserAuth
 {
-    public class GraphHelper
+    public class GraphHelperUserAuth : GraphHelperBase
     {
         
-        private static HttpClient _httpClient;
-        private static RequestBuilder _builder;
-
-        private static string _accessToken;
-        private static string _refreshToken;
-        private static string _tokenLifetime;
-        private static long _millis;
-
+        private string _refreshToken;
         private const string AuthorizationUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/devicecode";
-        private const string TokenEndpointUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
-
-        private static string _allScopeAuthorizations = "user.read offline_access";
-        private static string _clientId = "067207ed-41a4-4402-b97f-b977babe0ec9"; 
-        private static string _tenantId = "b4ff9807-402f-42b8-a89d-428363c55de7";
+        private string _allScopeAuthorizations;
         
-        // TODO: Remove redundant tasks
-        public static async Task InitGraph(string clientId, string tenantId, string permissions, Func<string, string, Task> prompt)
+        public GraphHelperUserAuth(string clientId, string tenantId, string scope)
         {
-            _httpClient = new HttpClient();
-            _clientId = clientId;
-            _tenantId = tenantId;
-            _allScopeAuthorizations = permissions;
+            ClientId = clientId;
+            TenantId = tenantId;
+            _allScopeAuthorizations = scope;
+            
+            HttpClient = new HttpClient();
+        }
+        
+        public async Task InitGraph(Func<string, string, Task> prompt)
+        {
+            // has to be called after initializing GraphHelper object
             
             // authorize
             string deviceCode = await AuthorizeAsync(prompt);
@@ -53,40 +47,35 @@ namespace PeakboardExtensionGraph.UserAuth
             if (requestAttempts == 40) throw new Exception("Failed to receive tokens 40 times. Aborting...");
 
             // init request builder
-            _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0/me");
+            Builder = new RequestBuilder(AccessToken, "https://graph.microsoft.com/v1.0/me");
             
         }
 
-        public static async Task InitGraphWithRefreshToken(string token, string clientId, string tenantId, string permissions)
+        public async Task InitGraphWithRefreshToken(string token)
         {
-            // Initialize attributes
-            _clientId = clientId;
-            _tenantId = tenantId;
-            _allScopeAuthorizations = permissions;
-            
             // Initialize via refresh token (in runtime)
             _refreshToken = token;
-            _httpClient = new HttpClient();
+            HttpClient = new HttpClient();
             await RefreshAccessAsync();
-            _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0/me");
+            Builder = new RequestBuilder(AccessToken, "https://graph.microsoft.com/v1.0/me");
         }
 
-        private static async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)
+        private async Task<string> AuthorizeAsync(Func<string, string, Task> prompt)
         {
             // generate url for http request
-            string url = string.Format(AuthorizationUrl, _tenantId);
+            string url = string.Format(AuthorizationUrl, TenantId);
             
             // generate body for http request
             var values = new Dictionary<string, string>
             {
-                {"client_id", _clientId},
+                {"client_id", ClientId},
                 {"scope", _allScopeAuthorizations}
             };
             
             FormUrlEncodedContent data = new FormUrlEncodedContent(values);
             
             // make http request to get device code for authentication
-            HttpResponseMessage response = await _httpClient.PostAsync(url, data);
+            HttpResponseMessage response = await HttpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
 
             if (response.StatusCode != HttpStatusCode.OK)
@@ -97,9 +86,9 @@ namespace PeakboardExtensionGraph.UserAuth
             var authorizationResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             
             // get device code and authentication message
-            string deviceCode = null;
-            string uri = null;
-            string userCode = null;
+            string deviceCode;
+            string uri;
+            string userCode;
             if (authorizationResponse != null)
             {
                 authorizationResponse.TryGetValue("device_code", out deviceCode);
@@ -118,23 +107,23 @@ namespace PeakboardExtensionGraph.UserAuth
             return deviceCode;
         }
 
-        private static async Task<bool> GetTokensAsync(string deviceCode)
+        private async Task<bool> GetTokensAsync(string deviceCode)
         {
             // generate url for http request
-            string url = string.Format(TokenEndpointUrl, _tenantId);
+            string url = string.Format(TokenEndpointUrl, TenantId);
             
             // generate body for http request
             var values = new Dictionary<string, string>
             {
                 { "grant_type", "urn:ietf:params:oauth:grant-type:device_code" },
-                { "client_id", _clientId },
+                { "client_id", ClientId },
                 { "device_code", deviceCode }
             };
             
             FormUrlEncodedContent data = new FormUrlEncodedContent(values);
             
             // make http request to get access token and refresh token
-            HttpResponseMessage response = await _httpClient.PostAsync(url, data);
+            HttpResponseMessage response = await HttpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
             
             // catch error if user didn't authenticate (yet)
@@ -148,12 +137,12 @@ namespace PeakboardExtensionGraph.UserAuth
                 {
                     // store token values
                     tokenResponse.TryGetValue("refresh_token", out _refreshToken);
-                    tokenResponse.TryGetValue("access_token", out _accessToken);
-                    tokenResponse.TryGetValue("expires_in", out _tokenLifetime);
+                    tokenResponse.TryGetValue("access_token", out AccessToken);
+                    tokenResponse.TryGetValue("expires_in", out TokenLifetime);
                 }
                 else return false;
 
-                _millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
 
                 return true;
             }
@@ -163,15 +152,15 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
 
-        private static async Task RefreshAccessAsync()
+        private async Task RefreshAccessAsync()
         {
             // generate url for http request
-            string url = String.Format(TokenEndpointUrl, _tenantId);
+            string url = String.Format(TokenEndpointUrl, TenantId);
             
             // generate body for http requestd
             var values = new Dictionary<string, string>
             {
-                { "client_id", _clientId },
+                { "client_id", ClientId },
                 { "grant_type", "refresh_token" },
                 { "scope", _allScopeAuthorizations },
                 { "refresh_token", _refreshToken }
@@ -180,7 +169,7 @@ namespace PeakboardExtensionGraph.UserAuth
             var data = new FormUrlEncodedContent(values);
             
             // make http request to get new tokens
-            HttpResponseMessage response = await _httpClient.PostAsync(url, data);
+            HttpResponseMessage response = await HttpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
             var tokenResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
 
@@ -192,25 +181,25 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (tokenResponse != null)
             {
-                tokenResponse.TryGetValue("access_token", out _accessToken);
+                tokenResponse.TryGetValue("access_token", out AccessToken);
                 tokenResponse.TryGetValue("refresh_token", out _refreshToken);
-                tokenResponse.TryGetValue("expires_in", out _tokenLifetime);
+                tokenResponse.TryGetValue("expires_in", out TokenLifetime);
             }
             else
             {
                 throw new Exception($"Failed to regain access:\n {jsonString}");
             }
 
-            _builder?.RefreshToken(_accessToken);
+            Builder?.RefreshToken(AccessToken);
 
-            _millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+            Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }
 
-        public static async Task<bool> CheckIfTokenExpiredAsync()
+        public async Task<bool> CheckIfTokenExpiredAsync()
         {
             // check if token expired
             long temp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            if ((temp - _millis) / 1000 > Int32.Parse(_tokenLifetime))
+            if ((temp - Millis) / 1000 > Int32.Parse(TokenLifetime))
             {
                 // refresh tokens
                 await RefreshAccessAsync();
@@ -220,7 +209,7 @@ namespace PeakboardExtensionGraph.UserAuth
             return false;
         }
 
-        public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
+        /*public async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
         {
             // build request
             var request = _builder.GetRequest(out var url, key, parameters);
@@ -237,9 +226,9 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             return jsonString;
-        }
+        }*/
 
-        public static string GetRefreshToken()
+        public string GetRefreshToken()
         {
             if (_refreshToken != null) return _refreshToken;
             throw new NullReferenceException("Refresh-Token not initialized yet");

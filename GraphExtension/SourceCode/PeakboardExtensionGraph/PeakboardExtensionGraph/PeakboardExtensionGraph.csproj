@@ -77,7 +77,7 @@
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RequestBuilder.cs" />
         <Compile Include="RequestParameters.cs" />
-        <Compile Include="UserAuth\GraphHelper.cs" />
+        <Compile Include="UserAuth\GraphHelperUserAuth.cs" />
         <Compile Include="UserAuth\GraphUIControl.cs">
           <DependentUpon>GraphUIControl.xaml</DependentUpon>
         </Compile>

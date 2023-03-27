@@ -22,6 +22,8 @@ namespace PeakboardExtensionGraph.UserAuth
             {"People", "/people"}
         };
 
+        private GraphHelperUserAuth _graphHelper;
+
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
         private string _customEntities = "";
@@ -139,11 +141,12 @@ namespace PeakboardExtensionGraph.UserAuth
                 // initialize with refresh token if possible
                 try
                 {
-                    await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
-                        Permissions.Text);
+                    _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
+                    await _graphHelper.InitGraphWithRefreshToken(RefreshToken.Text);
                 }
                 catch (Exception ex)
                 {
+                    // todo reset refresh token if not in ui anymore
                     MessageBox.Show(ex.Message);
                     return;
                 }
@@ -152,7 +155,8 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 try
                 {
-                    await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
+                    _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
+                    await _graphHelper.InitGraph((code, url) =>
                     {
                         // open web browser
                         Process.Start(url);
@@ -167,7 +171,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
                 
             }
-            this.RefreshToken.Text = GraphHelper.GetRefreshToken();
+            this.RefreshToken.Text = _graphHelper.GetRefreshToken();
 
             string[] entities = _customEntities.Split(' ');
 
@@ -217,7 +221,7 @@ namespace PeakboardExtensionGraph.UserAuth
             try
             {
                 // make a graph call and update select & order by combo boxes
-                var response = await GraphHelper.MakeGraphCall(data, new RequestParameters()
+                var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
                 {
                     Top = 1
                 });
@@ -423,7 +427,7 @@ namespace PeakboardExtensionGraph.UserAuth
             // check if custom call works
             try
             {
-                await GraphHelper.MakeGraphCall(CustomCallTextBox.Text);
+                await _graphHelper.MakeGraphCall(CustomCallTextBox.Text);
             }
             catch (Exception ex)
             {
@@ -451,7 +455,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 {
                     name = CustomEntityText.Text.Split(' ')[0];
                     url = CustomEntityText.Text.Split(' ')[1];
-                    await GraphHelper.MakeGraphCall(url);
+                    await _graphHelper.MakeGraphCall(url);
                 }
                 catch (Exception ex)
                 {
