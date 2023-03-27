@@ -4,27 +4,22 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace PeakboardExtensionGraph
+namespace PeakboardExtensionGraph.AppOnly
 {
-    public class GraphHelperAppOnly
+    public class GraphHelperAppOnly : GraphHelperBase
     {
-        private static HttpClient _httpClient;
-        private static RequestBuilder _builder;
-        private static string _accessToken;
-        
-        private static string _tokenLifetime;
-        private static long _millis;
-        
-        private const string TokenEndpointUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
-        private static string _clientId = "067207ed-41a4-4402-b97f-b977babe0ec9"; 
-        private static string _tenantId = "b4ff9807-402f-42b8-a89d-428363c55de7";
-        private static string _clientSecret = "OBy8Q~M0pJQDqXIsV57e_MUKO6x69IRLPgbtIbmC";
+        private string _clientSecret = "OBy8Q~M0pJQDqXIsV57e_MUKO6x69IRLPgbtIbmC";
 
-        public static async Task InitGraph(string clientId, string tenantId, string clientSecret)
+        public GraphHelperAppOnly(string clientId, string tenantId, string clientSecret)
         {
             _clientId = clientId;
             _tenantId = tenantId;
             _clientSecret = clientSecret;
+        }
+
+        public async Task InitGraph()
+        {
+            // has to be called after initializing GraphHelper object
             
             string url = string.Format(TokenEndpointUrl, _tenantId);
             
@@ -59,7 +54,7 @@ namespace PeakboardExtensionGraph
         }
         
         
-        public static async Task<bool> CheckIfTokenExpiredAsync()
+        public async Task<bool> CheckIfTokenExpiredAsync()
         {
             // check if token expired
             long temp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
@@ -73,7 +68,7 @@ namespace PeakboardExtensionGraph
             return false;
         }
 
-        private static async Task RefreshAccessAsync()
+        private async Task RefreshAccessAsync()
         {
             string url = string.Format(TokenEndpointUrl, _tenantId);
             
@@ -105,23 +100,7 @@ namespace PeakboardExtensionGraph
             
             _builder.RefreshToken(_accessToken);
         }
-
-
-        public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
-        {
-            // build request
-            var request = _builder.GetRequest(out var url, key, parameters);
-            
-            // call graph api
-            var response = await _httpClient.SendAsync(request);
-            
-            // convert to string and return
-            string jsonString = await response.Content.ReadAsStringAsync();
-
-            JsonHelper.FindGraphError(jsonString);
-
-            return jsonString;
-        }
+        
 
     }
 }

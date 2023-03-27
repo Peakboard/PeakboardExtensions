@@ -65,20 +65,23 @@
         <Reference Include="WindowsBase" />
     </ItemGroup>
     <ItemGroup>
-        <Compile Include="GraphExtension.cs" />
-        <Compile Include="GraphHelper.cs" />
-        <Compile Include="GraphHelperAppOnly.cs" />
-        <Compile Include="GraphHelperBase.cs" />
-        <Compile Include="GraphUIControl.cs">
-          <DependentUpon>GraphUIControl.xaml</DependentUpon>
+        <Compile Include="AppOnly\GraphAppOnlyUIControl.xaml.cs">
+            <DependentUpon>GraphAppOnlyUIControl.xaml</DependentUpon>
         </Compile>
+        <Compile Include="AppOnly\GraphHelperAppOnly.cs" />
+        <Compile Include="AppOnly\MsGraphAppOnlyCustomList.cs" />
+        <Compile Include="GraphExtension.cs" />
+        <Compile Include="GraphHelperBase.cs" />
         <Compile Include="JsonHelper.cs" />
-        <Compile Include="MsGraphAppOnlyCustomList.cs" />
-        <Compile Include="MsGraphCustomList.cs" />
         <Compile Include="MsGraphError.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RequestBuilder.cs" />
         <Compile Include="RequestParameters.cs" />
+        <Compile Include="UserAuth\GraphHelper.cs" />
+        <Compile Include="UserAuth\GraphUIControl.cs">
+          <DependentUpon>GraphUIControl.xaml</DependentUpon>
+        </Compile>
+        <Compile Include="UserAuth\MsGraphCustomList.cs" />
     </ItemGroup>
     <ItemGroup>
       <None Include="App.config" />
@@ -86,7 +89,6 @@
     </ItemGroup>
     <ItemGroup>
       <Content Include="Extension.xml" />
-      <Content Include="queries.json" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -96,19 +98,14 @@
     <Target Name="AfterBuild">
     </Target>
     -->
-
-    <ItemGroup>
-        <None Include="queries.json">
-            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-        </None>
-    </ItemGroup>
     <ItemGroup>
         <Content Include="Extension.xml">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
     <ItemGroup>
-      <Page Include="GraphUIControl.xaml" />
+      <Page Include="AppOnly\GraphAppOnlyUIControl.xaml" />
+      <Page Include="UserAuth\GraphUIControl.xaml" />
     </ItemGroup>
 
 </Project>

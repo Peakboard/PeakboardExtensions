@@ -9,8 +9,7 @@ using System.Windows.Controls;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
 
-
-namespace PeakboardExtensionGraph
+namespace PeakboardExtensionGraph.UserAuth
 {
     public partial class GraphUiControl : CustomListUserControlBase
     {
@@ -26,7 +25,7 @@ namespace PeakboardExtensionGraph
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
         private string _customEntities = "";
-
+        
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
@@ -39,10 +38,10 @@ namespace PeakboardExtensionGraph
         protected override string GetParameterOverride()
         {
             string data = ((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString();
-            // request data is either custom link or selected dropdown entry
 
             string select = "";
             string orderBy = "";
+            string customCall = "";
             
             // put each selected field into one comma separated string
             foreach (var item in SelectList.Items)
@@ -79,8 +78,13 @@ namespace PeakboardExtensionGraph
                 orderBy = orderBy.Remove(orderBy.Length - 1);
             }
 
+            if (CustomCallCheckBox.IsChecked == true)
+            {
+                customCall = CustomCallTextBox.Text;
+            }
+
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{RefreshToken.Text};{_customEntities};{CustomCallTextBox.Text}";
+                   $"{Top.Text};{Skip.Text};{RefreshToken.Text};{_customEntities};{customCall}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -106,6 +110,7 @@ namespace PeakboardExtensionGraph
                 }
                 else
                 {
+                    // remove ' desc' from orderBy attributes
                     for (int i = 0; i < _chosenOrder.Length; i++)
                     {
                         _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
@@ -188,7 +193,7 @@ namespace PeakboardExtensionGraph
                 {
                     await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
                     {
-                        // open webbrowser
+                        // open web browser
                         Process.Start(url);
                         Clipboard.SetText(code);
                         return Task.FromResult(0);
@@ -216,7 +221,7 @@ namespace PeakboardExtensionGraph
             
             if (RequestBox.Items.Count == 0)
             {
-                // initialize combo boxes for graph calls
+                // initialize combo boxes for graph calls & restore saved ui settings
                 InitComboBoxes();
             }
 
@@ -248,7 +253,6 @@ namespace PeakboardExtensionGraph
             OrderList.IsEnabled = false;
             RequestBox.IsEnabled = false;
             
-
             try
             {
                 // make a graph call and update select & order by combo boxes
@@ -276,6 +280,7 @@ namespace PeakboardExtensionGraph
             _chosenRequest = "";
             _chosenAttributes = new [] { "" };
             _chosenOrder = new [] { "" };
+            
         }
 
         private void UpdateSelectList(string response)
@@ -386,7 +391,7 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
                 {
                     // if json contains an error field -> deserialize to Error Object & throw exception
-                    GraphHelper.DeserializeError(response);
+                    GraphHelperBase.DeserializeError(response);
                 }
             }
             if(!prepared)
@@ -416,7 +421,7 @@ namespace PeakboardExtensionGraph
             }
             
         }
-
+        
         private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
             // checkbox to enable / disable custom api call
@@ -480,7 +485,7 @@ namespace PeakboardExtensionGraph
                 {
                     name = CustomEntityText.Text.Split(' ')[0];
                     url = CustomEntityText.Text.Split(' ')[1];
-                    var response = await GraphHelper.MakeGraphCall(url);
+                    await GraphHelper.MakeGraphCall(url);
                 }
                 catch (Exception ex)
                 {

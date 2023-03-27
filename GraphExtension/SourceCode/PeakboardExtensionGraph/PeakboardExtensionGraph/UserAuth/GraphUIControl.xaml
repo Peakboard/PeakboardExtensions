@@ -1,4 +1,4 @@
-<controls:CustomListUserControlBase x:Class="PeakboardExtensionGraph.GraphUiControl"
+<controls:CustomListUserControlBase x:Class="PeakboardExtensionGraph.UserAuth.GraphUiControl"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -71,7 +71,7 @@
             </TabItem>
         </TabControl>
         <!-- Desc / Asc -->
-        <TextBlock Grid.Column="1" Grid.Row="8" Text="sorting" HorizontalAlignment="Right" Margin="3 4 70 3"/>
+        <TextBlock Grid.Column="1" Grid.Row="8" Text="sorting" HorizontalAlignment="Right" IsEnabled="False" Margin="3 4 70 3"/>
         <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="8" Margin="3 3 3 10" HorizontalAlignment="Right" Width="60">
             <ComboBoxItem Content="Desc" IsSelected="True"></ComboBoxItem>
             <ComboBoxItem Content="Asc" IsSelected="False"></ComboBoxItem>

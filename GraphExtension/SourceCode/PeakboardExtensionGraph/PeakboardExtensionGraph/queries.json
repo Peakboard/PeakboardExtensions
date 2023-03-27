@@ -1,8 +1,0 @@
-{
-  "mail": "/messages",
-  "calendar": "/calendarview",
-  "people": "/people",
-  "contacts": "/contacts?$select=displayName,emailAddresses",
-  "todos": "/todo/lists/{0}/tasks",
-  "todolists": "/todo/lists"
-}

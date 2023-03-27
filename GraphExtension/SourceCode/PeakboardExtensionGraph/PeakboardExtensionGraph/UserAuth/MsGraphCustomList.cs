@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Peakboard.ExtensionKit;
 
-namespace PeakboardExtensionGraph
+namespace PeakboardExtensionGraph.UserAuth
 {
     [Serializable]
     public class MsGraphCustomList : CustomListBase
@@ -35,46 +35,24 @@ namespace PeakboardExtensionGraph
             { 
                 InitializeGraph(data);
             }
-            var checkTask = GraphHelper.CheckIfTokenExpiredAsync();
-            checkTask.Wait();
             
-            // get parameter for graph call
-            string type = data.Parameter.Split(';')[3];         // request type
-            string select = data.Parameter.Split(';')[4];       // select   
-            string orderBy = data.Parameter.Split(';')[5];      // order by
-            string filter = data.Parameter.Split(';')[6];       // filter
-            bool eventual = data.Parameter.Split(';')[7] == "true";
-            string topString = data.Parameter.Split(';')[8];    // top
-            string skipString = data.Parameter.Split(';')[9];   // skip
-            string customCall = data.Parameter.Split(';')[12];  // custom call
+            // check if access token expired
+            var expiredTask = GraphHelper.CheckIfTokenExpiredAsync();
+            expiredTask.Wait();
             
-            int top = 0;
-            int skip = 0;
+            // update refresh token in parameter if renewed
+            if (expiredTask.Result)
+            {
+                UpdateRefreshToken(GraphHelper.GetRefreshToken(), data);
+            }
             
-            try { top = Int32.Parse(topString); } catch (Exception) { /*ignored*/ }
-            try { skip = Int32.Parse(skipString); } catch (Exception) { /*ignored*/ }
-
             // make graph call
-            Task<string> task;
-            if(customCall == "")
-            {
-                task = GraphHelper.MakeGraphCall(type, new RequestParameters()
-                {
-                    OrderBy = orderBy,
-                    Select = select,
-                    Top = top,
-                    Skip = skip,
-                    Filter = filter,
-                    ConsistencyLevelEventual = eventual
-                });
-            }
-            else
-            {
-                task = GraphHelper.MakeGraphCall(customCall, new RequestParameters()
-                {
-                    ConsistencyLevelEventual = eventual
-                });
-            }
+            string request = data.Parameter.Split(';')[3];
+            string customCall = data.Parameter.Split(';')[12];
+
+            if (customCall != "") request = customCall;
+
+            var task = GraphHelper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -105,52 +83,22 @@ namespace PeakboardExtensionGraph
             }
             
             // check if access token expired
-            var checkTask = GraphHelper.CheckIfTokenExpiredAsync();
-            checkTask.Wait();
+            var expiredTask = GraphHelper.CheckIfTokenExpiredAsync();
+            expiredTask.Wait();
             
             // update refresh token in parameter if renewed
-            if (checkTask.Result)
+            if (expiredTask.Result)
             {
                 UpdateRefreshToken(GraphHelper.GetRefreshToken(), data);
             }
-
-            // get parameter for graph call
-            string type = data.Parameter.Split(';')[3];         // request type
-            string select = data.Parameter.Split(';')[4];       // select   
-            string orderBy = data.Parameter.Split(';')[5];      // order by
-            string filter = data.Parameter.Split(';')[6];       // filter
-            bool eventual = data.Parameter.Split(';')[7] == "true";
-            string topString = data.Parameter.Split(';')[8];    // top
-            string skipString = data.Parameter.Split(';')[9];   // skip
-            string customCall = data.Parameter.Split(';')[12];   // custom call
-            
-            int top = 0;
-            int skip = 0;
-            
-            try { top = Int32.Parse(topString); } catch (Exception) { /*ignored*/ }
-            try { skip = Int32.Parse(skipString); } catch (Exception) { /*ignored*/ }
             
             // make graph call
-            Task<string> task;
-            if(customCall == "")
-            {
-                task = GraphHelper.MakeGraphCall(type, new RequestParameters()
-                {
-                    OrderBy = orderBy,
-                    Select = select,
-                    Top = top,
-                    Skip = skip,
-                    Filter = filter,
-                    ConsistencyLevelEventual = eventual
-                });
-            }
-            else
-            {
-                task = GraphHelper.MakeGraphCall(customCall, new RequestParameters()
-                {
-                    ConsistencyLevelEventual = eventual
-                });
-            }
+            string request = data.Parameter.Split(';')[3];
+            string customCall = data.Parameter.Split(';')[12];
+
+            if (customCall != "") request = customCall;
+
+            var task = GraphHelper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -216,7 +164,7 @@ namespace PeakboardExtensionGraph
                 else if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
                 {
                     // if json contains an error field -> deserialize to Error Object & throw exception
-                    GraphHelper.DeserializeError(response);
+                    GraphHelperBase.DeserializeError(response);
                 }
             }
             if(!prepared)
@@ -242,7 +190,47 @@ namespace PeakboardExtensionGraph
 
             data.Parameter = result;
         }
-
         
+        private RequestParameters BuildParameter(CustomListData data)
+        {
+            string[] paramArr = data.Parameter.Split(';');
+
+            if (paramArr[11] != "")
+            {
+                // custom call -> no request parameter
+                return new RequestParameters()
+                {
+                    ConsistencyLevelEventual = paramArr[7] == "true"
+                };
+            }
+            
+            int top, skip;
+
+            // try parse strings to int
+            try { top = Int32.Parse(paramArr[8]); } catch (Exception) { top = 0; }
+            try { skip = Int32.Parse(paramArr[9]); } catch (Exception) { skip = 0; }
+
+            return new RequestParameters()
+            {
+                Select = paramArr[4],
+                OrderBy = paramArr[5],
+                Filter = paramArr[6],
+                ConsistencyLevelEventual = paramArr[7] == "true",
+                Top = top,
+                Skip = skip
+            };
+            
+            /*
+                4   =>  select
+                5   =>  order by
+                6   =>  filter
+                7   =>  consistency level (header)(for filter)
+                8   =>  top
+                9   =>  skip
+                10  =>  custom entities (not used here)
+                11  =>  custom call
+            */
+        }
+
     }
 }

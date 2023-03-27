@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 
-namespace PeakboardExtensionGraph
+namespace PeakboardExtensionGraph.UserAuth
 {
     public class GraphHelper
     {
@@ -221,18 +221,6 @@ namespace PeakboardExtensionGraph
         {
             if (_refreshToken != null) return _refreshToken;
             throw new NullReferenceException("Refresh-Token not initialized yet");
-        }
-
-        public static void DeserializeError(string json)
-        {
-            var error = JsonConvert.DeserializeObject<RootMsGraphError>(json)?.Error;
-
-            if (error?.Message == null || error.Code == null)
-            {
-                throw new MsGraphException($"Unknown Microsoft Graph Error: {json}");
-            }
-            throw new MsGraphException($"Microsoft Graph Error: {error.Code}: {error.Message}");
-
         }
 
     }
