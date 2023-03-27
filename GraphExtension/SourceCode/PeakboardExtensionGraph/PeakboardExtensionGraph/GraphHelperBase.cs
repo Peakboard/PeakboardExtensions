@@ -7,8 +7,7 @@ namespace PeakboardExtensionGraph
 {
     public abstract class GraphHelperBase
     {
-        // TODO: Make everything nonstatic?
-        
+
         protected RequestBuilder _builder = null;
         protected HttpClient _httpClient = null;
         

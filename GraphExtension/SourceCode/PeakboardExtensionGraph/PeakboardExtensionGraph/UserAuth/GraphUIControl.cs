@@ -129,54 +129,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
         {
-
             await InitializeUi();
-            /*if (RefreshToken.Text != "")
-            {
-                // initialize with refresh token if possible
-                await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
-                    Permissions.Text);
-            }
-            else
-            {
-                try
-                {
-                    await GraphHelper.InitGraph(ClientId.Text, TenantId.Text, Permissions.Text, (code, url) =>
-                    {
-                        // open webbrowser
-                        Process.Start(url);
-                        Clipboard.SetText(code);
-                        return Task.FromResult(0);
-                    });
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message);
-                    return;
-                }
-                
-            }
-            this.RefreshToken.Text = GraphHelper.GetRefreshToken();
-            
-            if (RequestBox.Items.Count == 0)
-            {
-                // initialize combo boxes for graph calls
-                MessageBox.Show(_chosenAttributes.Length + " " + _chosenOrder.Length);
-                InitComboBoxes();
-                _chosenAttributes = new string[]{""};
-                _chosenOrder = new string[]{""};
-                _chosenRequest = "";
-            }
-            
-            // enable UI components
-            RequestBox.IsEnabled = true;
-            SelectList.IsEnabled = true;
-            OrderList.IsEnabled = true;
-            OrderByMode.IsEnabled = true;
-            Top.IsEnabled = true;
-            Skip.IsEnabled = true;
-            CustomCallCheckBox.IsEnabled = true;
-            Filter.IsEnabled = true;*/
         }
 
         private async Task InitializeUi()
@@ -184,8 +137,16 @@ namespace PeakboardExtensionGraph.UserAuth
             if (RefreshToken.Text != "")
             {
                 // initialize with refresh token if possible
-                await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
-                    Permissions.Text);
+                try
+                {
+                    await GraphHelper.InitGraphWithRefreshToken(RefreshToken.Text, ClientId.Text, TenantId.Text,
+                        Permissions.Text);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    return;
+                }
             }
             else
             {
@@ -454,7 +415,6 @@ namespace PeakboardExtensionGraph.UserAuth
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
                 Skip.IsEnabled = true;
-                UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
             }
         }
 
@@ -478,6 +438,12 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             if(CustomEntityText.Text != "")
             {
+                if (CustomEntityText.Text.Split(' ').Length != 2)
+                {
+                    MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
+                    return;
+                }
+                
                 string name;
                 string url;
                 // check if entity exists ins Ms Graph
@@ -489,7 +455,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Invalid Entity: {ex.Message} Entity: {CustomEntityText.Text}");
+                    MessageBox.Show($"Invalid Entity: {ex.Message}");
                     return;
                 }
                 AddEntity(name, url);

@@ -45,7 +45,7 @@ namespace PeakboardExtensionGraph.AppOnly
             
             // make graph call
             string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[12];
+            string customCall = data.Parameter.Split(';')[11];
 
             if (customCall != "") request = customCall;
             
@@ -84,7 +84,7 @@ namespace PeakboardExtensionGraph.AppOnly
             
             // make graph call
             string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[12];
+            string customCall = data.Parameter.Split(';')[11];
 
             if (customCall != "") request = customCall;
             
