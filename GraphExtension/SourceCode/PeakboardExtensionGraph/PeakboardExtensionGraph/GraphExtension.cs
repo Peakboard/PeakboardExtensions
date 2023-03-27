@@ -1,4 +1,6 @@
 ﻿using Peakboard.ExtensionKit;
+using PeakboardExtensionGraph.AppOnly;
+using PeakboardExtensionGraph.UserAuth;
 
 namespace PeakboardExtensionGraph
 {

@@ -9,23 +9,23 @@ namespace PeakboardExtensionGraph
     {
         // TODO: Make everything nonstatic?
         
-        protected static RequestBuilder _builder = null;
-        protected static HttpClient _httpClient = null;
+        protected RequestBuilder _builder = null;
+        protected HttpClient _httpClient = null;
         
-        protected static string _accessToken;
-        protected static string _tokenLifetime;
-        protected static long _millis;
+        protected string _accessToken;
+        protected string _tokenLifetime;
+        protected long _millis;
         
         protected const string TokenEndpointUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
 
-        protected static string _clientId; 
-        protected static string _tenantId;
+        protected string _clientId; 
+        protected string _tenantId;
         
 
-        public static async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
+        public async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
         {
             // build request
-            var request = _builder.GetRequest(out var url, key, parameters);
+            var request = this._builder.GetRequest(out var url, key, parameters);
             
             // call graph api
             var response = await _httpClient.SendAsync(request);
