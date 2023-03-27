@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -8,31 +9,34 @@ namespace PeakboardExtensionGraph
     public abstract class GraphHelperBase
     {
 
-        protected RequestBuilder _builder = null;
-        protected HttpClient _httpClient = null;
+        protected RequestBuilder Builder = null;
+        protected HttpClient HttpClient = null;
         
-        protected string _accessToken;
-        protected string _tokenLifetime;
-        protected long _millis;
+        protected string AccessToken;
+        protected string TokenLifetime;
+        protected long Millis;
         
         protected const string TokenEndpointUrl = "https://login.microsoftonline.com/{0}/oauth2/v2.0/token";
 
-        protected string _clientId; 
-        protected string _tenantId;
+        protected string ClientId; 
+        protected string TenantId;
         
 
         public async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
         {
             // build request
-            var request = this._builder.GetRequest(out var url, key, parameters);
+            var request = this.Builder.GetRequest(out var url, key, parameters);
             
             // call graph api
-            var response = await _httpClient.SendAsync(request);
+            var response = await HttpClient.SendAsync(request);
             
             // convert to string and return
             string jsonString = await response.Content.ReadAsStringAsync();
 
-            JsonHelper.FindGraphError(jsonString);
+            if (response.StatusCode != HttpStatusCode.OK)
+            { 
+                DeserializeError(jsonString);
+            }
 
             return jsonString;
         }

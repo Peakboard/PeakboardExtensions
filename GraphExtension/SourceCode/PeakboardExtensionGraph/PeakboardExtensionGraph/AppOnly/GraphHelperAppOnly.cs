@@ -13,8 +13,8 @@ namespace PeakboardExtensionGraph.AppOnly
 
         public GraphHelperAppOnly(string clientId, string tenantId, string clientSecret)
         {
-            _clientId = clientId;
-            _tenantId = tenantId;
+            ClientId = clientId;
+            TenantId = tenantId;
             _clientSecret = clientSecret;
         }
 
@@ -23,12 +23,12 @@ namespace PeakboardExtensionGraph.AppOnly
             // has to be called after initializing GraphHelper object
             
             // form authorization url
-            string url = string.Format(TokenEndpointUrl, _tenantId);
+            string url = string.Format(TokenEndpointUrl, TenantId);
             
             // request body
             Dictionary<string, string> values = new Dictionary<string, string>
             {
-                {"client_id", _clientId},
+                {"client_id", ClientId},
                 {"scope", "https://graph.microsoft.com/.default"},
                 {"client_secret", _clientSecret},
                 {"grant_type", "client_credentials"}
@@ -36,8 +36,8 @@ namespace PeakboardExtensionGraph.AppOnly
             FormUrlEncodedContent data = new FormUrlEncodedContent(values);
 
             // post request to get access to graph application
-            _httpClient = new HttpClient();
-            HttpResponseMessage response = await _httpClient.PostAsync(url, data);
+            HttpClient = new HttpClient();
+            HttpResponseMessage response = await HttpClient.PostAsync(url, data);
 
             string jsonString = await response.Content.ReadAsStringAsync();
 
@@ -51,9 +51,9 @@ namespace PeakboardExtensionGraph.AppOnly
             var authorizationResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             if (authorizationResponse != null)
             {
-                authorizationResponse.TryGetValue("access_token", out _accessToken);
-                authorizationResponse.TryGetValue("expires_in", out _tokenLifetime);
-                _millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                authorizationResponse.TryGetValue("access_token", out AccessToken);
+                authorizationResponse.TryGetValue("expires_in", out TokenLifetime);
+                Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
             else
             {
@@ -61,7 +61,7 @@ namespace PeakboardExtensionGraph.AppOnly
             }
 
             // init request builder
-            _builder = new RequestBuilder(_accessToken, "https://graph.microsoft.com/v1.0");
+            Builder = new RequestBuilder(AccessToken, "https://graph.microsoft.com/v1.0");
         }
         
         
@@ -69,7 +69,7 @@ namespace PeakboardExtensionGraph.AppOnly
         {
             // check if token expired
             long temp = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            if ((temp - _millis) / 1000 > Int32.Parse(_tokenLifetime))
+            if ((temp - Millis) / 1000 > Int32.Parse(TokenLifetime))
             {
                 // refresh tokens
                 await RefreshAccessAsync();
@@ -82,12 +82,12 @@ namespace PeakboardExtensionGraph.AppOnly
         private async Task RefreshAccessAsync()
         {
             // from request url
-            string url = string.Format(TokenEndpointUrl, _tenantId);
+            string url = string.Format(TokenEndpointUrl, TenantId);
             
             // request body
             Dictionary<string, string> values = new Dictionary<string, string>
             {
-                {"client_id", _clientId},
+                {"client_id", ClientId},
                 {"scope", "https://graph.microsoft.com/.default"},
                 {"client_secret", _clientSecret},
                 {"grant_type", "client_credentials"}
@@ -95,7 +95,7 @@ namespace PeakboardExtensionGraph.AppOnly
             FormUrlEncodedContent data = new FormUrlEncodedContent(values);
             
             // post request for new access token
-            HttpResponseMessage response = await _httpClient.PostAsync(url, data);
+            HttpResponseMessage response = await HttpClient.PostAsync(url, data);
             
             string jsonString = await response.Content.ReadAsStringAsync();
             
@@ -109,9 +109,9 @@ namespace PeakboardExtensionGraph.AppOnly
             var authorizationResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
             if (authorizationResponse != null)
             {
-                authorizationResponse.TryGetValue("access_token", out _accessToken);
-                authorizationResponse.TryGetValue("expires_in", out _tokenLifetime);
-                _millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                authorizationResponse.TryGetValue("access_token", out AccessToken);
+                authorizationResponse.TryGetValue("expires_in", out TokenLifetime);
+                Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
             }
             else
             {
@@ -119,7 +119,7 @@ namespace PeakboardExtensionGraph.AppOnly
             }
             
             // replace access token in request builder
-            _builder.RefreshToken(_accessToken);
+            Builder.RefreshToken(AccessToken);
         }
         
 
