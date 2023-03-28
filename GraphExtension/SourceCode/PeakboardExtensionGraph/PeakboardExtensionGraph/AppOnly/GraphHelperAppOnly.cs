@@ -9,7 +9,7 @@ namespace PeakboardExtensionGraph.AppOnly
 {
     public class GraphHelperAppOnly : GraphHelperBase
     {
-        private string _clientSecret = "OBy8Q~M0pJQDqXIsV57e_MUKO6x69IRLPgbtIbmC";
+        private string _clientSecret;
 
         public GraphHelperAppOnly(string clientId, string tenantId, string clientSecret)
         {
