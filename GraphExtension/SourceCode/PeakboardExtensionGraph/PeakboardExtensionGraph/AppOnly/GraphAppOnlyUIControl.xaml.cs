@@ -204,6 +204,7 @@ namespace PeakboardExtensionGraph.AppOnly
         {
             if(CustomEntityText.Text != "")
             {
+                // check for valid input
                 if (CustomEntityText.Text.Split(' ').Length != 2)
                 {
                     MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
@@ -236,6 +237,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 CustomCallTextBox.IsEnabled = true;
                 CustomCallCheckButton.IsEnabled = true;
                 
+                // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
                 SelectList.IsEnabled = false;
                 OrderList.IsEnabled = false;
@@ -252,6 +254,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 CustomCallTextBox.IsEnabled = false;
                 CustomCallCheckButton.IsEnabled = false;
                 
+                // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
@@ -322,6 +325,7 @@ namespace PeakboardExtensionGraph.AppOnly
             _selectAttributes = new List<string>();
             
             // read through json response and store every highest layer nested object into _selectAttributes
+            // skip every nested object / array
             while (reader.Read())
             {
                 if (reader.Value != null && reader.TokenType == JsonToken.PropertyName && !reader.Value.ToString().Contains("@odata"))
@@ -364,6 +368,8 @@ namespace PeakboardExtensionGraph.AppOnly
             _orderByAttributes = new List<string>();
             
             // read through json response and store every primitive property into _orderByAttributes
+            // skip nested arrays & ignore objects
+            // but walk through every nested object to access all their primitive properties
             while (reader.Read())
             {
                 if (reader.TokenType == JsonToken.PropertyName)

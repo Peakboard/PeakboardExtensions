@@ -30,9 +30,10 @@ namespace PeakboardExtensionGraph
             // call graph api
             var response = await HttpClient.SendAsync(request);
             
-            // convert to string and return
+            // convert to string
             string jsonString = await response.Content.ReadAsStringAsync();
 
+            // check response status code: Status code not 200 OK => ERROR
             if (response.StatusCode != HttpStatusCode.OK)
             { 
                 DeserializeError(jsonString);
@@ -43,6 +44,7 @@ namespace PeakboardExtensionGraph
         
         public static void DeserializeError(string json)
         {
+            // try deserializing response into MsGraphError object
             var error = JsonConvert.DeserializeObject<RootMsGraphError>(json)?.Error;
 
             if (error?.Message == null || error.Code == null)

@@ -26,7 +26,7 @@ namespace PeakboardExtensionGraph.UserAuth
         
         public async Task InitGraph(Func<string, string, Task> prompt)
         {
-            // has to be called after initializing GraphHelper object
+            /* has to be called after initializing GraphHelper object */
             
             // authorize
             string deviceCode = await AuthorizeAsync(prompt);
@@ -178,7 +178,8 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 throw new MsGraphException($"Failed to regain access.\n Status Code: {response.StatusCode}\n Error: {jsonString}");
             }
-
+            
+            // extract tokens from json response
             if (tokenResponse != null)
             {
                 tokenResponse.TryGetValue("access_token", out AccessToken);
@@ -209,24 +210,18 @@ namespace PeakboardExtensionGraph.UserAuth
             return false;
         }
 
-        /*public async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
+        public async Task<bool> PostAsync(string json)
         {
             // build request
-            var request = _builder.GetRequest(out var url, key, parameters);
+            var request = Builder.PostRequest(json);
             
-            // call graph api
-            var response = await _httpClient.SendAsync(request);
+            // post request
+            var response = await HttpClient.SendAsync(request);
             
-            // convert to string and return
-            string jsonString = await response.Content.ReadAsStringAsync();
-
-            if (response.StatusCode != HttpStatusCode.OK)
-            {
-                GraphHelperBase.DeserializeError(jsonString);
-            }
-
-            return jsonString;
-        }*/
+            // return if post succeeded
+            if (response.StatusCode != HttpStatusCode.Accepted) return false;
+            else return true;
+        }
 
         public string GetRefreshToken()
         {

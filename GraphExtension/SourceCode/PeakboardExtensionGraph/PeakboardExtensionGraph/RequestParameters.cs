@@ -9,6 +9,6 @@ namespace PeakboardExtensionGraph
         public string OrderBy { get; set; }
         public int Skip = 0;
         public string Filter { get; set; }
-        public bool ConsistencyLevelEventual { get; set; }
+        public bool ConsistencyLevelEventual { get; set; } // header needed for some filter options
     }
 }

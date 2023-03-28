@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 
 namespace PeakboardExtensionGraph
 {
@@ -27,14 +28,6 @@ namespace PeakboardExtensionGraph
             if(parameters != null)
             {
                 queryParams = "?";
-                
-                if (suffix == "/calendarview")
-                {
-                    // add required parameter for calendar view request
-                    var start = DateTime.Now.ToString("yyyy-MM-ddThh:mm:ssZ");
-                    var end = DateTime.Now.AddDays(7).ToString("yyyy-MM-ddThh:mm:ssZ");
-                    queryParams += $"startdatetime={start}&enddatetime={end}";
-                }
                 
                 // append filter
                 if (!string.IsNullOrEmpty(parameters.Filter))
@@ -106,6 +99,26 @@ namespace PeakboardExtensionGraph
             }
 
             requestUrl = url + queryParams;
+            return request;
+        }
+
+        public HttpRequestMessage PostRequest(string json)
+        {
+            // create HttpRequest Content
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            //  build request
+            var request = new HttpRequestMessage
+            {
+                RequestUri = new Uri(_baseUrl + "/sendmail"),
+                Method = HttpMethod.Post,
+                Content = content
+            };
+            
+            // add authentication header
+            request.Headers.Authorization = new AuthenticationHeaderValue("bearer", _accessToken);
+
+            // return request
             return request;
         }
 

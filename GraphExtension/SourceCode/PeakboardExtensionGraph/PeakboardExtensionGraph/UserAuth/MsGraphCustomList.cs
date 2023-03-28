@@ -21,6 +21,46 @@ namespace PeakboardExtensionGraph.UserAuth
                 Name = "Microsoft Graph UserAuth List",
                 Description = "Returns data from MS-Graph API",
                 PropertyInputPossible = true,
+                Functions =
+                {
+                    new CustomListFunctionDefinition()
+                    {
+                        Name = "SendMail",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Recipient",
+                                Description = "Person who shall receive this message",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                            Name = "Header",
+                            Description = "Header of the message",
+                            Optional = false,
+                            Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Body",
+                                Description = "Body of the message",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            }
+                        },
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+                        {
+                            new CustomListFunctionReturnParameterDefinition
+                            {
+                                Name = "result",
+                                Description = "Success",
+                                Type = CustomListFunctionParameterTypes.Boolean
+                            }       
+                        }
+                    }
+                }
             };
         }
         
@@ -122,6 +162,33 @@ namespace PeakboardExtensionGraph.UserAuth
             return items;
         }
 
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        {
+            var template =
+                "(\"message\":(\"subject\":\"{0}\",\"body\":(\"contentType\":null,\"content\":\"{1}\")," +
+                "\"toRecipients\":[(\"emailAddress\":(\"name\":null,\"address\":\"{2}\"))]))";
+
+            // get user input
+            var recipient = context.Values[0].StringValue;
+            var header = context.Values[1].StringValue;
+            var body = context.Values[2].StringValue;
+
+            // put user input into json template
+            var requestBody = String.Format(template, header, body, recipient);
+            requestBody = requestBody.Replace('(', '{');
+            requestBody = requestBody.Replace(')', '}');
+
+            // make graph post request
+            var task = _graphHelper.PostAsync(requestBody);
+            task.Wait();
+
+            // return if request succeeded
+            var ret = new CustomListExecuteReturnContext();
+            ret.Add(task.Result);
+
+            return ret;
+        }
+
         private void InitializeGraph(CustomListData data)
         {
             // get refresh token from parameter
@@ -197,7 +264,7 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             string[] paramArr = data.Parameter.Split(';');
 
-            if (paramArr[11] != "")
+            if (paramArr[12] != "")
             {
                 // custom call -> no request parameter
                 return new RequestParameters()

@@ -16,7 +16,7 @@ namespace PeakboardExtensionGraph.UserAuth
         private readonly Dictionary<string, string> _options = new Dictionary<string, string>
         {
             {"Me", ""},
-            {"Calendar", "/calendarview"},
+            {"Calendar", "/events"},
             {"Contacts", "/contacts"},
             {"Mail", "/messages"},
             {"People", "/people"}
@@ -82,6 +82,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (CustomCallCheckBox.IsChecked == true)
             {
+                // add custom call only if its checkbox is checked
                 customCall = CustomCallTextBox.Text;
             }
 
@@ -173,14 +174,16 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             this.RefreshToken.Text = _graphHelper.GetRefreshToken();
 
-            string[] entities = _customEntities.Split(' ');
+            if(!_uiInitialized){
+                string[] entities = _customEntities.Split(' ');
 
-            // add saved custom entities into dictionary so they are added to the Request dropdown
-            foreach (var entity in entities)
-            {
-                if (entity != "" && !_options.Values.Contains(entity))
+                // add saved custom entities into dictionary so they are added to the Request dropdown
+                foreach (var entity in entities)
                 {
-                    _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                    if (entity != "" && !_options.Values.Contains(entity))
+                    {
+                        _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                    }
                 }
             }
             
@@ -242,10 +245,10 @@ namespace PeakboardExtensionGraph.UserAuth
             OrderList.IsEnabled = true;
             RequestBox.IsEnabled = true;
             
+            // clear saved selections after they are set
             _chosenRequest = "";
             _chosenAttributes = new [] { "" };
             _chosenOrder = new [] { "" };
-            
         }
 
         private void UpdateSelectList(string response)
@@ -255,6 +258,7 @@ namespace PeakboardExtensionGraph.UserAuth
             _selectAttributes = new List<string>();
             
             // read through json response and store every highest layer nested object into _selectAttributes
+            // skip every nested object / array
             while (reader.Read())
             {
                 if (reader.Value != null && reader.TokenType == JsonToken.PropertyName && !reader.Value.ToString().Contains("@odata"))
@@ -272,7 +276,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             _selectAttributes.Sort();
             
-            // clear combo box and append every entry from the list into the combo box
+            // clear combobox and append every entry from the list into the combobox
             SelectList.Items.Clear();
            
             foreach (var attr in _selectAttributes)
@@ -297,6 +301,8 @@ namespace PeakboardExtensionGraph.UserAuth
             _orderByAttributes = new List<string>();
             
             // read through json response and store every primitive property into _orderByAttributes
+            // skip nested arrays & ignore objects
+            // but walk through every nested object to access all their primitive properties
             while (reader.Read())
             {
                 if (reader.TokenType == JsonToken.PropertyName)
@@ -395,6 +401,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 CustomCallTextBox.IsEnabled = true;
                 CustomCallCheckButton.IsEnabled = true;
                 
+                // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
                 SelectList.IsEnabled = false;
                 OrderList.IsEnabled = false;
@@ -411,6 +418,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 CustomCallTextBox.IsEnabled = false;
                 CustomCallCheckButton.IsEnabled = false;
                 
+                // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
@@ -431,6 +439,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             catch (Exception ex)
             {
+                // catch exception and print message if the call contains error
                 MessageBox.Show($"Invalid call: {ex.Message}");
                 return;
             }
@@ -442,6 +451,7 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             if(CustomEntityText.Text != "")
             {
+                // check for valid input
                 if (CustomEntityText.Text.Split(' ').Length != 2)
                 {
                     MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");

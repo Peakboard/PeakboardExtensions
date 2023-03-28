@@ -9,18 +9,6 @@ namespace PeakboardExtensionGraph
 {
     public class JsonHelper
     {
-
-        public static void FindGraphError(string json)
-        {
-            JsonTextReader reader = new JsonTextReader(new StringReader(json));
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.PropertyName && reader.Value?.ToString() == "error")
-                {
-                    GraphHelperBase.DeserializeError(json);
-                }
-            }
-        }
         public static void SkipArray(JsonReader reader)
         {
             // skip nested array
@@ -62,6 +50,8 @@ namespace PeakboardExtensionGraph
                 }
             }
         }
+        
+        /*************************************** Method for UI-Control Classes  ***************************************/
         
         public static void OrderByWalkThroughObject(JsonReader reader, string objPrefix, List<string> list)
         {
@@ -110,6 +100,7 @@ namespace PeakboardExtensionGraph
             }
         }
         
+        /*************************************** Methods for CustomList Classes ***************************************/
         public static void ColumnsWalkThroughObject(JsonReader reader, string objPrefix, CustomListColumnCollection cols)
         {
             var lastName = "";
