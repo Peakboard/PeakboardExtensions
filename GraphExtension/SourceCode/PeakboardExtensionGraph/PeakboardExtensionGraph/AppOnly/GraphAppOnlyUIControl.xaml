@@ -33,7 +33,7 @@
         <TextBox Grid.Column="1" Grid.Row="1" Name="TenantId" Text="b4ff9807-402f-42b8-a89d-428363c55de7" VerticalContentAlignment="Center" Margin="3"/>
         <!-- Client Secret -->
         <TextBlock Grid.Column="0" Grid.Row="2" Text="ClientSecret" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="2" Name="Secret" Text="OBy8Q~M0pJQDqXIsV57e_MUKO6x69IRLPgbtIbmC" VerticalContentAlignment="Center" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="2" Name="Secret" Text="vDr8Q~.W7_~OUzxIAOIGCO~T9_nQvotrkz6IsaDd" VerticalContentAlignment="Center" Margin="3"/>
         <!-- Connect Button -->
         <Button Grid.Column="1" Grid.Row="3" Name="ConnectButton" Content="Connect" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="ConnectButton_Click"></Button>
         <!-- Request Data -->
