@@ -171,14 +171,15 @@ namespace PeakboardExtensionGraph.UserAuth
             // make http request to get new tokens
             HttpResponseMessage response = await HttpClient.PostAsync(url, data);
             string jsonString = await response.Content.ReadAsStringAsync();
-            var tokenResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
-
+            
             // check response for error codes
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 throw new MsGraphException($"Failed to regain access.\n Status Code: {response.StatusCode}\n Error: {jsonString}");
             }
             
+            var tokenResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+
             // extract tokens from json response
             if (tokenResponse != null)
             {

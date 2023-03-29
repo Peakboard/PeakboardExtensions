@@ -31,6 +31,8 @@ namespace PeakboardExtensionGraph.UserAuth
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
+
+        private string _refreshToken = "";
         
         
         public GraphUiControl()
@@ -88,7 +90,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{RefreshToken.Text};{_customEntities};{customCall}";
+                   $"{Top.Text};{Skip.Text};{_refreshToken};{_customEntities};{customCall}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -131,7 +133,7 @@ namespace PeakboardExtensionGraph.UserAuth
             ToggleUiComponents();
 
             // try to initialize combo boxes for graph calls & restore saved ui settings
-            if (RefreshToken.Text != "")
+            if (_refreshToken != "")
             {
                 InitComboBoxes();
             }
@@ -144,13 +146,14 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private async Task InitializeUi()
         {
-            if (RefreshToken.Text != "")
+            if (_refreshToken != "" || RefreshToken.Text != "")
             {
+                _refreshToken = RefreshToken.Text;
                 // initialize with refresh token if possible
                 try
                 {
                     _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                    await _graphHelper.InitGraphWithRefreshToken(RefreshToken.Text);
+                    await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
                 }
                 catch (Exception ex)
                 {
@@ -179,7 +182,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
                 
             }
-            this.RefreshToken.Text = _graphHelper.GetRefreshToken();
+            _refreshToken = _graphHelper.GetRefreshToken();
+            RefreshToken.Text = _refreshToken;
 
             if (RequestBox.Items.Count == 0){
                 // initialize combo boxes for graph calls & restore saved ui settings

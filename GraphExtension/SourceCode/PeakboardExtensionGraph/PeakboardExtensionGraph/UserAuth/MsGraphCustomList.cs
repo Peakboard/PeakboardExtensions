@@ -12,6 +12,44 @@ namespace PeakboardExtensionGraph.UserAuth
     {
         private bool _initialized;
         private GraphHelperUserAuth _graphHelper;
+
+        private CustomListFunctionDefinition _func = new CustomListFunctionDefinition()
+        {
+            Name = "SendMail",
+            InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
+            {
+                new CustomListFunctionInputParameterDefinition()
+                {
+                    Name = "Recipient",
+                    Description = "Person who shall receive this message",
+                    Optional = false,
+                    Type = CustomListFunctionParameterTypes.String
+                },
+                new CustomListFunctionInputParameterDefinition()
+                {
+                    Name = "Header",
+                    Description = "Header of the message",
+                    Optional = false,
+                    Type = CustomListFunctionParameterTypes.String
+                },
+                new CustomListFunctionInputParameterDefinition()
+                {
+                    Name = "Body",
+                    Description = "Body of the message",
+                    Optional = false,
+                    Type = CustomListFunctionParameterTypes.String
+                }
+            },
+            ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+            {
+                new CustomListFunctionReturnParameterDefinition
+                {
+                    Name = "result",
+                    Description = "Success",
+                    Type = CustomListFunctionParameterTypes.Boolean
+                }
+            }
+        };
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -22,43 +60,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 PropertyInputPossible = true,
                 Functions =
                 {
-                    new CustomListFunctionDefinition()
-                    {
-                        Name = "SendMail",
-                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
-                        {
-                            new CustomListFunctionInputParameterDefinition()
-                            {
-                                Name = "Recipient",
-                                Description = "Person who shall receive this message",
-                                Optional = false,
-                                Type = CustomListFunctionParameterTypes.String
-                            },
-                            new CustomListFunctionInputParameterDefinition()
-                            {
-                            Name = "Header",
-                            Description = "Header of the message",
-                            Optional = false,
-                            Type = CustomListFunctionParameterTypes.String
-                            },
-                            new CustomListFunctionInputParameterDefinition()
-                            {
-                                Name = "Body",
-                                Description = "Body of the message",
-                                Optional = false,
-                                Type = CustomListFunctionParameterTypes.String
-                            }
-                        },
-                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
-                        {
-                            new CustomListFunctionReturnParameterDefinition
-                            {
-                                Name = "result",
-                                Description = "Success",
-                                Type = CustomListFunctionParameterTypes.Boolean
-                            }       
-                        }
-                    }
+                    _func
                 }
             };
         }
@@ -213,6 +215,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 
             }
             _initialized = true;
+
         }
 
         private JsonTextReader PreparedReader(string response)
