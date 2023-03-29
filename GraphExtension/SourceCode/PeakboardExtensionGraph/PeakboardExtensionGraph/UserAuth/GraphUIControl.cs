@@ -130,6 +130,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             
             // disable / enable Ui components depending on state of custom call checkbox
+            // TODO: Fix this -> components not disabled at beginning 
             ToggleUiComponents();
 
             // try to initialize combo boxes for graph calls & restore saved ui settings

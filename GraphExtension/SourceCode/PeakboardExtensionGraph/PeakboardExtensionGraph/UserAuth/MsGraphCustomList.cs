@@ -20,22 +20,8 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 new CustomListFunctionInputParameterDefinition()
                 {
-                    Name = "Recipient",
-                    Description = "Person who shall receive this message",
-                    Optional = false,
-                    Type = CustomListFunctionParameterTypes.String
-                },
-                new CustomListFunctionInputParameterDefinition()
-                {
-                    Name = "Header",
-                    Description = "Header of the message",
-                    Optional = false,
-                    Type = CustomListFunctionParameterTypes.String
-                },
-                new CustomListFunctionInputParameterDefinition()
-                {
-                    Name = "Body",
-                    Description = "Body of the message",
+                    Name = "Parameters",
+                    Description = "String containing all parameters for the function separated by ';' character",
                     Optional = false,
                     Type = CustomListFunctionParameterTypes.String
                 }
@@ -170,12 +156,12 @@ namespace PeakboardExtensionGraph.UserAuth
                 "\"toRecipients\":[(\"emailAddress\":(\"name\":null,\"address\":\"{2}\"))]))";
 
             // get user input
-            var recipient = context.Values[0].StringValue;
-            var header = context.Values[1].StringValue;
-            var body = context.Values[2].StringValue;
+            var parameters = context.Values[0].StringValue.Split(';');
+            /*var header = context.Values[1].StringValue;
+            var body = context.Values[2].StringValue;*/
 
             // put user input into json template
-            var requestBody = String.Format(template, header, body, recipient);
+            var requestBody = String.Format(template, parameters);
             requestBody = requestBody.Replace('(', '{');
             requestBody = requestBody.Replace(')', '}');
 
