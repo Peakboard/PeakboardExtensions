@@ -31,7 +31,8 @@ namespace PeakboardExtensionGraph.UserAuth
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
-        private bool _uiInitialized;
+        
+        
         public GraphUiControl()
         {
             InitializeComponent();
@@ -100,34 +101,40 @@ namespace PeakboardExtensionGraph.UserAuth
             TenantId.Text = paramArr[1];
             Permissions.Text = paramArr[2];
             
-            if(!_uiInitialized)
-            {
-                _chosenRequest = paramArr[3];
-                _chosenAttributes = paramArr[4].Split(',');
-                _chosenOrder = paramArr[5].Split(',');
-
-                if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
-                {
-                    // set sorting order to ascending
-                    ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
-                }
-                else
-                {
-                    // remove ' desc' from orderBy attributes
-                    for (int i = 0; i < _chosenOrder.Length; i++)
-                    {
-                        _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
-                    }
-                }
-            }
+            _chosenRequest = paramArr[3];
+            _chosenAttributes = paramArr[4].Split(','); 
+            _chosenOrder = paramArr[5].Split(',');
             
             Filter.Text = paramArr[6];
             ConsistencyBox.IsChecked = (paramArr[7] == "true");
             Top.Text = paramArr[8];
             Skip.Text = paramArr[9];
-            RefreshToken.Text = paramArr[10];
             _customEntities = paramArr[11];
+            CustomCallCheckBox.IsChecked = (paramArr[12] != ""); 
             CustomCallTextBox.Text = paramArr[12];
+
+            if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
+            { 
+                // set sorting order to ascending
+                ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
+            }
+            else
+            {
+                // remove ' desc' from orderBy attributes
+                for (int i = 0; i < _chosenOrder.Length; i++)
+                {
+                    _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
+                }
+            }
+            
+            // disable / enable Ui components depending on state of custom call checkbox
+            ToggleUiComponents();
+
+            // try to initialize combo boxes for graph calls & restore saved ui settings
+            if (RefreshToken.Text != "")
+            {
+                InitComboBoxes();
+            }
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
@@ -174,25 +181,11 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             this.RefreshToken.Text = _graphHelper.GetRefreshToken();
 
-            if(!_uiInitialized){
-                string[] entities = _customEntities.Split(' ');
-
-                // add saved custom entities into dictionary so they are added to the Request dropdown
-                foreach (var entity in entities)
-                {
-                    if (entity != "" && !_options.Values.Contains(entity))
-                    {
-                        _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
-                    }
-                }
-            }
-            
-            if (RequestBox.Items.Count == 0)
-            {
+            if (RequestBox.Items.Count == 0){
                 // initialize combo boxes for graph calls & restore saved ui settings
                 InitComboBoxes();
             }
-
+            
             // enable UI components
             RequestBox.IsEnabled = true;
             CustomEntityText.IsEnabled = true;
@@ -205,13 +198,72 @@ namespace PeakboardExtensionGraph.UserAuth
             CustomCallCheckBox.IsEnabled = true;
             Filter.IsEnabled = true;
             ConsistencyBox.IsEnabled = true;
-            
-            _uiInitialized = true;
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
-            UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+            try
+            {
+                UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+            }
+            catch (Exception ex)
+            {
+                // catch potential exception caused by graph call error
+                MessageBox.Show(ex.Message);
+                RequestBox.IsEnabled = true;
+                
+            }
+        }
+        
+        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
+        {
+            ToggleUiComponents();
+        }
+
+        private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
+        {
+            // check if custom call works
+            try
+            {
+                await _graphHelper.MakeGraphCall(CustomCallTextBox.Text);
+            }
+            catch (Exception ex)
+            {
+                // catch exception and print message if the call contains error
+                MessageBox.Show($"Invalid call: {ex.Message}");
+                return;
+            }
+
+            MessageBox.Show("Everything seems to be fine...");
+        }
+
+        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            if(CustomEntityText.Text != "")
+            {
+                // check for valid input
+                if (CustomEntityText.Text.Split(' ').Length != 2)
+                {
+                    MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
+                    return;
+                }
+                
+                string name;
+                string url;
+                // check if entity exists ins Ms Graph
+                try
+                {
+                    name = CustomEntityText.Text.Split(' ')[0];
+                    url = CustomEntityText.Text.Split(' ')[1];
+                    await _graphHelper.MakeGraphCall(url);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Invalid Entity: {ex.Message}");
+                    return;
+                }
+                AddEntity(name, url);
+            }
         }
 
         private async void UpdateLists(string data)
@@ -220,26 +272,16 @@ namespace PeakboardExtensionGraph.UserAuth
             SelectList.IsEnabled = false;
             OrderList.IsEnabled = false;
             RequestBox.IsEnabled = false;
-            
-            try
+
+            // make a graph call and update select & order by combo boxes
+            var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
             {
-                // make a graph call and update select & order by combo boxes
-                var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
-                {
-                    Top = 1
-                });
-                // catch potential exception caused by graph call error
-                // TODO: Add select all / none ?
-                UpdateSelectList(response);
-                UpdateOrderByList(response);
-            }
-            catch (Exception e)
-            {
-                // reset UI
-                MessageBox.Show(e.Message);
-                RequestBox.IsEnabled = true;
-            }
-            
+                Top = 1
+            });
+            // TODO: Add select all / none ?
+            UpdateSelectList(response);
+            UpdateOrderByList(response);
+
             // unlock dropdowns
             SelectList.IsEnabled = true; 
             OrderList.IsEnabled = true;
@@ -377,23 +419,48 @@ namespace PeakboardExtensionGraph.UserAuth
         
         private void InitComboBoxes()
         {
-            // Add every Dictionary entry to Request Combobox
-            RequestBox.Items.Clear(); 
+            string[] entities = _customEntities.Split(' ');
 
-            foreach (var option in _options)
+            // add saved custom entities into dictionary so they are added to the Request dropdown
+            foreach (var entity in entities)
             {
-                var boi = new ComboBoxItem()
+                if (entity != "" && !_options.Values.Contains(entity))
                 {
-                    Content = option.Key,
-                    Tag = option.Value,
-                    IsSelected = option.Value == _chosenRequest
-                };
-                RequestBox.Items.Add(boi);
+                    _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                }
             }
             
+           
+            if(RequestBox.Items.Count == 0)
+            {
+                // Add every Dictionary entry to Request Combobox
+                foreach (var option in _options)
+                {
+                    var boi = new ComboBoxItem()
+                    {
+                        Content = option.Key,
+                        Tag = option.Value,
+                        IsSelected = option.Value == _chosenRequest
+                    };
+                    RequestBox.Items.Add(boi);
+                }
+            }
+            else
+            {
+                // select correct item
+                foreach (ComboBoxItem item in RequestBox.Items)
+                {
+                    if (item.Tag.ToString() == _chosenRequest)
+                    {
+                        item.IsSelected = true;
+                        break;
+                    }
+                }
+            }
+
         }
-        
-        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
+
+        private void ToggleUiComponents()
         {
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
@@ -420,6 +487,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 
                 // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
+                SelectList.IsEnabled = true;
+                OrderList.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
                 CustomEntityText.IsEnabled = true;
@@ -427,52 +496,6 @@ namespace PeakboardExtensionGraph.UserAuth
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
                 Skip.IsEnabled = true;
-            }
-        }
-
-        private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
-        {
-            // check if custom call works
-            try
-            {
-                await _graphHelper.MakeGraphCall(CustomCallTextBox.Text);
-            }
-            catch (Exception ex)
-            {
-                // catch exception and print message if the call contains error
-                MessageBox.Show($"Invalid call: {ex.Message}");
-                return;
-            }
-
-            MessageBox.Show("Everything seems to be fine...");
-        }
-
-        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
-        {
-            if(CustomEntityText.Text != "")
-            {
-                // check for valid input
-                if (CustomEntityText.Text.Split(' ').Length != 2)
-                {
-                    MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
-                    return;
-                }
-                
-                string name;
-                string url;
-                // check if entity exists ins Ms Graph
-                try
-                {
-                    name = CustomEntityText.Text.Split(' ')[0];
-                    url = CustomEntityText.Text.Split(' ')[1];
-                    await _graphHelper.MakeGraphCall(url);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"Invalid Entity: {ex.Message}");
-                    return;
-                }
-                AddEntity(name, url);
             }
         }
 
