@@ -124,10 +124,14 @@ namespace PeakboardExtensionGraph.AppOnly
                 }
             }
 
-            // disable / enable Ui components depending on state of custom call checkbox
-            ToggleUiComponents();
             
-            if(_helper != null) InitComboBoxes();
+            // disable / enable Ui components depending on state of custom call checkbox
+            // try to initialize combo boxes for graph calls & restore saved ui settings
+            if(_helper != null)
+            {
+                InitComboBoxes();
+                ToggleUiComponents();
+            }
             
         }
         
@@ -175,7 +179,7 @@ namespace PeakboardExtensionGraph.AppOnly
             // add saved custom entities into dictionary so they are added to the Request dropdown
             foreach (var entity in entities)
             {
-                if (entity != "" && !_options.Values.Contains(entity))
+                if (entity != "" && !_options.Values.Contains(entity.Split(',')[1]))
                 {
                     _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
