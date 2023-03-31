@@ -36,6 +36,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
             }
         };
+        
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -60,7 +61,7 @@ namespace PeakboardExtensionGraph.UserAuth
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
             if (!_initialized)
-            { 
+            {
                 InitializeGraph(data);
             }
             
@@ -178,6 +179,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private void InitializeGraph(CustomListData data)
         {
+            this.Log?.Info("Initializing GraphHelper");
+            
             // get refresh token from parameter
             string refreshToken = data.Parameter.Split(';')[10];
 
@@ -200,6 +203,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 task.Wait();
                 
             }
+
+            this.Log?.Info("Successful initialized GraphHelper");
             _initialized = true;
 
         }
