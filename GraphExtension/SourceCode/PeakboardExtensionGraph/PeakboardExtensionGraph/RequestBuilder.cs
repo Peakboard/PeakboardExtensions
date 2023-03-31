@@ -102,7 +102,7 @@ namespace PeakboardExtensionGraph
             return request;
         }
 
-        public HttpRequestMessage PostRequest(string json)
+        public HttpRequestMessage PostRequest(string url, string json)
         {
             // create HttpRequest Content
             var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -110,7 +110,7 @@ namespace PeakboardExtensionGraph
             //  build request
             var request = new HttpRequestMessage
             {
-                RequestUri = new Uri(_baseUrl + "/sendmail"),
+                RequestUri = new Uri(_baseUrl + url),
                 Method = HttpMethod.Post,
                 Content = content
             };

@@ -152,14 +152,15 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
+            var url = data.Parameter.Split(';')[13];
+            var json = data.Parameter.Split(';')[14];
+            
             var template =
                 "(\"message\":(\"subject\":\"{0}\",\"body\":(\"contentType\":null,\"content\":\"{1}\")," +
                 "\"toRecipients\":[(\"emailAddress\":(\"name\":null,\"address\":\"{2}\"))]))";
 
             // get user input
             var parameters = context.Values[0].StringValue.Split(';');
-            /*var header = context.Values[1].StringValue;
-            var body = context.Values[2].StringValue;*/
 
             // put user input into json template
             var requestBody = String.Format(template, parameters);
@@ -167,7 +168,7 @@ namespace PeakboardExtensionGraph.UserAuth
             requestBody = requestBody.Replace(')', '}');
 
             // make graph post request
-            var task = _graphHelper.PostAsync(requestBody);
+            var task = _graphHelper.PostAsync(url, requestBody);
             task.Wait();
 
             // return if request succeeded

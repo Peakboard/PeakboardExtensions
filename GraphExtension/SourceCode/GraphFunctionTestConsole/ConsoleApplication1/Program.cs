@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using PeakboardExtensionGraph;
 
 namespace ConsoleApplication1
@@ -18,7 +19,30 @@ namespace ConsoleApplication1
             requestBody = requestBody.Replace('(', '{');
             requestBody = requestBody.Replace(')', '}');
 
-            Console.WriteLine(requestBody);
+            //Console.WriteLine(requestBody);
+
+            var str = "{test:$test$,\ntemp:$temp$}";
+
+            int begin = str.IndexOf('$');
+            int end;
+            var values = new List<string>();
+            
+            while (begin != -1)
+            {
+                end = str.IndexOf('$', begin + 1);
+                if (end == -1) throw new Exception("End of placeholder not defined");
+                string value = "";
+                
+                for (int i = begin+1; i < end; i++)
+                {
+                    value += str[i];
+                    //str.Replace()
+                }
+                
+
+            }
+            
+            Console.WriteLine(str);
         }
     }
 }

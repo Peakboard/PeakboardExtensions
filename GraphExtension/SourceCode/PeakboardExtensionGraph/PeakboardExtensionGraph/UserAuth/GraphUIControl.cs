@@ -26,11 +26,11 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
-        private string _customEntities = "";
-        
+
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
+        private string _customEntities = "";
 
         private string _refreshToken = "";
         
@@ -47,7 +47,7 @@ namespace PeakboardExtensionGraph.UserAuth
             string select = "";
             string orderBy = "";
             string customCall = "";
-            
+
             // put each selected field into one comma separated string
             foreach (var item in SelectList.Items)
             {
@@ -71,7 +71,7 @@ namespace PeakboardExtensionGraph.UserAuth
                         orderBy += $"{lboi.Content},";
                 }
             }
-            
+
             // remove commas at the end
             if (select.Length > 1)
             {
@@ -90,7 +90,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{_refreshToken};{_customEntities};{customCall}";
+                   $"{Top.Text};{Skip.Text};{_refreshToken};{_customEntities};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -99,6 +99,7 @@ namespace PeakboardExtensionGraph.UserAuth
             if (String.IsNullOrEmpty(parameter)) return;
             
             var paramArr = parameter.Split(';');
+            
             ClientId.Text = paramArr[0];
             TenantId.Text = paramArr[1];
             Permissions.Text = paramArr[2];
@@ -114,6 +115,8 @@ namespace PeakboardExtensionGraph.UserAuth
             _customEntities = paramArr[11];
             CustomCallCheckBox.IsChecked = (paramArr[12] != ""); 
             CustomCallTextBox.Text = paramArr[12];
+            PostRequestUrl.Text = paramArr[13];
+            PostRequestBody.Text = paramArr[14];
 
             if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
             { 
@@ -128,6 +131,7 @@ namespace PeakboardExtensionGraph.UserAuth
                     _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
                 }
             }
+            
 
             // disable / enable Ui components depending on state of custom call checkbox
             // try to initialize combo boxes for graph calls & restore saved ui settings
@@ -522,9 +526,12 @@ namespace PeakboardExtensionGraph.UserAuth
                     Tag = url,
                     IsSelected = true
                 });
+                // TODO: everything in _options -> add flag to options if custom or not 
+                // TODO: add deleting custom entities
                 _options.Add(name, url);
-                _customEntities += $"{name},{url}";
+                _customEntities += $"{name},{url} ";
                 CustomEntityText.Text = "";
+
             }
         }
     }

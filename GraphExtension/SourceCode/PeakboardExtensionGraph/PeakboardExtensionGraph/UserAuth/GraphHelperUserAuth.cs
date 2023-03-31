@@ -211,10 +211,10 @@ namespace PeakboardExtensionGraph.UserAuth
             return false;
         }
 
-        public async Task<bool> PostAsync(string json)
+        public async Task<bool> PostAsync(string url, string json)
         {
             // build request
-            var request = Builder.PostRequest(json);
+            var request = Builder.PostRequest(url, json);
             
             // post request
             var response = await HttpClient.SendAsync(request);
