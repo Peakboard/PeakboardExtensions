@@ -22,7 +22,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {"People", "/people"}
         };
 
-        private Dictionary<string, string> _custom = new Dictionary<string, string>();
+        private Dictionary<string, string> _customEntities = new Dictionary<string, string>();
 
         private GraphHelperUserAuth _graphHelper;
 
@@ -72,8 +72,9 @@ namespace PeakboardExtensionGraph.UserAuth
                         orderBy += $"{lboi.Content},";
                 }
             }
-
-            foreach (var entity in _custom)
+            
+            // put each custom entity into one space separated string
+            foreach (var entity in _customEntities)
             {
                 customEntities += $"{entity.Key},{entity.Value} ";
             }
@@ -106,7 +107,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override void SetParameterOverride(string parameter)
         {
-            string customEntities = "";
+            string customEntities;
 
             if (String.IsNullOrEmpty(parameter))
             {
@@ -164,13 +165,13 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             
             // init custom entities dictionary
-            _custom = new Dictionary<string, string>();
+            _customEntities = new Dictionary<string, string>();
 
             if(customEntities != ""){
                 string[] enitites = customEntities.Split(' ');
                 foreach (var entity in enitites)
                 {
-                    _custom.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                    _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
             }
 
@@ -237,7 +238,8 @@ namespace PeakboardExtensionGraph.UserAuth
             // enable UI components
             RequestBox.IsEnabled = true;
             RemoveEntityButton.IsEnabled = true;
-            CustomEntityText.IsEnabled = true;
+            CustomEntityName.IsEnabled = true;
+            CustomEntityUrl.IsEnabled = true;
             CustomEntityButton.IsEnabled = true;
             SelectList.IsEnabled = true;
             OrderList.IsEnabled = true;
@@ -288,24 +290,15 @@ namespace PeakboardExtensionGraph.UserAuth
             MessageBox.Show("Everything seems to be fine...");
         }
 
-        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private async void CustomEntityButton_Click(object sender, RoutedEventArgs e)
         {
-            if(CustomEntityText.Text != "")
+            if(CustomEntityName.Text != "" && CustomEntityUrl.Text != "")
             {
-                // check for valid input
-                if (CustomEntityText.Text.Split(' ').Length != 2)
-                {
-                    MessageBox.Show("Invalid input.\n Expected:\"<Name> <Url-Suffix>\"");
-                    return;
-                }
-                
-                string name;
-                string url;
+                string name = CustomEntityName.Text;
+                string url = CustomEntityUrl.Text;
                 // check if entity exists ins Ms Graph
                 try
                 {
-                    name = CustomEntityText.Text.Split(' ')[0];
-                    url = CustomEntityText.Text.Split(' ')[1];
                     await _graphHelper.MakeGraphCall(url);
                 }
                 catch (Exception ex)
@@ -489,7 +482,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 RequestBox.Items.Add(boi);
             }
             // add saved custom entities into Request Combobox
-            foreach (var entity in _custom)
+            foreach (var entity in _customEntities)
             {
                 var boi = new ComboBoxItem()
                 {
@@ -516,7 +509,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 OrderList.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
-                CustomEntityText.IsEnabled = false;
+                CustomEntityName.IsEnabled = false;
+                CustomEntityUrl.IsEnabled = false;
                 CustomEntityButton.IsEnabled = false;
                 OrderByMode.IsEnabled = false;
                 Top.IsEnabled = false;
@@ -534,7 +528,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 OrderList.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
-                CustomEntityText.IsEnabled = true;
+                CustomEntityName.IsEnabled = true;
+                CustomEntityUrl.IsEnabled = true;
                 CustomEntityButton.IsEnabled = true;
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
@@ -545,11 +540,11 @@ namespace PeakboardExtensionGraph.UserAuth
         private void AddEntity(string name, string url)
         {
             // check if entity already exists
-            if (_options.ContainsKey(name) || _custom.ContainsKey(name))
+            if (_options.ContainsKey(name) || _customEntities.ContainsKey(name))
             {
                 MessageBox.Show("Name already exists");
             }
-            else if (_options.ContainsValue(url) || _custom.ContainsValue(url))
+            else if (_options.ContainsValue(url) || _customEntities.ContainsValue(url))
             {
                 MessageBox.Show("Entity already exists");
             }
@@ -562,8 +557,9 @@ namespace PeakboardExtensionGraph.UserAuth
                     Tag = url,
                     IsSelected = true
                 });
-                _custom.Add(name, url);
-                CustomEntityText.Text = "";
+                _customEntities.Add(name, url);
+                CustomEntityName.Text = "";
+                CustomEntityUrl.Text = "";
             }
         }
 
@@ -572,7 +568,7 @@ namespace PeakboardExtensionGraph.UserAuth
             string key = ((ComboBoxItem)RequestBox.SelectedItem).Content.ToString();
             
             // check if item is custom
-            if (_custom.Remove(key))
+            if (_customEntities.Remove(key))
             {
                 // remove item from combobox
                 RequestBox.Items.Remove((ComboBoxItem)RequestBox.SelectedItem);
