@@ -19,6 +19,8 @@ namespace PeakboardExtensionGraph.AppOnly
             { "Users", "/users" }
         };
 
+        private Dictionary<string, string> _custom = new Dictionary<string, string>();
+        
         private GraphHelperAppOnly _helper;
         
         private List<string> _orderByAttributes;
