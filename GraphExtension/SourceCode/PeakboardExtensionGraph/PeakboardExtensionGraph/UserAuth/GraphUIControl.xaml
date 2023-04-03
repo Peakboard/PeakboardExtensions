@@ -74,7 +74,6 @@
         </TextBox>
         <!-- Authenticate Button -->
         <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="btnAuth_Click">
-            
         </Button>
         <!-- Request Data -->
         <TextBlock Grid.Column="0" Grid.Row="4" Text="Request Data" Margin="3"/>
@@ -92,25 +91,60 @@
                 </StackPanel>
             </ComboBox.ToolTip>
         </ComboBox>
-        <Button Grid.Column="1" Grid.Row="4" Name="RemoveEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Remove" Width="50" Margin="3" Click="RemoveEntityButton_OnClickEntityButton_OnClick"/>
+        <Button Grid.Column="1" Grid.Row="4" Name="RemoveEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Remove" Width="50" Margin="3" Click="RemoveEntityButton_OnClickEntityButton_OnClick">
+            <Button.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Remove Entity</TextBlock>
+                    <TextBlock>
+                        Remove a custom entity
+                        <LineBreak />
+                        from the dropdown menu.
+                    </TextBlock>
+                </StackPanel>
+            </Button.ToolTip>
+        </Button>
         <!-- Add Entity -->
         <TextBlock Grid.Column="0" Grid.Row="5" Text="Add entity" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="5" Name="CustomEntityText" IsEnabled="False" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3" Width="290">
-            <TextBox.ToolTip>
-                <StackPanel>
-                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
-                    <TextBlock>
-                        Add a custom entity to the
-                        <LineBreak />
-                        request data dropdown menu.
-                    </TextBlock>
-                    <Border BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0,8" />
-                    <TextBlock FontStyle="Italic">Example input: Events /events</TextBlock>
-                </StackPanel>
-            </TextBox.ToolTip>
-        </TextBox>
-        <Button Grid.Column="1" Grid.Row="5" Name="CustomEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Add" Width="50" Margin="3" Click="CustomEntityButton_OnClick"/>
-        <!-- Select & Order by Tabs -->
+        <Grid Grid.Column="1" Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="75" />
+                <ColumnDefinition Width="25" />
+                <ColumnDefinition Width="155" />
+                <ColumnDefinition Width="55" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Name" Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Name="CustomEntityName" IsEnabled="False" VerticalContentAlignment="Center" Margin="3"/>
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Url" Margin="3"/>
+            <TextBox Grid.Column="3" Grid.Row="0" Name="CustomEntityUrl" IsEnabled="False" VerticalContentAlignment="Center" Margin="3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
+                        <TextBlock>
+                            Url Suffix starting after:
+                            <LineBreak />
+                            https://graph.microsoft.com/v1.0/me
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEntityButton_Click">
+                <Button.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
+                        <TextBlock>
+                            Add a custom entity to the
+                            <LineBreak />
+                            request data dropdown menu.
+                        </TextBlock>
+                    </StackPanel>
+                </Button.ToolTip>
+            </Button>
+        </Grid>
+        <!-- Select, Order by & Request Body Tabs -->
         <TabControl Grid.Column="1" Grid.Row="6" Margin="3">
             <TabItem Header="Select">
                 <TabItem.ToolTip>
@@ -145,7 +179,7 @@
                     <TextBlock Text="Url Suffix:" Margin="3"></TextBlock>
                     <TextBox Name="PostRequestUrl" VerticalContentAlignment="Center" Margin="3"></TextBox>
                     <TextBlock Text="Request Body:" Margin="3"></TextBlock>
-                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="100" Margin="3" AcceptsReturn="True" AcceptsTab="True" ></TextBox>
+                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="60" Margin="3" AcceptsReturn="True" AcceptsTab="True" ></TextBox>
                 </StackPanel>
             </TabItem>
         </TabControl>
@@ -183,32 +217,44 @@
         </TextBox>
         <TextBlock Grid.Column="1" Grid.Row="8" Text="Eventual" HorizontalAlignment="Center" Margin="260 3 3 3"></TextBlock>
         <CheckBox Grid.Column="1" Grid.Row="8" Name="ConsistencyBox" HorizontalAlignment="Right" IsEnabled="False" Margin="3 4 3 3"></CheckBox>
-        <!-- Top --> 
-        <TextBlock Grid.Column="1" Grid.Row="9" Text="Top" HorizontalAlignment="Left" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="9" Name="Top" IsEnabled="False" HorizontalAlignment="Left" Width="130" Text="" VerticalContentAlignment="Center" Margin="30 3 3 3">
-            <TextBox.ToolTip>
-                <StackPanel>
-                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Top</TextBlock>
-                    <TextBlock>
-                        Define how many objects are returned
-                    </TextBlock>
-                </StackPanel>
-            </TextBox.ToolTip>
-        </TextBox>
-        <!-- Skip -->
-        <TextBlock Grid.Column="1" Grid.Row="9" Text="Skip" HorizontalAlignment="Center" Margin="50 3 3 3"/>
-        <TextBox Grid.Column="1" Grid.Row="9" Name="Skip" IsEnabled="False" HorizontalAlignment="Right" Width="130" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3">
-            <TextBox.ToolTip>
-                <StackPanel>
-                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Skip</TextBlock>
-                    <TextBlock>
-                        Define how many objects (from the top) are skipped.
-                        <LineBreak />
-                        Empty -> 0 Skipped
-                    </TextBlock>
-                </StackPanel>
-            </TextBox.ToolTip>
-        </TextBox>
+        <!-- Top / Skip -->
+        <Grid Grid.Column="1" Grid.Row="9">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="145"/>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="145"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Top --> 
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Top" Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Name="Top" IsEnabled="False" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Top</TextBlock>
+                        <TextBlock>
+                            Define how many objects are returned
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+            <!-- Skip -->
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Skip" HorizontalAlignment="Center" Margin="3 3 3 3"/>
+            <TextBox Grid.Column="3" Grid.Row="0" Name="Skip" IsEnabled="False" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Skip</TextBlock>
+                        <TextBlock>
+                            Define how many objects (from the top) are skipped.
+                            <LineBreak />
+                            Empty -> 0 Skipped
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+        </Grid>
         <!-- Custom Call -->
         <Border Grid.Column="1" Grid.Row="10" BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0 3 3 3" />
         <TextBlock Grid.Column="0" Grid.Row="11" HorizontalAlignment="Left" Text="Custom Call" Margin="3"/>
