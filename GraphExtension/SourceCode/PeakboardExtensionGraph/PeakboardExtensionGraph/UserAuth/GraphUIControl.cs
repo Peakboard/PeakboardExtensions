@@ -22,6 +22,8 @@ namespace PeakboardExtensionGraph.UserAuth
             {"People", "/people"}
         };
 
+        private Dictionary<string, string> _custom = new Dictionary<string, string>();
+
         private GraphHelperUserAuth _graphHelper;
 
         private List<string> _selectAttributes;
@@ -30,11 +32,9 @@ namespace PeakboardExtensionGraph.UserAuth
         private string _chosenRequest = "";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
-        private string _customEntities = "";
 
         private string _refreshToken = "";
-        
-        
+
         public GraphUiControl()
         {
             InitializeComponent();
@@ -47,6 +47,7 @@ namespace PeakboardExtensionGraph.UserAuth
             string select = "";
             string orderBy = "";
             string customCall = "";
+            string customEntities = "";
 
             // put each selected field into one comma separated string
             foreach (var item in SelectList.Items)
@@ -72,6 +73,11 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
             }
 
+            foreach (var entity in _custom)
+            {
+                customEntities += $"{entity.Key},{entity.Value} ";
+            }
+
             // remove commas at the end
             if (select.Length > 1)
             {
@@ -82,6 +88,11 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 orderBy = orderBy.Remove(orderBy.Length - 1);
             }
+            
+            if (customEntities.Length > 1)
+            {
+                customEntities = customEntities.Remove(customEntities.Length - 1);
+            }
 
             if (CustomCallCheckBox.IsChecked == true)
             {
@@ -90,11 +101,12 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{_refreshToken};{_customEntities};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text}";
+                   $"{Top.Text};{Skip.Text};{_refreshToken};{customEntities};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text}";
         }
 
         protected override void SetParameterOverride(string parameter)
         {
+            string customEntities = "";
 
             if (String.IsNullOrEmpty(parameter))
             {
@@ -102,7 +114,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 _chosenRequest = "";
                 _chosenAttributes = new [] { "" };
                 _chosenOrder = new [] { "" };
-                _customEntities = "";
+                customEntities = "";
 
                 Filter.Text = "";
                 ConsistencyBox.IsChecked = false;
@@ -130,7 +142,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 ConsistencyBox.IsChecked = (paramArr[7] == "true");
                 Top.Text = paramArr[8];
                 Skip.Text = paramArr[9];
-                _customEntities = paramArr[11];
+                customEntities = paramArr[11];
                 CustomCallCheckBox.IsChecked = (paramArr[12] != "");
                 CustomCallTextBox.Text = paramArr[12];
                 PostRequestUrl.Text = paramArr[13];
@@ -148,6 +160,17 @@ namespace PeakboardExtensionGraph.UserAuth
                     {
                         _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
                     }
+                }
+            }
+            
+            // init custom entities dictionary
+            _custom = new Dictionary<string, string>();
+
+            if(customEntities != ""){
+                string[] enitites = customEntities.Split(' ');
+                foreach (var entity in enitites)
+                {
+                    _custom.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
             }
 
@@ -213,6 +236,7 @@ namespace PeakboardExtensionGraph.UserAuth
             
             // enable UI components
             RequestBox.IsEnabled = true;
+            RemoveEntityButton.IsEnabled = true;
             CustomEntityText.IsEnabled = true;
             CustomEntityButton.IsEnabled = true;
             SelectList.IsEnabled = true;
@@ -229,7 +253,7 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             try
             {
-                if(RequestBox != null && RequestBox.SelectedItem != null)
+                if(RequestBox?.SelectedItem != null)
                 {
                     UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
                 }
@@ -291,6 +315,11 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
                 AddEntity(name, url);
             }
+        }
+        
+        private void RemoveEntityButton_OnClickEntityButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            RemoveEntity();
         }
 
         private async void UpdateLists(string data)
@@ -446,11 +475,8 @@ namespace PeakboardExtensionGraph.UserAuth
         
         private void InitComboBoxes()
         {
-            string[] entities = _customEntities.Split(' ');
-            
             RequestBox.Items.Clear();
-           
-            
+
             // Add every Dictionary entry to Request Combobox
             foreach (var option in _options)
             {
@@ -463,18 +489,15 @@ namespace PeakboardExtensionGraph.UserAuth
                 RequestBox.Items.Add(boi);
             }
             // add saved custom entities into Request Combobox
-            foreach (var entity in entities)
+            foreach (var entity in _custom)
             {
-                if (entity != "" && !_options.Values.Contains(entity.Split(',')[1]))
+                var boi = new ComboBoxItem()
                 {
-                    var boi = new ComboBoxItem()
-                    {
-                        Content = entity.Split(',')[0],
-                        Tag = entity.Split(',')[1],
-                        IsSelected = entity.Split(',')[1] == _chosenRequest
-                    };
-                    RequestBox.Items.Add(boi);
-                }
+                    Content = entity.Key,
+                    Tag = entity.Value,
+                    IsSelected = entity.Value == _chosenRequest
+                };
+                RequestBox.Items.Add(boi);
             }
         }
 
@@ -488,6 +511,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 
                 // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
+                RemoveEntityButton.IsEnabled = false;
                 SelectList.IsEnabled = false;
                 OrderList.IsEnabled = false;
                 Filter.IsEnabled = false;
@@ -505,6 +529,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 
                 // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
+                RemoveEntityButton.IsEnabled = true;
                 SelectList.IsEnabled = true;
                 OrderList.IsEnabled = true;
                 Filter.IsEnabled = true;
@@ -520,15 +545,15 @@ namespace PeakboardExtensionGraph.UserAuth
         private void AddEntity(string name, string url)
         {
             // check if entity already exists
-            if (_options.ContainsKey(name))
+            if (_options.ContainsKey(name) || _custom.ContainsKey(name))
             {
                 MessageBox.Show("Name already exists");
             }
-            else if (_options.ContainsValue(url))
+            else if (_options.ContainsValue(url) || _custom.ContainsValue(url))
             {
                 MessageBox.Show("Entity already exists");
             }
-            else
+            else       
             {
                 // add entity to Request Dropdown
                 RequestBox.Items.Add(new ComboBoxItem()
@@ -537,13 +562,25 @@ namespace PeakboardExtensionGraph.UserAuth
                     Tag = url,
                     IsSelected = true
                 });
-                // TODO: everything in _options -> add flag to options if custom or not 
-                // TODO: add deleting custom entities
-                _customEntities += $"{name},{url} ";
+                _custom.Add(name, url);
                 CustomEntityText.Text = "";
-
             }
         }
+
+        private void RemoveEntity()
+        {
+            string key = ((ComboBoxItem)RequestBox.SelectedItem).Content.ToString();
+            
+            // check if item is custom
+            if (_custom.Remove(key))
+            {
+                // remove item from combobox
+                RequestBox.Items.Remove((ComboBoxItem)RequestBox.SelectedItem);
+                ((ComboBoxItem)RequestBox.Items[0]).IsSelected = true;
+            }
+            
+        }
+        
     }
     
 }
