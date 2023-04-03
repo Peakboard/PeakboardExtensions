@@ -144,7 +144,7 @@
                     <TextBlock Text="Url Suffix:" Margin="3"></TextBlock>
                     <TextBox Name="PostRequestUrl" VerticalContentAlignment="Center" Margin="3"></TextBox>
                     <TextBlock Text="Request Body:" Margin="3"></TextBlock>
-                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Center" Height="100" Margin="3"></TextBox>
+                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="100" Margin="3" AcceptsReturn="True" AcceptsTab="True" ></TextBox>
                 </StackPanel>
             </TabItem>
         </TabControl>

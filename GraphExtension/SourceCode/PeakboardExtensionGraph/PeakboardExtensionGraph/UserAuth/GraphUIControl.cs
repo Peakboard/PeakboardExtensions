@@ -96,42 +96,60 @@ namespace PeakboardExtensionGraph.UserAuth
         protected override void SetParameterOverride(string parameter)
         {
 
-            if (String.IsNullOrEmpty(parameter)) return;
-            
-            var paramArr = parameter.Split(';');
-            
-            ClientId.Text = paramArr[0];
-            TenantId.Text = paramArr[1];
-            Permissions.Text = paramArr[2];
-            
-            _chosenRequest = paramArr[3];
-            _chosenAttributes = paramArr[4].Split(','); 
-            _chosenOrder = paramArr[5].Split(',');
-            
-            Filter.Text = paramArr[6];
-            ConsistencyBox.IsChecked = (paramArr[7] == "true");
-            Top.Text = paramArr[8];
-            Skip.Text = paramArr[9];
-            _customEntities = paramArr[11];
-            CustomCallCheckBox.IsChecked = (paramArr[12] != ""); 
-            CustomCallTextBox.Text = paramArr[12];
-            PostRequestUrl.Text = paramArr[13];
-            PostRequestBody.Text = paramArr[14];
+            if (String.IsNullOrEmpty(parameter))
+            {
+                // called when new instance of data source is created
+                _chosenRequest = "";
+                _chosenAttributes = new [] { "" };
+                _chosenOrder = new [] { "" };
+                _customEntities = "";
 
-            if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
-            { 
-                // set sorting order to ascending
-                ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
+                Filter.Text = "";
+                ConsistencyBox.IsChecked = false;
+                CustomCallCheckBox.IsChecked = false;
+                Top.Text = "";
+                Skip.Text = "";
+                CustomCallTextBox.Text = "";
+                PostRequestUrl.Text = "";
+                PostRequestBody.Text = "";
             }
             else
             {
-                // remove ' desc' from orderBy attributes
-                for (int i = 0; i < _chosenOrder.Length; i++)
+                // called when instance is created already and saves need to be restored
+                var paramArr = parameter.Split(';');
+
+                ClientId.Text = paramArr[0];
+                TenantId.Text = paramArr[1];
+                Permissions.Text = paramArr[2];
+
+                _chosenRequest = paramArr[3];
+                _chosenAttributes = paramArr[4].Split(',');
+                _chosenOrder = paramArr[5].Split(',');
+
+                Filter.Text = paramArr[6];
+                ConsistencyBox.IsChecked = (paramArr[7] == "true");
+                Top.Text = paramArr[8];
+                Skip.Text = paramArr[9];
+                _customEntities = paramArr[11];
+                CustomCallCheckBox.IsChecked = (paramArr[12] != "");
+                CustomCallTextBox.Text = paramArr[12];
+                PostRequestUrl.Text = paramArr[13];
+                PostRequestBody.Text = paramArr[14];
+
+                if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
                 {
-                    _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
+                    // set sorting order to ascending
+                    ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
+                }
+                else
+                {
+                    // remove ' desc' from orderBy attributes
+                    for (int i = 0; i < _chosenOrder.Length; i++)
+                    {
+                        _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
+                    }
                 }
             }
-            
 
             // disable / enable Ui components depending on state of custom call checkbox
             // try to initialize combo boxes for graph calls & restore saved ui settings
@@ -211,14 +229,16 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             try
             {
-                UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+                if(RequestBox != null && RequestBox.SelectedItem != null)
+                {
+                    UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
+                }
             }
             catch (Exception ex)
             {
                 // catch potential exception caused by graph call error
                 MessageBox.Show(ex.Message);
-                RequestBox.IsEnabled = true;
-                
+                if (RequestBox != null) RequestBox.IsEnabled = true;
             }
         }
         
@@ -427,44 +447,35 @@ namespace PeakboardExtensionGraph.UserAuth
         private void InitComboBoxes()
         {
             string[] entities = _customEntities.Split(' ');
-
-            // add saved custom entities into dictionary so they are added to the Request dropdown
+            
+            RequestBox.Items.Clear();
+           
+            
+            // Add every Dictionary entry to Request Combobox
+            foreach (var option in _options)
+            {
+                var boi = new ComboBoxItem()
+                {
+                    Content = option.Key,
+                    Tag = option.Value,
+                    IsSelected = option.Value == _chosenRequest
+                };
+                RequestBox.Items.Add(boi);
+            }
+            // add saved custom entities into Request Combobox
             foreach (var entity in entities)
             {
                 if (entity != "" && !_options.Values.Contains(entity.Split(',')[1]))
                 {
-                    _options.Add(entity.Split(',')[0], entity.Split(',')[1]);
-                }
-            }
-            
-           
-            if(RequestBox.Items.Count == 0)
-            {
-                // Add every Dictionary entry to Request Combobox
-                foreach (var option in _options)
-                {
                     var boi = new ComboBoxItem()
                     {
-                        Content = option.Key,
-                        Tag = option.Value,
-                        IsSelected = option.Value == _chosenRequest
+                        Content = entity.Split(',')[0],
+                        Tag = entity.Split(',')[1],
+                        IsSelected = entity.Split(',')[1] == _chosenRequest
                     };
                     RequestBox.Items.Add(boi);
                 }
             }
-            else
-            {
-                // select correct item
-                foreach (ComboBoxItem item in RequestBox.Items)
-                {
-                    if (item.Tag.ToString() == _chosenRequest)
-                    {
-                        item.IsSelected = true;
-                        break;
-                    }
-                }
-            }
-
         }
 
         private void ToggleUiComponents()
@@ -528,7 +539,6 @@ namespace PeakboardExtensionGraph.UserAuth
                 });
                 // TODO: everything in _options -> add flag to options if custom or not 
                 // TODO: add deleting custom entities
-                _options.Add(name, url);
                 _customEntities += $"{name},{url} ";
                 CustomEntityText.Text = "";
 
