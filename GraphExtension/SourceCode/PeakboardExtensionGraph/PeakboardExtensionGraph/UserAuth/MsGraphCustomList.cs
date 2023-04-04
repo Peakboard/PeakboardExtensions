@@ -11,6 +11,7 @@ namespace PeakboardExtensionGraph.UserAuth
     [Serializable]
     public class MsGraphCustomList : CustomListBase
     {
+        // todo fix unusual behavior with multiple accounts
         private bool _initialized;
         private GraphHelperUserAuth _graphHelper;
 

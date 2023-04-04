@@ -171,17 +171,12 @@ namespace PeakboardExtensionGraph.UserAuth
                 string[] enitites = customEntities.Split(' ');
                 foreach (var entity in enitites)
                 {
+                    // todo check if name contains comma space or semicolon char
                     _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
                 }
             }
 
-            // disable / enable Ui components depending on state of custom call checkbox
-            // try to initialize combo boxes for graph calls & restore saved ui settings
-            if (_refreshToken != "")
-            {
-                InitComboBoxes();
-                ToggleUiComponents();
-            }
+            RestoreUi(parameter);
         }
 
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
@@ -191,64 +186,30 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private async Task InitializeUi()
         {
-            if (_refreshToken != "" || RefreshToken.Text != "")
+            ToggleUiComponents(false);
+            
+            try
             {
-                _refreshToken = RefreshToken.Text;
-                // initialize with refresh token if possible
-                try
+                _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
+                await _graphHelper.InitGraph((code, url) =>
                 {
-                    _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                    await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
-                }
-                catch (Exception ex)
-                {
-                    // todo reset refresh token if not in ui anymore
-                    MessageBox.Show(ex.Message);
-                    return;
-                }
+                    // open web browser
+                    Process.Start(url);
+                    Clipboard.SetText(code);
+                    return Task.FromResult(0);
+                });
             }
-            else
+            catch (Exception e)
             {
-                try
-                {
-                    _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                    await _graphHelper.InitGraph((code, url) =>
-                    {
-                        // open web browser
-                        Process.Start(url);
-                        Clipboard.SetText(code);
-                        return Task.FromResult(0);
-                    });
-                }
-                catch (Exception e)
-                {
-                    MessageBox.Show(e.Message);
-                    return;
-                }
-                
+                MessageBox.Show(e.Message);
+                return;
             }
             _refreshToken = _graphHelper.GetRefreshToken();
-            RefreshToken.Text = _refreshToken;
-
-            if (RequestBox.Items.Count == 0){
-                // initialize combo boxes for graph calls & restore saved ui settings
-                InitComboBoxes();
-            }
             
+            // initialize combo boxes for graph calls & restore saved ui settings
+            InitComboBoxes();
             // enable UI components
-            RequestBox.IsEnabled = true;
-            RemoveEntityButton.IsEnabled = true;
-            CustomEntityName.IsEnabled = true;
-            CustomEntityUrl.IsEnabled = true;
-            CustomEntityButton.IsEnabled = true;
-            SelectList.IsEnabled = true;
-            OrderList.IsEnabled = true;
-            OrderByMode.IsEnabled = true;
-            Top.IsEnabled = true;
-            Skip.IsEnabled = true;
-            CustomCallCheckBox.IsEnabled = true;
-            Filter.IsEnabled = true;
-            ConsistencyBox.IsEnabled = true;
+            ToggleUiComponents(true);
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -270,7 +231,7 @@ namespace PeakboardExtensionGraph.UserAuth
         
         private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
-            ToggleUiComponents();
+            ToggleCustomCall();
         }
 
         private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
@@ -494,7 +455,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
 
-        private void ToggleUiComponents()
+        private void ToggleCustomCall()
         {
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
@@ -537,6 +498,22 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
 
+        private void ToggleUiComponents(bool state)
+        {
+            RequestBox.IsEnabled = state;
+            RemoveEntityButton.IsEnabled = state;
+            CustomEntityName.IsEnabled = state;
+            CustomEntityUrl.IsEnabled = state;
+            CustomEntityButton.IsEnabled = state;
+            SelectList.IsEnabled = state;
+            OrderList.IsEnabled = state;
+            OrderByMode.IsEnabled = state;
+            Top.IsEnabled = state;
+            Skip.IsEnabled = state;
+            CustomCallCheckBox.IsEnabled = state;
+            Filter.IsEnabled = state;
+            ConsistencyBox.IsEnabled = state;
+        }
         private void AddEntity(string name, string url)
         {
             // check if entity already exists
@@ -575,6 +552,36 @@ namespace PeakboardExtensionGraph.UserAuth
                 ((ComboBoxItem)RequestBox.Items[0]).IsSelected = true;
             }
             
+        }
+
+        private async void RestoreUi(string parameter)
+        {
+            // case 1: New datasource is created
+            // Do nothing -> there are no parameters that can be restored
+            if (String.IsNullOrEmpty(parameter)) return;
+
+            // case 2: Existing datasource is restored & refresh token is still valid
+            // Get a new access token via refresh token & restore parameters
+            if (_graphHelper == null)
+            {
+                _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
+            }
+
+            _refreshToken = parameter.Split(';')[10];
+            try
+            {
+                await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
+                InitComboBoxes();
+                ToggleCustomCall();
+                _refreshToken = _graphHelper.GetRefreshToken();
+            }
+            // case 3: Existing datasource is restored & refresh token expired
+            // Lock UI -> parameters cant be restored until access is granted
+            // Wait for authentication via Authenticate Button
+            catch (Exception)
+            {
+                ToggleUiComponents(false);
+            }
         }
         
     }
