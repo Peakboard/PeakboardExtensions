@@ -37,7 +37,7 @@
           <HintPath>..\..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
         </Reference>
         <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=Amd64">
-          <HintPath>..\..\packages\Peakboard.ExtensionKit.1.0.15\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
+          <HintPath>..\..\packages\Peakboard.ExtensionKit.2.0.0\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
         </Reference>
         <Reference Include="PresentationCore" />
         <Reference Include="PresentationFramework" />

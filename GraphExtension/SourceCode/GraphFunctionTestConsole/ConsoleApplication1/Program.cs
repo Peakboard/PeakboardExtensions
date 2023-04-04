@@ -21,27 +21,13 @@ namespace ConsoleApplication1
 
             //Console.WriteLine(requestBody);
 
-            var str = "{test:$test$,\ntemp:$temp$}";
+            var str = "{test: $0$,\ntemp: $1$ }";
 
-            int begin = str.IndexOf('$');
-            int end;
-            var values = new List<string>();
-            
-            while (begin != -1)
+            for (int i = 0; i < 2; i++)
             {
-                end = str.IndexOf('$', begin + 1);
-                if (end == -1) throw new Exception("End of placeholder not defined");
-                string value = "";
-                
-                for (int i = begin+1; i < end; i++)
-                {
-                    value += str[i];
-                    //str.Replace()
-                }
-                
-
+                str = str.Replace($"${i}$", "abc");
             }
-            
+
             Console.WriteLine(str);
         }
     }
