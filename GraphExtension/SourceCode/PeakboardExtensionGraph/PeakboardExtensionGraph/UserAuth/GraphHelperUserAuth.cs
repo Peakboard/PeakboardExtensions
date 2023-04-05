@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Win32.SafeHandles;
 using Newtonsoft.Json;
 
 namespace PeakboardExtensionGraph.UserAuth
@@ -57,6 +58,16 @@ namespace PeakboardExtensionGraph.UserAuth
             _refreshToken = token;
             HttpClient = new HttpClient();
             await RefreshAccessAsync();
+            Builder = new RequestBuilder(AccessToken, "https://graph.microsoft.com/v1.0/me");
+        }
+
+        public void InitGraphWithAccessToken(string accessToken, string expiresIn, long millis, string refreshToken)
+        {
+            this.AccessToken = accessToken;
+            this.TokenLifetime = expiresIn;
+            this.Millis = millis;
+            this._refreshToken = refreshToken;
+
             Builder = new RequestBuilder(AccessToken, "https://graph.microsoft.com/v1.0/me");
         }
 

@@ -1,6 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
 using PeakboardExtensionGraph;
+using PeakboardExtensionGraph.AppOnly;
+using PeakboardExtensionGraph.UserAuth;
 
 namespace ConsoleApplication1
 {
@@ -8,27 +13,36 @@ namespace ConsoleApplication1
     {
         public static void Main(string[] args)
         {
-            var template =
-                "(\"message\":(\"subject\":\"{0}\",\"body\":(\"contentType\":null,\"content\":\"{1}\"),\"toRecipients\":[(\"emailAddress\":(\"name\":null,\"address\":\"{2}\"))]))";
+            var helper = new GraphHelperAppOnly("067207ed-41a4-4402-b97f-b977babe0ec9",
+                "b4ff9807-402f-42b8-a89d-428363c55de7", "4Sa8Q~kl8UcvQPUrLrMkVudIeIb6XHJ4l8K95cr6");
 
-            var recipient = "yh@email.com";
-            var header = "test";
-            var body = "body";
+            helper.InitGraph().Wait();
 
-            var requestBody = String.Format(template, header, body, recipient);
-            requestBody = requestBody.Replace('(', '{');
-            requestBody = requestBody.Replace(')', '}');
-
-            //Console.WriteLine(requestBody);
-
-            var str = "{test: $0$,\ntemp: $1$ }";
-
-            for (int i = 0; i < 2; i++)
+            var task = helper.MakeGraphCall("/sites", new RequestParameters()
             {
-                str = str.Replace($"${i}$", "abc");
+                Top = 1,
+                OrderBy = "name"
+            });
+            task.Wait();
+
+            var response = task.Result;
+
+            JsonTextReader reader = new JsonTextReader(new StringReader(response));
+
+            while (reader.Read())
+            {
+                if (reader.TokenType == JsonToken.String || reader.TokenType == JsonToken.Float ||
+                    reader.TokenType == JsonToken.Boolean || reader.TokenType == JsonToken.PropertyName ||
+                    reader.TokenType == JsonToken.Integer || reader.TokenType == JsonToken.Null)
+                {
+                    Console.WriteLine($"Token: {reader.TokenType} Value: {reader.Value}");
+                }
+                else
+                {
+                    Console.WriteLine($"Token: {reader.TokenType}");
+                }
             }
 
-            Console.WriteLine(str);
         }
     }
 }

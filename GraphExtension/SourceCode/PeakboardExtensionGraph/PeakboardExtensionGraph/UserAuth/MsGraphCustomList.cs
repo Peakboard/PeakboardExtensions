@@ -11,34 +11,7 @@ namespace PeakboardExtensionGraph.UserAuth
     [Serializable]
     public class MsGraphCustomList : CustomListBase
     {
-        // todo fix unusual behavior with multiple accounts
-        private bool _initialized;
-        private GraphHelperUserAuth _graphHelper;
 
-        private CustomListFunctionDefinition _func = new CustomListFunctionDefinition()
-        {
-            Name = "SendMail",
-            InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
-            {
-                new CustomListFunctionInputParameterDefinition()
-                {
-                    Name = "Parameters",
-                    Description = "String containing all parameters for the function separated by ';' character",
-                    Optional = false,
-                    Type = CustomListFunctionParameterTypes.String
-                }
-            },
-            ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
-            {
-                new CustomListFunctionReturnParameterDefinition
-                {
-                    Name = "result",
-                    Description = "Success",
-                    Type = CustomListFunctionParameterTypes.Boolean
-                }
-            }
-        };
-        
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -76,28 +49,16 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            if (!_initialized)
-            {
-                InitializeGraph(data);
-            }
-            
-            // check if access token expired
-            var expiredTask = _graphHelper.CheckIfTokenExpiredAsync();
-            expiredTask.Wait();
-            
-            // update refresh token in parameter if renewed
-            if (expiredTask.Result)
-            {
-                UpdateRefreshToken(_graphHelper.GetRefreshToken(), data);
-            }
-            
+            // get a helper
+            var helper = GetGraphHelper(data);
+
             // make graph call
-            string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[12];
+            string request = data.Parameter.Split(';')[7];
+            string customCall = data.Parameter.Split(';')[14];
 
             if (customCall != "") request = customCall;
 
-            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -121,29 +82,16 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            // check if GraphHelper & RequestBuilder are initialized
-            if (!_initialized)
-            { 
-                InitializeGraph(data);
-            }
-            
-            // check if access token expired
-            var expiredTask = _graphHelper.CheckIfTokenExpiredAsync();
-            expiredTask.Wait();
-            
-            // update refresh token in parameter if renewed
-            if (expiredTask.Result)
-            {
-                UpdateRefreshToken(_graphHelper.GetRefreshToken(), data);
-            }
-            
+            // get a graph helper
+            var helper = GetGraphHelper(data);
+
             // make graph call
-            string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[12];
+            string request = data.Parameter.Split(';')[7];
+            string customCall = data.Parameter.Split(';')[14];
 
             if (customCall != "") request = customCall;
 
-            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             var response = task.Result;
 
@@ -165,13 +113,15 @@ namespace PeakboardExtensionGraph.UserAuth
             
             return items;
         }
+        
+        #region Functions
 
         protected override CustomListFunctionDefinitionCollection GetDynamicFunctionsOverride(CustomListData data)
         {
             var functions = base.GetDynamicFunctionsOverride(data);
             
-            string url = data.Parameter.Split(';')[13];
-            string json = data.Parameter.Split(';')[14];
+            string url = data.Parameter.Split(';')[15];
+            string json = data.Parameter.Split(';')[16];
             string funcName = url.Split('/').Last();
 
             if (!String.IsNullOrWhiteSpace(json) && !String.IsNullOrWhiteSpace(url))
@@ -198,7 +148,7 @@ namespace PeakboardExtensionGraph.UserAuth
                     {
                         parameterName = reader.Value?.ToString();
                     }
-                    if (reader.TokenType == JsonToken.String && reader.Value.ToString().StartsWith("$") &&
+                    if (reader.TokenType == JsonToken.String && reader.Value != null && reader.Value.ToString().StartsWith("$") &&
                         reader.Value.ToString().EndsWith("$"))
                     {
                         func.InputParameters.Add(new CustomListFunctionInputParameterDefinition
@@ -241,9 +191,11 @@ namespace PeakboardExtensionGraph.UserAuth
         protected CustomListExecuteReturnContext RunDynamicFunction(CustomListData data, CustomListExecuteParameterContext context)
         {
             Log?.Verbose($"Function '{context.FunctionName}' for CustomList '{data.ListName ?? "?"}' called...");
+
+            var helper = GetGraphHelper(data);
             
-            var url = data.Parameter.Split(';')[13];
-            var json = data.Parameter.Split(';')[14];
+            var url = data.Parameter.Split(';')[15];
+            var json = data.Parameter.Split(';')[16];
 
             // get user input
             var parameters = context.Values;
@@ -255,25 +207,26 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             // make graph post request 
-            var task = _graphHelper.PostAsync(url, json);
+            var task = helper.PostAsync(url, json);
             task.Wait();
 
             // return if request succeeded
-            var ret = new CustomListExecuteReturnContext();
-            ret.Add(task.Result);
+            var ret = new CustomListExecuteReturnContext { task.Result };
 
             return ret;
             
         }
-
-        #region HelperFunctions
         
-        private void InitializeGraph(CustomListData data)
+        #endregion
+
+        #region HelperMethods
+        
+        private GraphHelperUserAuth GetGraphHelper(CustomListData data)
         {
-            this.Log?.Info("Initializing GraphHelper");
-            
-            // get refresh token from parameter
-            string refreshToken = data.Parameter.Split(';')[10];
+            this.Log?.Verbose("Initializing GraphHelper");
+            GraphHelperUserAuth helper;
+            // get refresh token
+            string refreshToken = data.Parameter.Split(';')[6];
 
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
@@ -283,21 +236,30 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             else
             {
-                // get parameter for azure app
+                // get parameters for azure app
                 string clientId = data.Parameter.Split(';')[0];
                 string tenantId = data.Parameter.Split(';')[1];
                 string permissions = data.Parameter.Split(';')[2];
+                string accessToken = data.Parameter.Split(';')[3];
+                string expiresIn = data.Parameter.Split(';')[4];
+                long millis = Int64.Parse(data.Parameter.Split(';')[5]);
                 
-                // if available initialize by refresh token (in runtime)
-                _graphHelper = new GraphHelperUserAuth(clientId, tenantId, permissions);
-                var task = _graphHelper.InitGraphWithRefreshToken(refreshToken);
-                task.Wait();
+                // if available initialize with access token (in runtime)
+                helper = new GraphHelperUserAuth(clientId, tenantId, permissions);
+                helper.InitGraphWithAccessToken(accessToken, expiresIn, millis, refreshToken);
                 
+                // check if access token expired
+                var expired = helper.CheckIfTokenExpiredAsync();
+                expired.Wait();
+                if (expired.Result)
+                {
+                    UpdateParameter(helper.GetAccessToken(), helper.GetExpirationTime(), helper.GetMillis(), helper.GetRefreshToken(), data);
+                }
             }
 
-            this.Log?.Info("Successful initialized GraphHelper");
-            _initialized = true;
+            this.Log?.Verbose("Successful initialized GraphHelper");
 
+            return helper;
         }
 
         private JsonTextReader PreparedReader(string response)
@@ -329,11 +291,14 @@ namespace PeakboardExtensionGraph.UserAuth
             return reader;
         }
         
-        public void UpdateRefreshToken(string token, CustomListData data)
+        public void UpdateParameter(string accessToken, string expiresIn, long millis, string refreshToken, CustomListData data)
         {
-            // replace refresh token in parameter if renewed
+            // replace tokens in parameter if renewed
             var values = data.Parameter.Split(';');
-            values[10] = token;
+            values[3] = accessToken;
+            values[4] = expiresIn;
+            values[5] = millis.ToString();
+            values[6] = refreshToken;
             string result = values[0];
             
             for(int i = 1; i < values.Length; i++)
@@ -348,40 +313,39 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             string[] paramArr = data.Parameter.Split(';');
 
-            if (paramArr[12] != "")
+            if (paramArr[14] != "")
             {
                 // custom call -> no request parameter
                 return new RequestParameters()
                 {
-                    ConsistencyLevelEventual = paramArr[7] == "true"
+                    ConsistencyLevelEventual = paramArr[11] == "true"
                 };
             }
             
             int top, skip;
 
             // try parse strings to int
-            try { top = Int32.Parse(paramArr[8]); } catch (Exception) { top = 0; }
-            try { skip = Int32.Parse(paramArr[9]); } catch (Exception) { skip = 0; }
+            try { top = Int32.Parse(paramArr[12]); } catch (Exception) { top = 0; }
+            try { skip = Int32.Parse(paramArr[13]); } catch (Exception) { skip = 0; }
 
             return new RequestParameters()
             {
-                Select = paramArr[4],
-                OrderBy = paramArr[5],
-                Filter = paramArr[6],
-                ConsistencyLevelEventual = paramArr[7] == "true",
+                Select = paramArr[8],
+                OrderBy = paramArr[9],
+                Filter = paramArr[10],
+                ConsistencyLevelEventual = paramArr[11] == "true",
                 Top = top,
                 Skip = skip
             };
             
             /*
-                4   =>  select
-                5   =>  order by
-                6   =>  filter
-                7   =>  consistency level (header)(for filter)
-                8   =>  top
-                9   =>  skip
-                10  =>  custom entities (not used here)
-                11  =>  custom call
+                8   =>  select
+                9   =>  order by
+                10  =>  filter
+                11  =>  consistency level (header)(for filter)
+                12  =>  top
+                13  =>  skip
+                14  =>  custom call
             */
         }
         

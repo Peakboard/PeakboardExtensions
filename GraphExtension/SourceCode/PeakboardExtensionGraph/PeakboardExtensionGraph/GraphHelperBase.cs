@@ -10,7 +10,7 @@ namespace PeakboardExtensionGraph
 
         protected RequestBuilder Builder = null;
         protected HttpClient HttpClient = null;
-        
+
         protected string AccessToken;
         protected string TokenLifetime;
         protected long Millis;
@@ -40,7 +40,7 @@ namespace PeakboardExtensionGraph
 
             return jsonString;
         }
-        
+
         public static void DeserializeError(string json)
         {
             // try deserializing response into MsGraphError object
@@ -52,6 +52,21 @@ namespace PeakboardExtensionGraph
             }
             throw new MsGraphException($"Microsoft Graph Error: {error.Code}: {error.Message}");
 
+        }
+
+        public string GetAccessToken()
+        {
+            return AccessToken;
+        }
+
+        public string GetExpirationTime()
+        {
+            return TokenLifetime;
+        }
+
+        public long GetMillis()
+        {
+            return Millis;
         }
     }
 }
