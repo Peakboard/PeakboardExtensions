@@ -7,6 +7,8 @@ namespace PeakboardExtensionGraph
 {
     public class JsonHelper
     {
+        
+        // todo  sharepoint problem
         public static void SkipArray(JsonReader reader)
         {
             // skip nested array
@@ -174,12 +176,15 @@ namespace PeakboardExtensionGraph
                     // nested object starts -> walk through recursively
                     value = false;
                     ItemsWalkThroughObject(reader, $"{objPrefix}-{lastName}", item, obj);
+                    lastName = "";
                 }
                 else if (reader.TokenType == JsonToken.StartArray)
                 {
                     // nested array starts -> store entire array json into column and skip the array
                     JsonHelper.SkipArray(reader);
                     item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
+                    value = false;
+                    lastName = "";
                 }
                 else if (reader.TokenType == JsonToken.EndObject)
                 {
@@ -204,6 +209,9 @@ namespace PeakboardExtensionGraph
                         }
                         item.Add($"{objPrefix}-{lastName}", objectValue);
                     }
+
+                    value = false;
+                    lastName = "";
                 }
             }
         }

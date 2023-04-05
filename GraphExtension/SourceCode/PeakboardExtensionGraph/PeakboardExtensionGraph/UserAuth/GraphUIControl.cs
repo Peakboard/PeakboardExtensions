@@ -101,21 +101,31 @@ namespace PeakboardExtensionGraph.UserAuth
                 customCall = CustomCallTextBox.Text;
             }
 
-            return $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{_refreshToken};{customEntities};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text}";
+            return 
+                // Azure App Information: 0 - 6
+                $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{_graphHelper.GetAccessToken()};" +
+                $"{_graphHelper.GetExpirationTime()};{_graphHelper.GetMillis()};{_graphHelper.GetRefreshToken()};" +
+                
+                // Query Information: 7 - 16
+                $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
+                $"{Top.Text};{Skip.Text};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text};" +
+                
+                // Only relevant for: UI 17
+                $"{customEntities}";
         }
 
         protected override void SetParameterOverride(string parameter)
         {
-            string customEntities;
-
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
+
+                _graphHelper = null;
+                
                 _chosenRequest = "";
                 _chosenAttributes = new [] { "" };
                 _chosenOrder = new [] { "" };
-                customEntities = "";
+                _customEntities = new Dictionary<string, string>();
 
                 Filter.Text = "";
                 ConsistencyBox.IsChecked = false;
@@ -125,29 +135,35 @@ namespace PeakboardExtensionGraph.UserAuth
                 CustomCallTextBox.Text = "";
                 PostRequestUrl.Text = "";
                 PostRequestBody.Text = "";
+                
+                ToggleUiComponents(false);
             }
             else
             {
                 // called when instance is created already and saves need to be restored
                 var paramArr = parameter.Split(';');
+                
+                // init graph helper
+                _graphHelper = new GraphHelperUserAuth(paramArr[0], paramArr[1], paramArr[2]);
 
                 ClientId.Text = paramArr[0];
                 TenantId.Text = paramArr[1];
                 Permissions.Text = paramArr[2];
 
-                _chosenRequest = paramArr[3];
-                _chosenAttributes = paramArr[4].Split(',');
-                _chosenOrder = paramArr[5].Split(',');
+                _chosenRequest = paramArr[7];
+                _chosenAttributes = paramArr[8].Split(',');
+                _chosenOrder = paramArr[9].Split(',');
 
-                Filter.Text = paramArr[6];
-                ConsistencyBox.IsChecked = (paramArr[7] == "true");
-                Top.Text = paramArr[8];
-                Skip.Text = paramArr[9];
-                customEntities = paramArr[11];
-                CustomCallCheckBox.IsChecked = (paramArr[12] != "");
-                CustomCallTextBox.Text = paramArr[12];
-                PostRequestUrl.Text = paramArr[13];
-                PostRequestBody.Text = paramArr[14];
+                Filter.Text = paramArr[10];
+                ConsistencyBox.IsChecked = (paramArr[11] == "true");
+                Top.Text = paramArr[12];
+                Skip.Text = paramArr[13];
+                CustomCallCheckBox.IsChecked = (paramArr[14] != "");
+                CustomCallTextBox.Text = paramArr[14];
+                PostRequestUrl.Text = paramArr[15];
+                PostRequestBody.Text = paramArr[16];
+                
+                var customEntities = paramArr[17];
 
                 if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
                 {
@@ -162,56 +178,28 @@ namespace PeakboardExtensionGraph.UserAuth
                         _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
                     }
                 }
-            }
-            
-            // init custom entities dictionary
-            _customEntities = new Dictionary<string, string>();
+                
+                // init custom entities dictionary
+                _customEntities = new Dictionary<string, string>();
 
-            if(customEntities != ""){
-                string[] enitites = customEntities.Split(' ');
-                foreach (var entity in enitites)
-                {
-                    // todo check if name contains comma space or semicolon char
-                    _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                if(customEntities != ""){
+                    string[] enitities = customEntities.Split(' ');
+                    foreach (var entity in enitities)
+                    {
+                        _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                    }
                 }
             }
 
             RestoreUi(parameter);
         }
 
+        #region EventListener
         private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
         {
             await InitializeUi();
         }
-
-        private async Task InitializeUi()
-        {
-            ToggleUiComponents(false);
-            
-            try
-            {
-                _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                await _graphHelper.InitGraph((code, url) =>
-                {
-                    // open web browser
-                    Process.Start(url);
-                    Clipboard.SetText(code);
-                    return Task.FromResult(0);
-                });
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.Message);
-                return;
-            }
-            _refreshToken = _graphHelper.GetRefreshToken();
-            
-            // initialize combo boxes for graph calls & restore saved ui settings
-            InitComboBoxes();
-            // enable UI components
-            ToggleUiComponents(true);
-        }
-
+        
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
             try
@@ -275,7 +263,38 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             RemoveEntity();
         }
+        
+        #endregion
 
+        #region HelperMethods
+        private async Task InitializeUi()
+        {
+            ToggleUiComponents(false);
+            
+            try
+            {
+                _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
+                await _graphHelper.InitGraph((code, url) =>
+                {
+                    // open web browser
+                    Process.Start(url);
+                    Clipboard.SetText(code);
+                    return Task.FromResult(0);
+                });
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message);
+                return;
+            }
+            _refreshToken = _graphHelper.GetRefreshToken();
+
+            // initialize combo boxes for graph calls & restore saved ui settings
+            InitComboBoxes();
+            // enable UI components
+            ToggleUiComponents(true);
+        }
+        
         private async void UpdateLists(string data)
         {
             // lock dropdowns
@@ -288,7 +307,6 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 Top = 1
             });
-            // TODO: Add select all / none ?
             UpdateSelectList(response);
             UpdateOrderByList(response);
 
@@ -500,6 +518,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private void ToggleUiComponents(bool state)
         {
+            
+            // todo add post request components here and disable listboxes at beginning in xaml
             RequestBox.IsEnabled = state;
             RemoveEntityButton.IsEnabled = state;
             CustomEntityName.IsEnabled = state;
@@ -514,6 +534,7 @@ namespace PeakboardExtensionGraph.UserAuth
             Filter.IsEnabled = state;
             ConsistencyBox.IsEnabled = state;
         }
+        
         private void AddEntity(string name, string url)
         {
             // check if entity already exists
@@ -525,8 +546,13 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 MessageBox.Show("Entity already exists");
             }
-            else       
+            else
             {
+                // replace prohibited characters
+                name = name.Replace(',', '_');
+                name = name.Replace(' ', '_');
+                name = name.Replace(';', '_');
+                
                 // add entity to Request Dropdown
                 RequestBox.Items.Add(new ComboBoxItem()
                 {
@@ -562,16 +588,15 @@ namespace PeakboardExtensionGraph.UserAuth
 
             // case 2: Existing datasource is restored & refresh token is still valid
             // Get a new access token via refresh token & restore parameters
-            if (_graphHelper == null)
-            {
-                _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-            }
-
-            _refreshToken = parameter.Split(';')[10];
+            string[] paramArr = parameter.Split(';');
+            
+            _graphHelper = new GraphHelperUserAuth(paramArr[0], paramArr[1], paramArr[2]);
+            _refreshToken = paramArr[6];
             try
             {
                 await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
                 InitComboBoxes();
+                ToggleUiComponents(true);
                 ToggleCustomCall();
                 _refreshToken = _graphHelper.GetRefreshToken();
             }
@@ -584,6 +609,8 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
         
+        #endregion
+
     }
     
 }

@@ -10,9 +10,7 @@ namespace PeakboardExtensionGraph.AppOnly
     [Serializable]
     public class MsGraphAppOnlyCustomList : CustomListBase
     {
-        private bool _initialized = false;
-        private GraphHelperAppOnly _graphHelper;
-        
+
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -32,23 +30,16 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            // check if graph helper is initialized
-            if (!_initialized)
-            {
-                InitializeGraph(data);
-            }
+            // Initialize GraphHelper
+            var helper = InitializeGraph(data);
 
-            // check if token expired
-            var expiredTask =_graphHelper.CheckIfTokenExpiredAsync();
-            expiredTask.Wait();
-            
             // make graph call
             string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[11];
+            string customCall = data.Parameter.Split(';')[10];
 
             if (customCall != "") request = customCall;
             
-            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             string response = task.Result;
             
@@ -71,23 +62,16 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            // check if graph is initialized
-            if (!_initialized)
-            {
-                InitializeGraph(data);
-            }
-            
-            // check if token expired
-            var expiredTask =_graphHelper.CheckIfTokenExpiredAsync();
-            expiredTask.Wait();
-            
+            // Initialize GraphHelper
+            var helper = InitializeGraph(data);
+
             // make graph call
             string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[11];
+            string customCall = data.Parameter.Split(';')[10];
 
             if (customCall != "") request = customCall;
             
-            var task = _graphHelper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.MakeGraphCall(request, BuildParameter(data));
             task.Wait();
             string response = task.Result;
             
@@ -111,16 +95,18 @@ namespace PeakboardExtensionGraph.AppOnly
             return items;
         }
 
-        private void InitializeGraph(CustomListData data)
+        #region HelperMethods
+        
+        private GraphHelperAppOnly InitializeGraph(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
             
             // init connection
-            _graphHelper = new GraphHelperAppOnly(paramArr[0], paramArr[1], paramArr[2]);
-            var task = _graphHelper.InitGraph();
+            var helper = new GraphHelperAppOnly(paramArr[0], paramArr[1], paramArr[2]);
+            var task = helper.InitGraph();
             task.Wait();
-            _initialized = true;
-            
+
+            return helper;
         }
         
         private JsonTextReader PreparedReader(string response)
@@ -156,7 +142,7 @@ namespace PeakboardExtensionGraph.AppOnly
         {
             string[] paramArr = data.Parameter.Split(';');
 
-            if (paramArr[11] != "")
+            if (paramArr[10] != "")
             {
                 // custom call -> no request parameter
                 return new RequestParameters()
@@ -188,9 +174,10 @@ namespace PeakboardExtensionGraph.AppOnly
                 7   =>  consistency level (header)(for filter)
                 8   =>  top
                 9   =>  skip
-                10  =>  custom entities (not used here)
-                11  =>  custom call
+                10  =>  custom call
             */
         }
+        
+        #endregion
     }
 }

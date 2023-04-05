@@ -97,21 +97,27 @@ namespace PeakboardExtensionGraph.AppOnly
                 customCall = CustomCallTextBox.Text;
             }
             
-            return $"{ClientId.Text};{TenantId.Text};{Secret.Text};{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                   $"{Top.Text};{Skip.Text};{customEntities};{customCall}";
+            return 
+                // Azure app information
+                $"{ClientId.Text};{TenantId.Text};{Secret.Text};" +
+                
+                // Query information
+                $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
+                $"{Top.Text};{Skip.Text};{customCall};" +
+                
+                // only relevant for UI
+                $"{customEntities}";
         }
 
         protected override void SetParameterOverride(string parameter)
         {
-            string customEntities;
-            
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
                 _chosenRequest = "/users";
                 _chosenAttributes = new [] { "" };
                 _chosenOrder = new [] { "" };
-                customEntities = "";
+                _customEntities = new Dictionary<string, string>();
 
                 Filter.Text = "";
                 ConsistencyBox.IsChecked = false;
@@ -119,6 +125,8 @@ namespace PeakboardExtensionGraph.AppOnly
                 Top.Text = "";
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
+                
+                ToggleUiComponents(false);
             }
             else
             {
@@ -136,9 +144,10 @@ namespace PeakboardExtensionGraph.AppOnly
                 ConsistencyBox.IsChecked = (paramArr[7] == "true");
                 Top.Text = paramArr[8];
                 Skip.Text = paramArr[9];
-                customEntities = paramArr[10];
-                CustomCallCheckBox.IsChecked = (paramArr[11] != "");
-                CustomCallTextBox.Text = paramArr[11];
+                CustomCallCheckBox.IsChecked = (paramArr[10] != "");
+                CustomCallTextBox.Text = paramArr[10];
+                
+                var customEntities = paramArr[11];
 
                 if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
                 {
@@ -153,29 +162,23 @@ namespace PeakboardExtensionGraph.AppOnly
                         _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
                     }
                 }
-            }
-            
-            // init custom entities dictionary
-            _customEntities = new Dictionary<string, string>();
+                
+                // init custom entities dictionary
+                _customEntities = new Dictionary<string, string>();
 
-            if(customEntities != ""){
-                string[] enitites = customEntities.Split(' ');
-                foreach (var entity in enitites)
-                {
-                    _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                if(customEntities != ""){
+                    string[] enitities = customEntities.Split(' ');
+                    foreach (var entity in enitities)
+                    {
+                        _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                    }
                 }
             }
-            
-            // disable / enable Ui components depending on state of custom call checkbox
-            // try to initialize combo boxes for graph calls & restore saved ui settings
-            if(_helper != null)
-            {
-                InitComboBoxes();
-                ToggleUiComponents();
-            }
-            
+
+            RestoreUi(parameter);
         }
         
+        #region EventListener
         private async void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
             var client = ClientId.Text;
@@ -193,26 +196,9 @@ namespace PeakboardExtensionGraph.AppOnly
                 return;
             }
 
-            if (RequestBox.Items.Count == 0)
-            {
-                // initialize combo boxes for graph calls & restore saved ui settings
-                InitComboBoxes();
-            }
-
+            InitComboBoxes();
             // enable UI components
-            RequestBox.IsEnabled = true;
-            RemoveEntityButton.IsEnabled = true;
-            CustomEntityName.IsEnabled = true;
-            CustomEntityUrl.IsEnabled = true;
-            CustomEntityButton.IsEnabled = true;
-            SelectList.IsEnabled = true;
-            OrderList.IsEnabled = true;
-            OrderByMode.IsEnabled = true;
-            Top.IsEnabled = true;
-            Skip.IsEnabled = true;
-            CustomCallCheckBox.IsEnabled = true;
-            Filter.IsEnabled = true;
-            ConsistencyBox.IsEnabled = true;
+            ToggleUiComponents(true);
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -234,7 +220,7 @@ namespace PeakboardExtensionGraph.AppOnly
         
         private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
         {
-            ToggleUiComponents();
+            ToggleCustomCall();
         }
 
         private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
@@ -275,11 +261,14 @@ namespace PeakboardExtensionGraph.AppOnly
             }
         }
         
-        private void RemoveEntityButton_OnClickEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveEntityButton_OnClick(object sender, RoutedEventArgs e)
         {
             RemoveEntity();
         }
+        
+        #endregion
 
+        #region HelperMethods
         private async void UpdateLists(string data)
         {
             // lock dropdowns
@@ -292,7 +281,6 @@ namespace PeakboardExtensionGraph.AppOnly
             {
                 Top = 1
             });
-            // TODO: Add select all / none ?
             UpdateSelectList(response);
             UpdateOrderByList(response);
 
@@ -459,7 +447,7 @@ namespace PeakboardExtensionGraph.AppOnly
             }
         }
 
-        private void ToggleUiComponents()
+        private void ToggleCustomCall()
         {
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
@@ -502,6 +490,23 @@ namespace PeakboardExtensionGraph.AppOnly
             }
         }
 
+        private void ToggleUiComponents(bool state)
+        {
+            RequestBox.IsEnabled = state;
+            RemoveEntityButton.IsEnabled = state;
+            CustomEntityName.IsEnabled = state;
+            CustomEntityUrl.IsEnabled = state;
+            CustomEntityButton.IsEnabled = state;
+            SelectList.IsEnabled = state;
+            OrderList.IsEnabled = state;
+            OrderByMode.IsEnabled = state;
+            Top.IsEnabled = state;
+            Skip.IsEnabled = state;
+            CustomCallCheckBox.IsEnabled = state;
+            Filter.IsEnabled = state;
+            ConsistencyBox.IsEnabled = state;
+        }
+
         private void AddEntity(string name, string url)
         {
             // check if entity already exists
@@ -515,6 +520,11 @@ namespace PeakboardExtensionGraph.AppOnly
             }
             else       
             {
+                // replace prohibited characters
+                name = name.Replace(',', '_');
+                name = name.Replace(' ', '_');
+                name = name.Replace(';', '_');
+                
                 // add entity to Request Dropdown
                 RequestBox.Items.Add(new ComboBoxItem()
                 {
@@ -541,5 +551,36 @@ namespace PeakboardExtensionGraph.AppOnly
             }
             
         }
+        
+        private async void RestoreUi(string parameter)
+        {
+            // case 1: New datasource is created
+            // Do nothing -> there are no parameters that can be restored
+            if(String.IsNullOrEmpty(parameter)) return;
+
+            string clientId = parameter.Split(';')[0];
+            string tenantId = parameter.Split(';')[1];
+            string secret = parameter.Split(';')[2];
+
+            // case 2: Existing datasource is restored & client secret is still valid 
+            // -> Initialize GraphHelper
+            try
+            {
+                _helper = new GraphHelperAppOnly(clientId, tenantId, secret);
+                await _helper.InitGraph();
+                InitComboBoxes();
+                ToggleUiComponents(true);
+                ToggleCustomCall();
+            }
+            // case 3: Existing datasource is restored & client secret expired
+            // Lock UI -> parameters cant be restored until access is granted
+            // Wait for connection via connect Button
+            catch (Exception)
+            {
+                ToggleUiComponents(false);
+            }
+        }
+        
+        #endregion
     }
 }
