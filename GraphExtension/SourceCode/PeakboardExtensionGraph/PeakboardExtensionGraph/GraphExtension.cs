@@ -1,6 +1,7 @@
 ﻿using Peakboard.ExtensionKit;
 using PeakboardExtensionGraph.AppOnly;
 using PeakboardExtensionGraph.UserAuth;
+using PeakboardExtensionGraph.UserAuthFunctions;
 
 namespace PeakboardExtensionGraph
 {
@@ -25,7 +26,8 @@ namespace PeakboardExtensionGraph
             return new CustomListCollection
             {
                 new MsGraphCustomList(),
-                new MsGraphAppOnlyCustomList()
+                new MsGraphAppOnlyCustomList(),
+                new MsGraphFunctionsCustomList()
             };
         }
     }

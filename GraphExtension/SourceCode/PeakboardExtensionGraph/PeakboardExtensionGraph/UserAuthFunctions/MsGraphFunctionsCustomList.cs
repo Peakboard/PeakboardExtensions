@@ -1,12 +1,14 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Windows;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
 using PeakboardExtensionGraph.UserAuth;
 
 namespace PeakboardExtensionGraph.UserAuthFunctions
 {
+    [Serializable]
     public class MsGraphFunctionsCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -37,6 +39,12 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
                 SupportsDynamicFunctions = true
             };
         }
+        
+        protected override FrameworkElement GetControlOverride()
+        {
+            // return an instance of the UI user control
+            return new GraphFunctionsUiControl();
+        }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
@@ -63,47 +71,59 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
         protected override CustomListFunctionDefinitionCollection GetDynamicFunctionsOverride(CustomListData data)
         {
             var functions = base.GetDynamicFunctionsOverride(data);
-            
-            string url = data.Parameter.Split(';')[15];
-            string json = data.Parameter.Split(';')[16];
-            string funcName = url.Split('/').Last();
 
-            if (!String.IsNullOrWhiteSpace(json) && !String.IsNullOrWhiteSpace(url))
+            string funcNames = data.Parameter.Split(';')[7];
+            string jsons = data.Parameter.Split(';')[9];
+
+            if (!String.IsNullOrWhiteSpace(jsons) && !String.IsNullOrWhiteSpace(funcNames))
             {
-                var func = new CustomListFunctionDefinition()
-                {
-                    Name = funcName,
-                    ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
-                    {
-                        new CustomListFunctionReturnParameterDefinition
-                        {
-                            Name = "result",
-                            Description = "Success",
-                            Type = CustomListFunctionParameterTypes.Boolean
-                        }
-                    }
-                };
+                string[] names = funcNames.Split('|');
+                string[] bodies = jsons.Split('|');
 
-                var reader = new JsonTextReader(new StringReader(json));
-                string parameterName = "";
-                while (reader.Read())
+                if (names.Length == bodies.Length)
                 {
-                    if (reader.TokenType == JsonToken.PropertyName)
+                    for (int i = 0; i < names.Length; i++)
                     {
-                        parameterName = reader.Value?.ToString();
-                    }
-                    if (reader.TokenType == JsonToken.String && reader.Value != null && reader.Value.ToString().StartsWith("$") &&
-                        reader.Value.ToString().EndsWith("$"))
-                    {
-                        func.InputParameters.Add(new CustomListFunctionInputParameterDefinition
+                        var func = new CustomListFunctionDefinition(){
+                            Name = names[i],
+                            ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+                            {
+                                new CustomListFunctionReturnParameterDefinition
+                                {
+                                    Name = "result",
+                                    Description = "Success",
+                                    Type = CustomListFunctionParameterTypes.Boolean
+                                }
+                            }
+                        };
+                        
+                        var reader = new JsonTextReader(new StringReader(bodies[i]));
+                        string parameterName = "";
+                        while (reader.Read())
                         {
-                            Name = parameterName,
-                            Optional = false,
-                            Type = CustomListFunctionParameterTypes.String
-                        });
+                            if (reader.TokenType == JsonToken.PropertyName)
+                            {
+                                parameterName = reader.Value?.ToString();
+                            }
+                            if (reader.TokenType == JsonToken.String && reader.Value != null && reader.Value.ToString().StartsWith("$") &&
+                                reader.Value.ToString().EndsWith("$"))
+                            {
+                                func.InputParameters.Add(new CustomListFunctionInputParameterDefinition
+                                {
+                                    Name = parameterName,
+                                    Optional = false,
+                                    Type = CustomListFunctionParameterTypes.String
+                                });
+                            }
+                        }
+                        functions.Add(func);
+                        
                     }
                 }
-                functions.Add(func);
+                else
+                {
+                    this.Log?.Warning($"Parameter String might be corrupted: Number of function names and function bodies vary");
+                }
             }
             return functions;
         }
@@ -138,27 +158,45 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
 
             var helper = GetGraphHelper(data);
             
-            var url = data.Parameter.Split(';')[15];
-            var json = data.Parameter.Split(';')[16];
+            var funcNames = data.Parameter.Split(';')[7].Split('|');
+            var funcUrls = data.Parameter.Split(';')[8].Split('|');
+            var funcBodies = data.Parameter.Split(';')[9].Split('|');
 
             // get user input
             var parameters = context.Values;
-
-            // put user input into json template
-            for (int i = 0; i < parameters.Count; i++)
-            {
-                json = json.Replace($"${i}$", parameters[i].StringValue);
-            }
-
-            // make graph post request 
-            var task = helper.PostAsync(url, json);
-            task.Wait();
-
-            // return if request succeeded
-            var ret = new CustomListExecuteReturnContext { task.Result };
-
-            return ret;
             
+            // get function name
+            var funcName = context.FunctionName;
+
+            // check if 
+            if (funcNames.Length == funcUrls.Length && funcUrls.Length == funcBodies.Length)
+            {
+                // get index of called function
+                var index = Array.IndexOf(funcNames, funcName);
+                if (index < 0)
+                {
+                    this.Log?.Warning($"Function not found: {funcName}");
+                    return new CustomListExecuteReturnContext() { false };
+                }
+                
+                // get corresponding url & json object
+                var url = funcUrls[index];
+                var body = funcBodies[index];
+                
+                // put user input into json template
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    body = body.Replace($"${i}$", parameters[i].StringValue);
+                }
+
+                // make graph post request 
+                var task = helper.PostAsync(url, body);
+                task.Wait();
+                return new CustomListExecuteReturnContext { task.Result };
+            }
+            
+            this.Log?.Warning($"Parameter String might be corrupted: Number of function names, function urls and function bodies vary");
+            return new CustomListExecuteReturnContext() { false };
         }
 
         #endregion
