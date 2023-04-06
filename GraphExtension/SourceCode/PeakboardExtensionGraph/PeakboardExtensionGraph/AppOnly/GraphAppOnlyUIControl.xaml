@@ -68,7 +68,7 @@
             </TextBox.ToolTip>
         </TextBox>
         <!-- Connect Button -->
-        <Button Grid.Column="1" Grid.Row="3" Name="ConnectButton" Content="Connect" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="ConnectButton_Click"></Button>
+        <Button Grid.Column="1" Grid.Row="3" Name="ConnectButton" Content="Connect" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="ConnectButton_OnClick"></Button>
         <!-- Request Data -->
         <TextBlock Grid.Column="0" Grid.Row="4" Text="Request Data" Margin="3"/>
         <ComboBox Grid.Column="1" Grid.Row="4" IsEnabled="False" HorizontalAlignment="Left" Width="290"  VerticalContentAlignment="Center" Name="RequestBox" Margin="3,3,3,3" SelectionChanged="RequestBox_SelectionChanged">
@@ -125,7 +125,7 @@
                     </StackPanel>
                 </TextBox.ToolTip>
             </TextBox>
-            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEntityButton_Click">
+            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEntityButton_OnClick">
                 <Button.ToolTip>
                     <StackPanel>
                         <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
@@ -244,7 +244,7 @@
         <!-- Custom Call -->
         <Border Grid.Column="1" Grid.Row="10" BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0 3 3 3" />
         <TextBlock Grid.Column="0" Grid.Row="11" HorizontalAlignment="Left" Text="Custom Call" Margin="3"/>
-        <CheckBox Grid.Column="0" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckBox"  HorizontalAlignment="Center" Margin="-20 4 3 3" Click="CustomCallCheckBox_Click"/>
+        <CheckBox Grid.Column="0" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckBox"  HorizontalAlignment="Center" Margin="-20 4 3 3" Click="CustomCallCheckBox_OnClick"/>
         <TextBox Grid.Column="1" Grid.Row="11" IsEnabled="False" Name="CustomCallTextBox" Text="" Width="290" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3 3 3 3">
             <TextBox.ToolTip>
                 <StackPanel>
@@ -261,7 +261,7 @@
                 </StackPanel>
             </TextBox.ToolTip>
         </TextBox>
-        <Button Grid.Column="1" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckButton" Content="Check" Width="50" HorizontalAlignment="Right" Margin="3" Click="CustomCallCheckButton_Click">
+        <Button Grid.Column="1" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckButton" Content="Check" Width="50" HorizontalAlignment="Right" Margin="3" Click="CustomCallCheckButton_OnClick">
             <Button.ToolTip>
                 <StackPanel>
                     <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Custom Call</TextBlock>

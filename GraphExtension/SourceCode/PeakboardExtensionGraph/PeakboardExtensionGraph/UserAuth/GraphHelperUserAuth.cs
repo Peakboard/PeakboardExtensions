@@ -203,7 +203,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 throw new Exception($"Failed to regain access:\n {jsonString}");
             }
 
-            Builder?.RefreshToken(AccessToken);
+            Builder?.SetAccessToken(AccessToken);
 
             Millis = DateTimeOffset.Now.ToUnixTimeMilliseconds();
         }

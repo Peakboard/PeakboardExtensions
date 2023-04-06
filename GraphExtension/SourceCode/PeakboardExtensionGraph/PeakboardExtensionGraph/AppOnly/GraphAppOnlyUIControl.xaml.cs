@@ -175,11 +175,11 @@ namespace PeakboardExtensionGraph.AppOnly
                 }
             }
 
-            RestoreUi(parameter);
+            RestoreGraphConnection(parameter);
         }
         
         #region EventListener
-        private async void ConnectButton_Click(object sender, RoutedEventArgs e)
+        private async void ConnectButton_OnClick(object sender, RoutedEventArgs e)
         {
             var client = ClientId.Text;
             var tenant = TenantId.Text;
@@ -196,7 +196,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 return;
             }
 
-            InitComboBoxes();
+            InitializeRequestDropdown();
             // enable UI components
             ToggleUiComponents(true);
         }
@@ -218,17 +218,17 @@ namespace PeakboardExtensionGraph.AppOnly
             }
         }
         
-        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
+        private void CustomCallCheckBox_OnClick(object sender, RoutedEventArgs e)
         {
             ToggleCustomCall();
         }
 
-        private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
+        private async void CustomCallCheckButton_OnClick(object sender, RoutedEventArgs e)
         {
             // check if custom call works
             try
             {
-                await _helper.MakeGraphCall(CustomCallTextBox.Text);
+                await _helper.GetAsync(CustomCallTextBox.Text);
             }
             catch (Exception ex)
             {
@@ -240,7 +240,7 @@ namespace PeakboardExtensionGraph.AppOnly
             MessageBox.Show("Everything seems to be fine...");
         }
 
-        private async void CustomEntityButton_Click(object sender, RoutedEventArgs e)
+        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
         {
             if(CustomEntityName.Text != "" && CustomEntityUrl.Text != "")
             {
@@ -250,7 +250,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 // check if entity exists in Ms Graph
                 try
                 {
-                    await _helper.MakeGraphCall(url);
+                    await _helper.GetAsync(url);
                 }
                 catch (Exception ex)
                 {
@@ -278,7 +278,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
             // make a graph call and update select & order by combo boxes
             try {
-                var response = await _helper.MakeGraphCall(data, new RequestParameters()
+                var response = await _helper.GetAsync(data, new RequestParameters()
                 {
                     Top = 1
                 });
@@ -433,8 +433,11 @@ namespace PeakboardExtensionGraph.AppOnly
             return reader;
         }
         
-        private void InitComboBoxes()
+        private void InitializeRequestDropdown()
         {
+            // Initialize or restore RequestDropdown
+            // ListBoxes get their values automatically through SelectionChanged listener
+            
             RequestBox.Items.Clear();
 
             // Add every Dictionary entry to Request Combobox
@@ -463,6 +466,8 @@ namespace PeakboardExtensionGraph.AppOnly
 
         private void ToggleCustomCall()
         {
+            // toggle Ui Components when Custom Call gets selected / deselected
+            
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
             {
@@ -506,6 +511,8 @@ namespace PeakboardExtensionGraph.AppOnly
 
         private void ToggleUiComponents(bool state)
         {
+            // enable / disable all UI components except Azure App stuff
+            
             RequestBox.IsEnabled = state;
             RemoveEntityButton.IsEnabled = state;
             CustomEntityName.IsEnabled = state;
@@ -566,10 +573,12 @@ namespace PeakboardExtensionGraph.AppOnly
             
         }
         
-        private async void RestoreUi(string parameter)
+        private async void RestoreGraphConnection(string parameter)
         {
-            // case 1: New datasource is created
-            // Do nothing -> there are no parameters that can be restored
+            // Set state of UI depending on state of Graph Connection
+            
+            // case 1: New datasource is created -> Graph connection never existed
+            // Do nothing -> there is nothing that can be restored
             if(String.IsNullOrEmpty(parameter)) return;
 
             string clientId = parameter.Split(';')[0];
@@ -577,18 +586,18 @@ namespace PeakboardExtensionGraph.AppOnly
             string secret = parameter.Split(';')[2];
 
             // case 2: Existing datasource is restored & client secret is still valid 
-            // -> Initialize GraphHelper
+            // -> Initialize GraphHelper & restore ui configuration
             try
             {
                 _helper = new GraphHelperAppOnly(clientId, tenantId, secret);
                 await _helper.InitGraph();
-                InitComboBoxes();
+                InitializeRequestDropdown();
                 ToggleUiComponents(true);
                 ToggleCustomCall();
             }
             // case 3: Existing datasource is restored & client secret expired
             // Lock UI -> parameters cant be restored until access is granted
-            // Wait for connection via connect Button
+            // Wait for connection through connect button
             catch (Exception)
             {
                 ToggleUiComponents(false);

@@ -58,7 +58,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (customCall != "") request = customCall;
 
-            var task = helper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
             var response = task.Result;
 
@@ -91,7 +91,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             if (customCall != "") request = customCall;
 
-            var task = helper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
             var response = task.Result;
 
@@ -309,7 +309,7 @@ namespace PeakboardExtensionGraph.UserAuth
             data.Parameter = result;
         }
         
-        private RequestParameters BuildParameter(CustomListData data)
+        private RequestParameters BuildRequestParameters(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
 

@@ -39,7 +39,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
             if (customCall != "") request = customCall;
             
-            var task = helper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
             string response = task.Result;
             
@@ -71,7 +71,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
             if (customCall != "") request = customCall;
             
-            var task = helper.MakeGraphCall(request, BuildParameter(data));
+            var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
             string response = task.Result;
             
@@ -138,7 +138,7 @@ namespace PeakboardExtensionGraph.AppOnly
             return reader;
         }
 
-        private RequestParameters BuildParameter(CustomListData data)
+        private RequestParameters BuildRequestParameters(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
 
