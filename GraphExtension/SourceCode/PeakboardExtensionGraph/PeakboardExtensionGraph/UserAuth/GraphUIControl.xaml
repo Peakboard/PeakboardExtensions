@@ -157,7 +157,7 @@
                         </TextBlock>
                     </StackPanel>
                 </TabItem.ToolTip>
-                <ListBox Height="100" SelectionMode="Multiple" Name="SelectList"></ListBox>
+                <ListBox Height="100" IsEnabled="False" SelectionMode="Multiple" Name="SelectList"></ListBox>
             </TabItem>
             <TabItem Header="Order by">
                 <TabItem.ToolTip>
@@ -172,7 +172,7 @@
                         </TextBlock>
                     </StackPanel>
                 </TabItem.ToolTip>
-                <ListBox Height="100" SelectionMode="Multiple" Name="OrderList"></ListBox>
+                <ListBox Height="100" IsEnabled="False" SelectionMode="Multiple" Name="OrderList"></ListBox>
             </TabItem>
             <TabItem Header="Post Request">
                 <StackPanel>
@@ -285,7 +285,6 @@
                 </StackPanel>
             </Button.ToolTip>
         </Button>
-        
         <!-- Refresh Token -->
         <TextBox Grid.Column="0" Grid.Row="12" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/>
     </Grid>

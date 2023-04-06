@@ -211,7 +211,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             catch (Exception ex)
             {
-                // catch potential exception caused by graph call error
+                // catch potential exception caused by combobox
                 MessageBox.Show(ex.Message);
                 if (RequestBox != null) RequestBox.IsEnabled = true;
             }
@@ -303,12 +303,26 @@ namespace PeakboardExtensionGraph.UserAuth
             RequestBox.IsEnabled = false;
 
             // make a graph call and update select & order by combo boxes
-            var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
+            try {
+                var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
+                {
+                    Top = 1
+                });
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
+            }
+            catch (Exception ex)
             {
-                Top = 1
-            });
-            UpdateSelectList(response);
-            UpdateOrderByList(response);
+                // catch potential exception caused by graph call error
+                MessageBox.Show(ex.Message);
+                RequestBox.IsEnabled = true;
+                
+                // clear saved selections after error
+                _chosenRequest = "";
+                _chosenAttributes = new [] { "" };
+                _chosenOrder = new [] { "" };
+                return;
+            }
 
             // unlock dropdowns
             SelectList.IsEnabled = true; 
@@ -528,6 +542,8 @@ namespace PeakboardExtensionGraph.UserAuth
             SelectList.IsEnabled = state;
             OrderList.IsEnabled = state;
             OrderByMode.IsEnabled = state;
+            PostRequestUrl.IsEnabled = state;
+            PostRequestBody.IsEnabled = state;
             Top.IsEnabled = state;
             Skip.IsEnabled = state;
             CustomCallCheckBox.IsEnabled = state;
