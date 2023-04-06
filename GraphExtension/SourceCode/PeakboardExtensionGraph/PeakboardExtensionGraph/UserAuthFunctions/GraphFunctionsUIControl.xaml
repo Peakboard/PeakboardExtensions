@@ -73,7 +73,7 @@
             </TextBox.ToolTip>
         </TextBox>
         <!-- Authenticate Button -->
-        <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="btnAuth_Click">
+        <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="btnAuth_OnClick">
         </Button>
         <!-- Functions -->
         <TabControl Grid.Column="1" Grid.Row="4" IsEnabled="False" Name="UiComponents" Margin="3">

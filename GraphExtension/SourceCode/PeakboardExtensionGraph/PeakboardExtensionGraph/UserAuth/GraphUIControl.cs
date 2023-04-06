@@ -191,13 +191,13 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
             }
 
-            RestoreUi(parameter);
+            RestoreGraphConnection(parameter);
         }
 
         #region EventListener
-        private async void btnAuth_Click(object sender, RoutedEventArgs routedEventArgs)
+        private async void btnAuth_OnClick(object sender, RoutedEventArgs routedEventArgs)
         {
-            await InitializeUi();
+            await Authenticate();
         }
         
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
@@ -217,17 +217,17 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
         
-        private void CustomCallCheckBox_Click(object sender, RoutedEventArgs e)
+        private void CustomCallCheckBox_OnClick(object sender, RoutedEventArgs e)
         {
             ToggleCustomCall();
         }
 
-        private async void CustomCallCheckButton_Click(object sender, RoutedEventArgs e)
+        private async void CustomCallCheckButton_OnClick(object sender, RoutedEventArgs e)
         {
             // check if custom call works
             try
             {
-                await _graphHelper.MakeGraphCall(CustomCallTextBox.Text);
+                await _graphHelper.GetAsync(CustomCallTextBox.Text);
             }
             catch (Exception ex)
             {
@@ -239,7 +239,7 @@ namespace PeakboardExtensionGraph.UserAuth
             MessageBox.Show("Everything seems to be fine...");
         }
 
-        private async void CustomEntityButton_Click(object sender, RoutedEventArgs e)
+        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
         {
             if(CustomEntityName.Text != "" && CustomEntityUrl.Text != "")
             {
@@ -248,7 +248,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 // check if entity exists ins Ms Graph
                 try
                 {
-                    await _graphHelper.MakeGraphCall(url);
+                    await _graphHelper.GetAsync(url);
                 }
                 catch (Exception ex)
                 {
@@ -259,7 +259,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
         }
         
-        private void RemoveEntityButton_OnClickEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveEntityButton_OnClick(object sender, RoutedEventArgs e)
         {
             RemoveEntity();
         }
@@ -267,7 +267,7 @@ namespace PeakboardExtensionGraph.UserAuth
         #endregion
 
         #region HelperMethods
-        private async Task InitializeUi()
+        private async Task Authenticate()
         {
             ToggleUiComponents(false);
             
@@ -290,7 +290,7 @@ namespace PeakboardExtensionGraph.UserAuth
             _refreshToken = _graphHelper.GetRefreshToken();
 
             // initialize combo boxes for graph calls & restore saved ui settings
-            InitComboBoxes();
+            InitializeRequestDropdown();
             // enable UI components
             ToggleUiComponents(true);
         }
@@ -304,7 +304,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             // make a graph call and update select & order by combo boxes
             try {
-                var response = await _graphHelper.MakeGraphCall(data, new RequestParameters()
+                var response = await _graphHelper.GetAsync(data, new RequestParameters()
                 {
                     Top = 1
                 });
@@ -459,8 +459,11 @@ namespace PeakboardExtensionGraph.UserAuth
             return reader;
         }
         
-        private void InitComboBoxes()
+        private void InitializeRequestDropdown()
         {
+            // Initialize or restore RequestDropdown
+            // ListBoxes get their values automatically through SelectionChanged listener
+            
             RequestBox.Items.Clear();
 
             // Add every Dictionary entry to Request Combobox
@@ -489,6 +492,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private void ToggleCustomCall()
         {
+            // toggle Ui Components when Custom Call gets selected / deselected
+            
             // checkbox to enable / disable custom api call
             if (CustomCallCheckBox.IsChecked == true)
             {
@@ -532,8 +537,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private void ToggleUiComponents(bool state)
         {
+            // enable / disable all UI components except Azure App stuff
             
-            // todo add post request components here and disable listboxes at beginning in xaml
             RequestBox.IsEnabled = state;
             RemoveEntityButton.IsEnabled = state;
             CustomEntityName.IsEnabled = state;
@@ -596,14 +601,16 @@ namespace PeakboardExtensionGraph.UserAuth
             
         }
 
-        private async void RestoreUi(string parameter)
+        private async void RestoreGraphConnection(string parameter)
         {
-            // case 1: New datasource is created
-            // Do nothing -> there are no parameters that can be restored
+            // Set state of UI depending on state of Graph Connection
+            
+            // case 1: New datasource is created -> Graph connection never existed
+            // Do nothing -> there is nothing that can be restored
             if (String.IsNullOrEmpty(parameter)) return;
 
             // case 2: Existing datasource is restored & refresh token is still valid
-            // Get a new access token via refresh token & restore parameters
+            // Get a new access token via refresh token & restore ui configuration
             string[] paramArr = parameter.Split(';');
             
             _graphHelper = new GraphHelperUserAuth(paramArr[0], paramArr[1], paramArr[2]);
@@ -611,14 +618,14 @@ namespace PeakboardExtensionGraph.UserAuth
             try
             {
                 await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
-                InitComboBoxes();
+                InitializeRequestDropdown();
                 ToggleUiComponents(true);
                 ToggleCustomCall();
                 _refreshToken = _graphHelper.GetRefreshToken();
             }
             // case 3: Existing datasource is restored & refresh token expired
             // Lock UI -> parameters cant be restored until access is granted
-            // Wait for authentication via Authenticate Button
+            // Wait for authentication through authenticate button
             catch (Exception)
             {
                 ToggleUiComponents(false);

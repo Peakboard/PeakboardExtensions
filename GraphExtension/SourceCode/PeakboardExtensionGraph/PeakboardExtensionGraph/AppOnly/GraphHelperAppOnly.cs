@@ -65,6 +65,7 @@ namespace PeakboardExtensionGraph.AppOnly
         }
         
         
+
         public async Task<bool> CheckIfTokenExpiredAsync()
         {
             // check if token expired
@@ -78,6 +79,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
             return false;
         }
+
 
         private async Task RefreshAccessAsync()
         {
@@ -119,7 +121,7 @@ namespace PeakboardExtensionGraph.AppOnly
             }
             
             // replace access token in request builder
-            Builder.RefreshToken(AccessToken);
+            Builder.SetAccessToken(AccessToken);
         }
         
 

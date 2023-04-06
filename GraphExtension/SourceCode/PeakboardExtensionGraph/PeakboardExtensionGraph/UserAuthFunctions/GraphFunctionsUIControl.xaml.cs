@@ -68,14 +68,14 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
                 }
             }
             
-            ReinitializeGraph(paramArr[0], paramArr[1], paramArr[2], paramArr[6]);
+            RestoreGraphConnection(paramArr[0], paramArr[1], paramArr[2], paramArr[6]);
             UpdateListBox();
             ToggleUiComponents(true);
         }
 
         #region EventListener
         
-        private void btnAuth_Click(object sender, RoutedEventArgs e)
+        private void btnAuth_OnClick(object sender, RoutedEventArgs e)
         {
             Authenticate();
         }
@@ -133,7 +133,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
         
         #region HelperMethods
         
-        private async void ReinitializeGraph(string clientId, string tenantId, string scope, string token)
+        private async void RestoreGraphConnection(string clientId, string tenantId, string scope, string token)
         {
             _graphHelper = new GraphHelperUserAuth(clientId, tenantId, scope);
 

@@ -21,7 +21,7 @@ namespace PeakboardExtensionGraph
         protected string TenantId;
         
 
-        public async Task<string> MakeGraphCall(string key = null, RequestParameters parameters = null)
+        public async Task<string> GetAsync(string key = null, RequestParameters parameters = null)
         {
             // build request
             var request = this.Builder.GetRequest(out var url, key, parameters);

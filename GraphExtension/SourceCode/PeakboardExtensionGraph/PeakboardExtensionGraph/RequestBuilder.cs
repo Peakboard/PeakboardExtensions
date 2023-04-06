@@ -122,7 +122,7 @@ namespace PeakboardExtensionGraph
             return request;
         }
 
-        public void RefreshToken(string token)
+        public void SetAccessToken(string token)
         {
             _accessToken = token;
         }
