@@ -179,7 +179,7 @@
                     <TextBlock Text="Url Suffix:" Margin="3"></TextBlock>
                     <TextBox Name="PostRequestUrl" VerticalContentAlignment="Center" Margin="3"></TextBox>
                     <TextBlock Text="Request Body:" Margin="3"></TextBlock>
-                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="60" Margin="3" AcceptsReturn="True" AcceptsTab="True" ></TextBox>
+                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="60" Margin="3" AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" ></TextBox>
                 </StackPanel>
             </TabItem>
         </TabControl>
