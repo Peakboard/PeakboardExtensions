@@ -84,7 +84,7 @@ namespace PeakboardExtensionGraph.UserAuth
         {
             // get a graph helper
             var helper = GetGraphHelper(data);
-
+            
             // make graph call
             string request = data.Parameter.Split(';')[7];
             string customCall = data.Parameter.Split(';')[14];

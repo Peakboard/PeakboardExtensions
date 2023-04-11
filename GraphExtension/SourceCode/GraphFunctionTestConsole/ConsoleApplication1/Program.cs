@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PeakboardExtensionGraph;
 using PeakboardExtensionGraph.AppOnly;
 using PeakboardExtensionGraph.UserAuth;
@@ -41,7 +42,7 @@ namespace ConsoleApplication1
                 {
                     Console.WriteLine($"Token: {reader.TokenType}");
                 }
-            }*/
+            }
 
             long time1 = DateTimeOffset.Now.ToUnixTimeSeconds();
             string str =
@@ -53,8 +54,65 @@ namespace ConsoleApplication1
             Console.WriteLine(arr[0]);
             Console.WriteLine();
             Console.WriteLine(arr[1]);
-            Console.WriteLine(time2-time1);
+            Console.WriteLine(time2-time1);*/
+
+
+            string json = @"{
+    'message': '$s_message$',
+    'number': $d_number$,
+    'bool': $b_bool$
+}";
+
+            int start, end;
+            int startIndex = 0;
+            List<string> values = new List<string>();
+
+            while (json.IndexOf('$', startIndex) >= 0)
+            {
+                start = json.IndexOf('$', startIndex);
+                startIndex = start + 1;
+                end = json.IndexOf('$', startIndex);
+                startIndex = end + 1;
+
+                string value = json.Substring(start, (end-start)+1);
+                values.Add(value);
+
+                PrintVar(value.Replace("$", ""));
+            }
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                json = json.Replace(values[i], $"${i}$");
+            }
+
+            json = json.Replace("$0$", "String");
+            json = json.Replace("$1$", "0");
+            json = json.Replace("$2$", "true");
+
+            var jobj = JsonConvert.SerializeObject(json);
             
+            Console.WriteLine(jobj);
+
+        }
+
+        private static void PrintVar(string value)
+        {
+            var values = value.Split('_');
+            switch (values[0])
+            {
+                case "s":
+                    Console.WriteLine($"String: {values[1]}");
+                    break;
+                case "d":
+                    Console.WriteLine($"Number: {values[1]}");
+                    break;
+                case "b":
+                    Console.WriteLine($"Bool: {values[1]}");
+                    break;
+                default:
+                    Console.WriteLine($"Unknown type: {value}");
+                    break;
+            }
         }
     }
 }

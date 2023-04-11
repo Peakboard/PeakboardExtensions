@@ -231,8 +231,7 @@ namespace PeakboardExtensionGraph.UserAuth
             var response = await HttpClient.SendAsync(request);
             
             // return if post succeeded
-            if (response.StatusCode != HttpStatusCode.Accepted) return false;
-            else return true;
+            return response.IsSuccessStatusCode;
         }
 
         public string GetRefreshToken()
