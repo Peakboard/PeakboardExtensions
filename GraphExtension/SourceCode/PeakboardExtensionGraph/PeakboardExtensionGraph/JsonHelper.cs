@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Peakboard.ExtensionKit;
@@ -8,7 +9,6 @@ namespace PeakboardExtensionGraph
     public class JsonHelper
     {
         
-        // todo  sharepoint problem
         public static void SkipArray(JsonReader reader)
         {
             // skip nested array

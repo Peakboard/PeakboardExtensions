@@ -62,6 +62,8 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
+            // TODO: Fix problem where empty fields get skipped (sharepoint)
+            
             // Initialize GraphHelper
             var helper = InitializeGraph(data);
 
