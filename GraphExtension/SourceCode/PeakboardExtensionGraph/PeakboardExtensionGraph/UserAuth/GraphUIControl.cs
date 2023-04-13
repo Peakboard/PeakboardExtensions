@@ -16,10 +16,11 @@ namespace PeakboardExtensionGraph.UserAuth
         private readonly Dictionary<string, string> _options = new Dictionary<string, string>
         {
             {"Me", ""},
-            {"Calendar", "/events"},
+            {"Events", "/events"},
             {"Contacts", "/contacts"},
-            {"Mail", "/messages"},
-            {"People", "/people"}
+            {"Messages", "/messages"},
+            {"People", "/people"},
+            {"TodoLists", "/todo/lists"}
         };
 
         private Dictionary<string, string> _customEntities = new Dictionary<string, string>();
@@ -106,11 +107,11 @@ namespace PeakboardExtensionGraph.UserAuth
                 $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{_graphHelper.GetAccessToken()};" +
                 $"{_graphHelper.GetExpirationTime()};{_graphHelper.GetMillis()};{_graphHelper.GetRefreshToken()};" +
                 
-                // Query Information: 7 - 16
+                // Query Information: 7 - 14
                 $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                $"{Top.Text};{Skip.Text};{customCall};{PostRequestUrl.Text};{PostRequestBody.Text};" +
+                $"{Top.Text};{Skip.Text};{customCall};" +
                 
-                // Only relevant for: UI 17
+                // Only relevant for: UI 15
                 $"{customEntities}";
         }
 
@@ -133,9 +134,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 Top.Text = "";
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
-                PostRequestUrl.Text = "";
-                PostRequestBody.Text = "";
-                
+
                 ToggleUiComponents(false);
             }
             else
@@ -160,10 +159,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 Skip.Text = paramArr[13];
                 CustomCallCheckBox.IsChecked = (paramArr[14] != "");
                 CustomCallTextBox.Text = paramArr[14];
-                PostRequestUrl.Text = paramArr[15];
-                PostRequestBody.Text = paramArr[16];
-                
-                var customEntities = paramArr[17];
+
+                var customEntities = paramArr[15];
 
                 if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
                 {
@@ -547,8 +544,6 @@ namespace PeakboardExtensionGraph.UserAuth
             SelectList.IsEnabled = state;
             OrderList.IsEnabled = state;
             OrderByMode.IsEnabled = state;
-            PostRequestUrl.IsEnabled = state;
-            PostRequestBody.IsEnabled = state;
             Top.IsEnabled = state;
             Skip.IsEnabled = state;
             CustomCallCheckBox.IsEnabled = state;

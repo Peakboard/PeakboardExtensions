@@ -22,9 +22,13 @@ namespace PeakboardExtensionGraph
 
     public class MsGraphException : Exception
     {
-        public MsGraphException(string message) : base(message)
+        public string Url { get; }
+        public string ErrorCode { get; }
+        public MsGraphException(string message, string errorCode = null, string url = null) : base(message)
         {
-            
+            Url = url;
+            ErrorCode = errorCode;
         }
+        
     }
 }

@@ -11,7 +11,6 @@ namespace PeakboardExtensionGraph.UserAuth
     [Serializable]
     public class MsGraphCustomList : CustomListBase
     {
-
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -24,23 +23,115 @@ namespace PeakboardExtensionGraph.UserAuth
                 {
                     new CustomListFunctionDefinition
                     {
-                        Name = "GetDynamicFunctionsMetadata",
-                        Description = "Returns metadata of the defined dynamic functions.",
+                        Name = "SendMail",
+                        Description = "Sends an email through Graph post request",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Subject",
+                                Description = "Subject of the email",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Body",
+                                Description = "Body of the email",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Recipient",
+                                Description = "Recipient of the email",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            }
+                        },
                         ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
                         {
                             new CustomListFunctionReturnParameterDefinition
                             {
-                                Name = "Count",
-                                Type = CustomListFunctionParameterTypes.Number,
-                                Description = "The number of dynamic functions."
+                                Name = "Sent",
+                                Type = CustomListFunctionParameterTypes.Boolean,
+                                Description = "Returns if the email was sent"
+                            }
+                        }
+                    },
+                    new CustomListFunctionDefinition()
+                    {
+                        Name = "AddEvent",
+                        Description = "Adds a calendar event to the calendar",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Subject",
+                                Description = "Subject of the event",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "StartDateTime",
+                                Description = "Start of the event",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "EndDateTime",
+                                Description = "End of the event",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            }
+                        },
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionReturnParameterDefinition()
+                            {
+                                Name = "Added",
+                                Description = "Returns if the event was added successfully",
+                                Type = CustomListFunctionParameterTypes.Boolean
+                            }
+                        }
+                    },
+                    new CustomListFunctionDefinition()
+                    {
+                        Name = "AddTask",
+                        Description = "Adds a task to a todo task list",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "ListID",
+                                Description = "Id if the list the task should be added to",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
+                                Name = "Title",
+                                Description = "Title of the task",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            },
+                        },
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection()
+                        {
+                            new CustomListFunctionReturnParameterDefinition()
+                            {
+                                Name = "Added",
+                                Description = "Returns if the task was added successfully",
+                                Type = CustomListFunctionParameterTypes.Boolean
                             }
                         }
                     }
-                },
-                SupportsDynamicFunctions = true
+                }
             };
         }
-        
+
         protected override FrameworkElement GetControlOverride()
         {
             // return an instance of the UI user control
@@ -63,7 +154,7 @@ namespace PeakboardExtensionGraph.UserAuth
             var response = task.Result;
 
             var cols = new CustomListColumnCollection();
-            
+
             // parse json to PB Columns
             JsonTextReader reader = PreparedReader(response);
 
@@ -78,13 +169,13 @@ namespace PeakboardExtensionGraph.UserAuth
 
             return cols;
         }
-        
+
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             // get a graph helper
             var helper = GetGraphHelper(data);
-            
+
             // make graph call
             string request = data.Parameter.Split(';')[7];
             string customCall = data.Parameter.Split(';')[14];
@@ -110,117 +201,107 @@ namespace PeakboardExtensionGraph.UserAuth
                     items.Add(item);
                 }
             }
-            
+
             return items;
         }
-        
+
         #region Functions
 
-        protected override CustomListFunctionDefinitionCollection GetDynamicFunctionsOverride(CustomListData data)
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data,
+            CustomListExecuteParameterContext context)
         {
-            var functions = base.GetDynamicFunctionsOverride(data);
+            bool result;
+
+            switch (context.FunctionName)
+            {
+                case "SendMail":
+                    result = SendMail(data, context.Values);
+                    break;
+                case "AddEvent":
+                    result = AddEvent(data, context.Values);
+                    break;
+                case "AddTask":
+                    result = AddTask(data, context.Values);
+                    break;
+                default:
+                    result = false;
+                    break;
+            }
             
-            string url = data.Parameter.Split(';')[15];
-            string json = data.Parameter.Split(';')[16];
-            string funcName = url.Split('/').Last();
-
-            if (!String.IsNullOrWhiteSpace(json) && !String.IsNullOrWhiteSpace(url))
-            {
-                var func = new CustomListFunctionDefinition()
-                {
-                    Name = funcName,
-                    ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
-                    {
-                        new CustomListFunctionReturnParameterDefinition
-                        {
-                            Name = "result",
-                            Description = "Success",
-                            Type = CustomListFunctionParameterTypes.Boolean
-                        }
-                    }
-                };
-
-                var reader = new JsonTextReader(new StringReader(json));
-                string parameterName = "";
-                while (reader.Read())
-                {
-                    if (reader.TokenType == JsonToken.PropertyName)
-                    {
-                        parameterName = reader.Value?.ToString();
-                    }
-                    if (reader.TokenType == JsonToken.String && reader.Value != null && reader.Value.ToString().StartsWith("$") &&
-                        reader.Value.ToString().EndsWith("$"))
-                    {
-                        func.InputParameters.Add(new CustomListFunctionInputParameterDefinition
-                        {
-                            Name = parameterName,
-                            Optional = false,
-                            Type = CustomListFunctionParameterTypes.String
-                        });
-                    }
-                }
-                functions.Add(func);
-            }
-            return functions;
+            return new CustomListExecuteReturnContext() { result };
         }
-        
-        protected double GetDynamicFunctionsMetadata(CustomListData data, CustomListExecuteParameterContext context)
+
+        private bool SendMail(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            Log?.Verbose($"Function '{nameof(GetDynamicFunctionsMetadata)}' for CustomList '{data.ListName ?? "?"}' called...");
+            string url = "/sendMail";
+            string body =
+                "{\"message\": {\"subject\": \"$0$\",\"body\": {\"contentType\": \"Text\",\"content:\" \"$1$\"}, \"toRecipients\": [{\"emailAddress\": {\"address\": \"$2$\"} }] }}";
 
-            return 0;
+            if (values.Count == 3)
+            {
+                var formattedBody = body.Replace("$0$", values[0].StringValue);
+                formattedBody = formattedBody.Replace("$1$", values[1].StringValue);
+                formattedBody = formattedBody.Replace("$2$", values[2].StringValue);
+
+                var helper = GetGraphHelper(data);
+
+                var task = helper.PostAsync(url, formattedBody);
+                task.Wait();
+
+                return task.Result;
+            }
+
+            return false;
         }
 
-        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        private bool AddTask(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            if (context.TryExecute("GetDynamicFunctionsMetadata", data, GetDynamicFunctionsMetadata, out var returnContext))
+            string url = "/todo/lists/{0}/tasks";
+            string body = "{\"title\": \"$0$\"}";
+
+            if (values.Count == 2)
             {
-                return returnContext;
+                var formattedUrl = String.Format(url, values[0].StringValue);
+                var formattedBody = body.Replace("$0$", values[1].StringValue);
+
+                var helper = GetGraphHelper(data);
+
+                var task = helper.PostAsync(formattedUrl, formattedBody);
+                task.Wait();
+
+                return task.Result;
             }
 
-            // Run at the end.
-            if (context.TryExecute(data, RunDynamicFunction, out returnContext))
-            {
-                return returnContext;
-            }
-
-            // Ignore by not doing anything OR throw exception to return error.
-            throw new DataErrorException("Function is not supported in this version.");
+            return false;
         }
-        
-        protected CustomListExecuteReturnContext RunDynamicFunction(CustomListData data, CustomListExecuteParameterContext context)
+
+        private bool AddEvent(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            Log?.Verbose($"Function '{context.FunctionName}' for CustomList '{data.ListName ?? "?"}' called...");
+            string url = "/events";
+            string body =
+                "{\"subject\": \"$0$\",\"start\": {\"dateTime\": \"$1$\",\"timeZone\": \"UTC\"}, \"end\": {\"dateTime\": \"$2$\",\"timeZone\": \"UTC\"} }";
 
-            var helper = GetGraphHelper(data);
-            
-            var url = data.Parameter.Split(';')[15];
-            var json = data.Parameter.Split(';')[16];
-
-            // get user input
-            var parameters = context.Values;
-
-            // put user input into json template
-            for (int i = 0; i < parameters.Count; i++)
+            if (values.Count == 3)
             {
-                json = json.Replace($"${i}$", parameters[i].StringValue);
+                var formattedBody = body.Replace("$0$", values[0].StringValue);
+                formattedBody = formattedBody.Replace("$1$", values[1].StringValue);
+                formattedBody = formattedBody.Replace("$2$", values[2].StringValue);
+
+                var helper = GetGraphHelper(data);
+
+                var task = helper.PostAsync(url, formattedBody);
+                task.Wait();
+
+                return task.Result;
             }
 
-            // make graph post request 
-            var task = helper.PostAsync(url, json);
-            task.Wait();
-
-            // return if request succeeded
-            var ret = new CustomListExecuteReturnContext { task.Result };
-
-            return ret;
-            
+            return false;
         }
-        
+
         #endregion
 
         #region HelperMethods
-        
+
         private GraphHelperUserAuth GetGraphHelper(CustomListData data)
         {
             this.Log?.Verbose("Initializing GraphHelper");
@@ -243,17 +324,18 @@ namespace PeakboardExtensionGraph.UserAuth
                 string accessToken = data.Parameter.Split(';')[3];
                 string expiresIn = data.Parameter.Split(';')[4];
                 long millis = Int64.Parse(data.Parameter.Split(';')[5]);
-                
+
                 // if available initialize with access token (in runtime)
                 helper = new GraphHelperUserAuth(clientId, tenantId, permissions);
                 helper.InitGraphWithAccessToken(accessToken, expiresIn, millis, refreshToken);
-                
+
                 // check if access token expired
                 var expired = helper.CheckIfTokenExpiredAsync();
                 expired.Wait();
                 if (expired.Result)
                 {
-                    UpdateParameter(helper.GetAccessToken(), helper.GetExpirationTime(), helper.GetMillis(), helper.GetRefreshToken(), data);
+                    UpdateParameter(helper.GetAccessToken(), helper.GetExpirationTime(), helper.GetMillis(),
+                        helper.GetRefreshToken(), data);
                 }
             }
 
@@ -282,7 +364,8 @@ namespace PeakboardExtensionGraph.UserAuth
                     GraphHelperBase.DeserializeError(response);
                 }
             }
-            if(!prepared)
+
+            if (!prepared)
             {
                 // no value array -> response contains single object which starts immediately
                 reader = new JsonTextReader(new StringReader(response));
@@ -290,8 +373,9 @@ namespace PeakboardExtensionGraph.UserAuth
 
             return reader;
         }
-        
-        public void UpdateParameter(string accessToken, string expiresIn, long millis, string refreshToken, CustomListData data)
+
+        public void UpdateParameter(string accessToken, string expiresIn, long millis, string refreshToken,
+            CustomListData data)
         {
             // replace tokens in parameter if renewed
             var values = data.Parameter.Split(';');
@@ -300,15 +384,15 @@ namespace PeakboardExtensionGraph.UserAuth
             values[5] = millis.ToString();
             values[6] = refreshToken;
             string result = values[0];
-            
-            for(int i = 1; i < values.Length; i++)
+
+            for (int i = 1; i < values.Length; i++)
             {
                 result += $";{values[i]}";
             }
 
             data.Parameter = result;
         }
-        
+
         private RequestParameters BuildRequestParameters(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
@@ -321,12 +405,27 @@ namespace PeakboardExtensionGraph.UserAuth
                     ConsistencyLevelEventual = paramArr[11] == "true"
                 };
             }
-            
+
             int top, skip;
 
             // try parse strings to int
-            try { top = Int32.Parse(paramArr[12]); } catch (Exception) { top = 0; }
-            try { skip = Int32.Parse(paramArr[13]); } catch (Exception) { skip = 0; }
+            try
+            {
+                top = Int32.Parse(paramArr[12]);
+            }
+            catch (Exception)
+            {
+                top = 0;
+            }
+
+            try
+            {
+                skip = Int32.Parse(paramArr[13]);
+            }
+            catch (Exception)
+            {
+                skip = 0;
+            }
 
             return new RequestParameters()
             {
@@ -337,7 +436,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 Top = top,
                 Skip = skip
             };
-            
+
             /*
                 8   =>  select
                 9   =>  order by
@@ -348,8 +447,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 14  =>  custom call
             */
         }
-        
-        #endregion
 
+        #endregion
     }
 }

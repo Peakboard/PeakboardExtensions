@@ -139,6 +139,13 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             UpdateListBox();
         }
         
+        private void ClearButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            FuncUrl.Text = "";
+            FuncName.Text = "";
+            FuncBody.Text = "";
+        }
+        
         #endregion
         
         #region HelperMethods

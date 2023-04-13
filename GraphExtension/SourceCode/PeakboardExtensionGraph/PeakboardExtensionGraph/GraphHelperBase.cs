@@ -30,27 +30,34 @@ namespace PeakboardExtensionGraph
             var response = await HttpClient.SendAsync(request);
             
             // convert to string
+            /*
+             * Large Object Heap: code that allocates a lot of memory in LOH
+             * Allocated object type: String
+             * Last observation: 12.04.2023 13:51 ConsoleApplication1.exe
+             * Allocated size: 105,8 MB
+             * TODO??
+             */
             string jsonString = await response.Content.ReadAsStringAsync();
 
             // check response status code: Status code not 200 OK => ERROR
             if (response.StatusCode != HttpStatusCode.OK)
             { 
-                DeserializeError(jsonString);
+                DeserializeError(jsonString, url);
             }
 
             return jsonString;
         }
 
-        public static void DeserializeError(string json)
+        public static void DeserializeError(string json, string url = null)
         {
             // try deserializing response into MsGraphError object
             var error = JsonConvert.DeserializeObject<RootMsGraphError>(json)?.Error;
 
             if (error?.Message == null || error.Code == null)
             {
-                throw new MsGraphException($"Unknown Microsoft Graph Error: {json}");
+                throw new MsGraphException($"Unknown Microsoft Graph Error: {json}", url);
             }
-            throw new MsGraphException($"Microsoft Graph Error: {error.Code}: {error.Message}");
+            throw new MsGraphException($"Microsoft Graph Error: {error.Code}: {error.Message}", error.Code, url);
 
         }
 
