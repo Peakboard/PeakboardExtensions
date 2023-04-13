@@ -174,14 +174,6 @@
                 </TabItem.ToolTip>
                 <ListBox Height="100" IsEnabled="False" SelectionMode="Multiple" Name="OrderList"></ListBox>
             </TabItem>
-            <TabItem Header="Post Request">
-                <StackPanel>
-                    <TextBlock Text="Url Suffix:" Margin="3"></TextBlock>
-                    <TextBox Name="PostRequestUrl" VerticalContentAlignment="Center" Margin="3"></TextBox>
-                    <TextBlock Text="Request Body:" Margin="3"></TextBlock>
-                    <TextBox Name="PostRequestBody" VerticalContentAlignment="Top" Height="60" Margin="3" AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" ></TextBox>
-                </StackPanel>
-            </TabItem>
         </TabControl>
         <!-- Desc / Asc -->
         <TextBlock Grid.Column="1" Grid.Row="7" Text="sorting" HorizontalAlignment="Right" Margin="3 4 70 3"/>

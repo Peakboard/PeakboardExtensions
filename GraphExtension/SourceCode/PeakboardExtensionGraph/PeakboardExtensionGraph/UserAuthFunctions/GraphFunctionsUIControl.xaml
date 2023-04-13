@@ -81,8 +81,8 @@
                 <StackPanel>
                     <ListBox Name="Functions" Height="250" Margin="3" SelectionMode="Single"/>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button Name="ShowFunc" Content="Show" Width="160" Margin="3" Click="ShowFunc_OnClick"/>
-                        <Button Name="RemoveFunc" Content="Remove" Width="160" Margin="3" Click="RemoveFunc_OnClick"/>
+                        <Button Name="ShowFunc" Content="Show" Width="163" Margin="3" Click="ShowFunc_OnClick"/>
+                        <Button Name="RemoveFunc" Content="Remove" Width="163" Margin="3" Click="RemoveFunc_OnClick"/>
                     </StackPanel>
                 </StackPanel>
             </TabItem>
@@ -97,7 +97,10 @@
                     <TextBlock Name="ErrorMessage" Margin="3" Text="Please complete all input fields" Foreground="Red" FontSize="10" Visibility="Hidden"/>
                     <TextBlock Text="Request Body" Margin="3"/>
                     <TextBox Name="FuncBody" VerticalAlignment="Top" Height="170" AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" Margin="3"/>
-                    <Button Name="AddFunc" Content="Add" Margin="3" HorizontalAlignment="Right" Width="130" Click="AddFunc_OnClick"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Name="ClearButton" Content="Clear" Margin="3" HorizontalAlignment="Left" Width="163" Click="ClearButton_OnClick"/>
+                        <Button Name="AddFunc" Content="Add" Margin="3" HorizontalAlignment="Right" Width="163" Click="AddFunc_OnClick"/>
+                    </StackPanel>
                 </StackPanel>
             </TabItem>
         </TabControl>

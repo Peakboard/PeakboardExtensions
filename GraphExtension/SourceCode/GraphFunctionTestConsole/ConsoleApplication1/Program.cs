@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PeakboardExtensionGraph;
 using PeakboardExtensionGraph.AppOnly;
 using PeakboardExtensionGraph.UserAuth;
+
 
 namespace ConsoleApplication1
 {
@@ -54,7 +56,7 @@ namespace ConsoleApplication1
             Console.WriteLine(arr[0]);
             Console.WriteLine();
             Console.WriteLine(arr[1]);
-            Console.WriteLine(time2-time1);*/
+            Console.WriteLine(time2-time1);
 
 
             string json = @"{
@@ -91,8 +93,24 @@ namespace ConsoleApplication1
 
             var jobj = JsonConvert.SerializeObject(json);
             
-            Console.WriteLine(jobj);
+            Console.WriteLine(jobj);*/
 
+            /*var helper = new GraphHelperUserAuth("067207ed-41a4-4402-b97f-b977babe0ec9",
+                "b4ff9807-402f-42b8-a89d-428363c55de7", RequestData.Permissions);
+            /*var task = helper.InitGraph((code, url) =>
+            {
+                Console.WriteLine(code);
+                Console.WriteLine(url);
+                return Task.FromResult(0);
+            });
+            task.Wait();*/
+
+        }
+
+        private static int Min(int val1, int val2)
+        {
+            if (val1 <= val2) return val1;
+            else return val2;
         }
 
         private static void PrintVar(string value)
