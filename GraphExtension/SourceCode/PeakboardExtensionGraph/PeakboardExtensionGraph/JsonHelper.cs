@@ -182,7 +182,9 @@ namespace PeakboardExtensionGraph
                 {
                     // nested array starts -> store entire array json into column and skip the array
                     JsonHelper.SkipArray(reader);
-                    item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
+                    if (item.ContainsKey($"{objPrefix}-{lastName}-Array"))
+                        item[$"{objPrefix}-{lastName}-Array"] = $"{obj.SelectToken(reader.Path)}";
+                    else item.Add($"{objPrefix}-{lastName}-Array", $"{obj.SelectToken(reader.Path)}");
                     value = false;
                     lastName = "";
                 }
@@ -197,7 +199,8 @@ namespace PeakboardExtensionGraph
                     if (reader.TokenType == JsonToken.Boolean || reader.TokenType == JsonToken.Float ||
                         reader.TokenType == JsonToken.Integer)
                     {
-                           item.Add($"{objPrefix}-{lastName}", reader.Value);
+                        if (item.ContainsKey($"{objPrefix}-{lastName}")) item[$"{objPrefix}-{lastName}"] = reader.Value;
+                        else item.Add($"{objPrefix}-{lastName}", reader.Value);
                     }
                     else
                     {
@@ -207,7 +210,9 @@ namespace PeakboardExtensionGraph
                         { 
                             objectValue = objectValue.Remove(1024);
                         }
-                        item.Add($"{objPrefix}-{lastName}", objectValue);
+
+                        if (item.ContainsKey($"{objPrefix}-{lastName}")) item[$"{objPrefix}-{lastName}"] = objectValue;
+                        else item.Add($"{objPrefix}-{lastName}", objectValue);
                     }
 
                     value = false;

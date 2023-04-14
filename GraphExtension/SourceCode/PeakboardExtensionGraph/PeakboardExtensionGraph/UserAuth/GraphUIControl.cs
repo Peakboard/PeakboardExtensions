@@ -117,6 +117,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override void SetParameterOverride(string parameter)
         {
+            ToggleUiComponents(false);
+            
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
@@ -134,8 +136,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 Top.Text = "";
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
-
-                ToggleUiComponents(false);
+                
             }
             else
             {

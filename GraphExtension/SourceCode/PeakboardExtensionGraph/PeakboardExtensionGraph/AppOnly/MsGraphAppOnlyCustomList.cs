@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using Newtonsoft.Json;
@@ -63,6 +64,10 @@ namespace PeakboardExtensionGraph.AppOnly
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             // TODO: Fix problem where empty fields get skipped (sharepoint)
+
+            var expectedKeys = GetColumnsOverride(data);
+            var emptyItem = new CustomListObjectElement();
+            SetKeys(emptyItem, expectedKeys);
             
             // Initialize GraphHelper
             var helper = InitializeGraph(data);
@@ -75,7 +80,7 @@ namespace PeakboardExtensionGraph.AppOnly
             
             var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
-            string response = task.Result;
+            string response = task.Result; // json object response
             
             // get items
             var items = new CustomListObjectElementCollection();
@@ -88,7 +93,7 @@ namespace PeakboardExtensionGraph.AppOnly
             {
                 if (reader.TokenType == JsonToken.StartObject)
                 {
-                    var item = new CustomListObjectElement();
+                    var item = CloneItem(emptyItem);
                     JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
                     items.Add(item);
                 }
@@ -178,6 +183,40 @@ namespace PeakboardExtensionGraph.AppOnly
                 9   =>  skip
                 10  =>  custom call
             */
+        }
+
+        private void SetKeys(CustomListObjectElement item, CustomListColumnCollection columns)
+        {
+            foreach (var column in columns)
+            {
+                var key = column.Name;
+                
+                switch (column.Type)
+                {
+                    case CustomListColumnTypes.Boolean:
+                        item.Add(key, false); 
+                        break;
+                    case CustomListColumnTypes.Number:
+                        item.Add(key, -1); 
+                        break;
+                    case CustomListColumnTypes.String:
+                        item.Add(key, "<empty>");
+                        break;
+                }
+                
+            }
+        }
+
+        private CustomListObjectElement CloneItem(CustomListObjectElement item)
+        {
+            var newItem = new CustomListObjectElement();
+
+            foreach (var key in item.Keys)
+            {
+                newItem.Add(key, item[key]);
+            }
+
+            return newItem;
         }
         
         #endregion

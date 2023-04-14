@@ -65,7 +65,8 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             var count = 0;
             if (!String.IsNullOrEmpty(data.Parameter))
             {
-                count = data.Parameter.Split(';')[7].Split('|').Length;
+                var funcs = data.Parameter.Split(';')[7].Split('|');
+                count = funcs[0] == "" && funcs.Length == 1 ? 0 : funcs.Length;
             }
 
             return new CustomListObjectElementCollection()
