@@ -234,9 +234,27 @@ namespace PeakboardExtensionGraph.UserAuth
         private bool SendMail(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
             string url = "/sendMail";
-            string body =
-                "{\"message\": {\"subject\": \"$0$\",\"body\": {\"contentType\": \"Text\",\"content:\" \"$1$\"}, \"toRecipients\": [{\"emailAddress\": {\"address\": \"$2$\"} }] }}";
+            //string body =
+                //"{\"message\": {\"subject\": \"$0$\",\"body\": {\"contentType\": \"Text\",\"content:\" \"$1$\"}, \"toRecipients\": [{\"emailAddress\": {\"address\": \"$2$\"} }] }}";
 
+
+            string body = @"{
+                ""message"": {
+                    ""subject"": ""$0$"",
+                    ""body"": {
+                        ""contentType"": ""Text"",
+                        ""content"": ""$1$""
+                    },
+                    ""toRecipients"": [
+                    {
+                        ""emailAddress"": {
+                            ""address"": ""$2$""
+                        }
+                    }
+                    ]
+                }
+            }";
+            
             if (values.Count == 3)
             {
                 var formattedBody = body.Replace("$0$", values[0].StringValue);
@@ -278,8 +296,18 @@ namespace PeakboardExtensionGraph.UserAuth
         private bool AddEvent(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
             string url = "/events";
-            string body =
-                "{\"subject\": \"$0$\",\"start\": {\"dateTime\": \"$1$\",\"timeZone\": \"UTC\"}, \"end\": {\"dateTime\": \"$2$\",\"timeZone\": \"UTC\"} }";
+            string body = @"{
+                ""subject"": ""$0$"",
+                ""start"": {
+                ""dateTime"": ""$1$"",
+                ""timeZone"": ""UTC""
+                },
+                ""end"": {
+                ""dateTime"": ""$2$"",
+                ""timeZone"": ""UTC""
+                }
+            }";
+                
 
             if (values.Count == 3)
             {
