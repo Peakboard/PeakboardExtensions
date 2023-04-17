@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
@@ -28,8 +29,9 @@ namespace PeakboardExtensionGraph.AppOnly
         private string _chosenRequest = "/users";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
-        
 
+        private bool _uiInitialized;
+        
         public GraphAppOnlyUiControl()
         {
             InitializeComponent();
@@ -111,6 +113,9 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override void SetParameterOverride(string parameter)
         {
+            ToggleUiComponents(false);
+            _uiInitialized = false;
+            
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
@@ -126,7 +131,6 @@ namespace PeakboardExtensionGraph.AppOnly
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
                 
-                ToggleUiComponents(false);
             }
             else
             {
@@ -175,12 +179,15 @@ namespace PeakboardExtensionGraph.AppOnly
                 }
             }
 
-            RestoreGraphConnection(parameter);
+            var task = RestoreGraphConnection(parameter);
         }
         
         #region EventListener
         private async void ConnectButton_OnClick(object sender, RoutedEventArgs e)
         {
+            ToggleUiComponents(false);
+            _uiInitialized = false;
+            
             var client = ClientId.Text;
             var tenant = TenantId.Text;
             var secret = Secret.Text;
@@ -189,23 +196,30 @@ namespace PeakboardExtensionGraph.AppOnly
             {
                 _helper = new GraphHelperAppOnly(client, tenant, secret);
                 await _helper.InitGraph();
+                
+                // init dropdown & list boxes
+                InitializeRequestDropdown();
+                var response = await _helper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Unable to connect to Graph: {ex.Message}");
                 return;
             }
-
-            InitializeRequestDropdown();
+            
             // enable UI components
             ToggleUiComponents(true);
+            ToggleCustomCall();
+            _uiInitialized = true;
         }
 
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
             try
             {
-                if(RequestBox?.SelectedItem != null)
+                if(RequestBox?.SelectedItem != null && _uiInitialized)
                 {
                     UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
                 }
@@ -272,8 +286,7 @@ namespace PeakboardExtensionGraph.AppOnly
         private async void UpdateLists(string data)
         {
             // lock dropdowns
-            SelectList.IsEnabled = false;
-            OrderList.IsEnabled = false;
+            TabControl.IsEnabled = false;
             RequestBox.IsEnabled = false;
 
             // make a graph call and update select & order by combo boxes
@@ -299,9 +312,9 @@ namespace PeakboardExtensionGraph.AppOnly
             }
 
             // unlock dropdowns
-            SelectList.IsEnabled = true; 
-            OrderList.IsEnabled = true;
+            TabControl.IsEnabled = true;
             RequestBox.IsEnabled = true;
+            
             
             // clear saved selections after they are set
             _chosenRequest = "";
@@ -477,8 +490,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
                 RemoveEntityButton.IsEnabled = false;
-                SelectList.IsEnabled = false;
-                OrderList.IsEnabled = false;
+                TabControl.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
                 CustomEntityName.IsEnabled = false;
@@ -496,8 +508,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
                 RemoveEntityButton.IsEnabled = true;
-                SelectList.IsEnabled = true;
-                OrderList.IsEnabled = true;
+                TabControl.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
                 CustomEntityName.IsEnabled = true;
@@ -518,8 +529,7 @@ namespace PeakboardExtensionGraph.AppOnly
             CustomEntityName.IsEnabled = state;
             CustomEntityUrl.IsEnabled = state;
             CustomEntityButton.IsEnabled = state;
-            SelectList.IsEnabled = state;
-            OrderList.IsEnabled = state;
+            TabControl.IsEnabled = state;
             OrderByMode.IsEnabled = state;
             Top.IsEnabled = state;
             Skip.IsEnabled = state;
@@ -573,7 +583,7 @@ namespace PeakboardExtensionGraph.AppOnly
             
         }
         
-        private async void RestoreGraphConnection(string parameter)
+        private async Task RestoreGraphConnection(string parameter)
         {
             // Set state of UI depending on state of Graph Connection
             
@@ -591,9 +601,15 @@ namespace PeakboardExtensionGraph.AppOnly
             {
                 _helper = new GraphHelperAppOnly(clientId, tenantId, secret);
                 await _helper.InitGraph();
+                
                 InitializeRequestDropdown();
+                var response = await _helper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
+                
                 ToggleUiComponents(true);
                 ToggleCustomCall();
+                _uiInitialized = true;
             }
             // case 3: Existing datasource is restored & client secret expired
             // Lock UI -> parameters cant be restored until access is granted
