@@ -25,7 +25,7 @@ namespace PeakboardExtensionGraph.UserAuth
             HttpClient = new HttpClient();
         }
         
-        public async Task InitGraph(Func<string, string, Task> prompt)
+        public async Task InitGraphAsync(Func<string, string, Task> prompt)
         {
             /* has to be called after initializing GraphHelper object */
             
@@ -52,7 +52,7 @@ namespace PeakboardExtensionGraph.UserAuth
             
         }
 
-        public async Task InitGraphWithRefreshToken(string token)
+        public async Task InitGraphWithRefreshTokenAsync(string token)
         {
             // Initialize via refresh token (in runtime)
             _refreshToken = token;

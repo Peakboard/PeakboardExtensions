@@ -157,7 +157,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             // try to restore graph access if refresh token is not expired
             try
             {
-                await _graphHelper.InitGraphWithRefreshToken(token);
+                await _graphHelper.InitGraphWithRefreshTokenAsync(token);
                 ToggleUiComponents(true);
             }
             catch (Exception)
@@ -171,7 +171,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             try
             {
                 _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                await _graphHelper.InitGraph((code, url) =>
+                await _graphHelper.InitGraphAsync((code, url) =>
                 {
                     // open web browser
                     Process.Start(url);

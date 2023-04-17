@@ -63,8 +63,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            // TODO: Fix problem where empty fields get skipped (sharepoint)
-
+            // create an item with empty values
             var expectedKeys = GetColumnsOverride(data);
             var emptyItem = new CustomListObjectElement();
             SetKeys(emptyItem, expectedKeys);
@@ -200,7 +199,7 @@ namespace PeakboardExtensionGraph.AppOnly
                         item.Add(key, -1); 
                         break;
                     case CustomListColumnTypes.String:
-                        item.Add(key, "<empty>");
+                        item.Add(key, "");
                         break;
                 }
                 

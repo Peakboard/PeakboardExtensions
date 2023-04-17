@@ -173,9 +173,14 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
+            // create an item with empty values
+            var expectedKeys = GetColumnsOverride(data);
+            var emptyItem = new CustomListObjectElement();
+            SetKeys(emptyItem, expectedKeys);
+
             // get a graph helper
             var helper = GetGraphHelper(data);
-
+            
             // make graph call
             string request = data.Parameter.Split(';')[7];
             string customCall = data.Parameter.Split(';')[14];
@@ -196,7 +201,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 if (reader.TokenType == JsonToken.StartObject)
                 {
-                    var item = new CustomListObjectElement();
+                    var item = CloneItem(emptyItem);
                     JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
                     items.Add(item);
                 }
@@ -474,6 +479,40 @@ namespace PeakboardExtensionGraph.UserAuth
                 13  =>  skip
                 14  =>  custom call
             */
+        }
+        
+        private void SetKeys(CustomListObjectElement item, CustomListColumnCollection columns)
+        {
+            foreach (var column in columns)
+            {
+                var key = column.Name;
+                
+                switch (column.Type)
+                {
+                    case CustomListColumnTypes.Boolean:
+                        item.Add(key, null); 
+                        break;
+                    case CustomListColumnTypes.Number:
+                        item.Add(key, null); 
+                        break;
+                    case CustomListColumnTypes.String:
+                        item.Add(key, null);
+                        break;
+                }
+                
+            }
+        }
+
+        private CustomListObjectElement CloneItem(CustomListObjectElement item)
+        {
+            var newItem = new CustomListObjectElement();
+
+            foreach (var key in item.Keys)
+            {
+                newItem.Add(key, item[key]);
+            }
+
+            return newItem;
         }
 
         #endregion

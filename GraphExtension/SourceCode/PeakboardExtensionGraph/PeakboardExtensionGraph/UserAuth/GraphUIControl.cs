@@ -36,6 +36,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private string _refreshToken = "";
 
+        private bool _uiInitialized;
+
         public GraphUiControl()
         {
             InitializeComponent();
@@ -118,7 +120,8 @@ namespace PeakboardExtensionGraph.UserAuth
         protected override void SetParameterOverride(string parameter)
         {
             ToggleUiComponents(false);
-            
+            _uiInitialized = false;
+
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
@@ -189,20 +192,20 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
             }
 
-            RestoreGraphConnection(parameter);
+            var restoreGraphConnection = RestoreGraphConnection(parameter);
         }
 
         #region EventListener
-        private async void btnAuth_OnClick(object sender, RoutedEventArgs routedEventArgs)
+        private void btnAuth_OnClick(object sender, RoutedEventArgs routedEventArgs)
         {
-            await Authenticate();
+            var authTask = Authenticate();
         }
         
         private void RequestBox_SelectionChanged(object sender, SelectionChangedEventArgs selectionChangedEventArgs)
         {
             try
             {
-                if(RequestBox?.SelectedItem != null)
+                if(RequestBox?.SelectedItem != null && _uiInitialized)
                 {
                     UpdateLists(((ComboBoxItem)this.RequestBox.SelectedItem).Tag.ToString());
                 }
@@ -268,17 +271,24 @@ namespace PeakboardExtensionGraph.UserAuth
         private async Task Authenticate()
         {
             ToggleUiComponents(false);
+            _uiInitialized = false;
             
             try
             {
                 _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
-                await _graphHelper.InitGraph((code, url) =>
+                await _graphHelper.InitGraphAsync((code, url) =>
                 {
                     // open web browser
                     Process.Start(url);
                     Clipboard.SetText(code);
                     return Task.FromResult(0);
                 });
+                
+                // initialize combo boxes for graph calls & restore saved ui settings
+                InitializeRequestDropdown();
+                var response = await _graphHelper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
             }
             catch (Exception e)
             {
@@ -287,17 +297,16 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             _refreshToken = _graphHelper.GetRefreshToken();
 
-            // initialize combo boxes for graph calls & restore saved ui settings
-            InitializeRequestDropdown();
             // enable UI components
             ToggleUiComponents(true);
+            ToggleCustomCall();
+            _uiInitialized = true;
         }
         
         private async void UpdateLists(string data)
         {
             // lock dropdowns
-            SelectList.IsEnabled = false;
-            OrderList.IsEnabled = false;
+            TabControl.IsEnabled = false;
             RequestBox.IsEnabled = false;
 
             // make a graph call and update select & order by combo boxes
@@ -323,10 +332,10 @@ namespace PeakboardExtensionGraph.UserAuth
             }
 
             // unlock dropdowns
-            SelectList.IsEnabled = true; 
-            OrderList.IsEnabled = true;
-            RequestBox.IsEnabled = true;
             
+            TabControl.IsEnabled = true; 
+            RequestBox.IsEnabled = true;
+
             // clear saved selections after they are set
             _chosenRequest = "";
             _chosenAttributes = new [] { "" };
@@ -501,8 +510,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
                 RemoveEntityButton.IsEnabled = false;
-                SelectList.IsEnabled = false;
-                OrderList.IsEnabled = false;
+                TabControl.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
                 CustomEntityName.IsEnabled = false;
@@ -520,8 +528,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
                 RemoveEntityButton.IsEnabled = true;
-                SelectList.IsEnabled = true;
-                OrderList.IsEnabled = true;
+                TabControl.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
                 CustomEntityName.IsEnabled = true;
@@ -542,8 +549,7 @@ namespace PeakboardExtensionGraph.UserAuth
             CustomEntityName.IsEnabled = state;
             CustomEntityUrl.IsEnabled = state;
             CustomEntityButton.IsEnabled = state;
-            SelectList.IsEnabled = state;
-            OrderList.IsEnabled = state;
+            TabControl.IsEnabled = state;
             OrderByMode.IsEnabled = state;
             Top.IsEnabled = state;
             Skip.IsEnabled = state;
@@ -597,7 +603,7 @@ namespace PeakboardExtensionGraph.UserAuth
             
         }
 
-        private async void RestoreGraphConnection(string parameter)
+        private async Task RestoreGraphConnection(string parameter)
         {
             // Set state of UI depending on state of Graph Connection
             
@@ -613,11 +619,19 @@ namespace PeakboardExtensionGraph.UserAuth
             _refreshToken = paramArr[6];
             try
             {
-                await _graphHelper.InitGraphWithRefreshToken(_refreshToken);
+                await _graphHelper.InitGraphWithRefreshTokenAsync(_refreshToken);
+                
+                // Initialize Dropdown & List boxes 
                 InitializeRequestDropdown();
+                var response = await _graphHelper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                UpdateSelectList(response);
+                UpdateOrderByList(response);
+                
                 ToggleUiComponents(true);
                 ToggleCustomCall();
+                
                 _refreshToken = _graphHelper.GetRefreshToken();
+                _uiInitialized = true;
             }
             // case 3: Existing datasource is restored & refresh token expired
             // Lock UI -> parameters cant be restored until access is granted
@@ -626,6 +640,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 ToggleUiComponents(false);
             }
+            
         }
         
         #endregion

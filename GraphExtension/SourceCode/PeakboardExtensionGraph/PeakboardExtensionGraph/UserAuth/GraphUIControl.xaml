@@ -145,7 +145,7 @@
             </Button>
         </Grid>
         <!-- Select, Order by & Request Body Tabs -->
-        <TabControl Grid.Column="1" Grid.Row="6" Margin="3">
+        <TabControl Grid.Column="1" Grid.Row="6" IsEnabled="False" Name="TabControl" Margin="3">
             <TabItem Header="Select">
                 <TabItem.ToolTip>
                     <StackPanel>
@@ -157,7 +157,7 @@
                         </TextBlock>
                     </StackPanel>
                 </TabItem.ToolTip>
-                <ListBox Height="100" IsEnabled="False" SelectionMode="Multiple" Name="SelectList"></ListBox>
+                <ListBox Height="100" SelectionMode="Multiple" Name="SelectList"></ListBox>
             </TabItem>
             <TabItem Header="Order by">
                 <TabItem.ToolTip>
@@ -172,7 +172,7 @@
                         </TextBlock>
                     </StackPanel>
                 </TabItem.ToolTip>
-                <ListBox Height="100" IsEnabled="False" SelectionMode="Multiple" Name="OrderList"></ListBox>
+                <ListBox Height="100" SelectionMode="Multiple" Name="OrderList"></ListBox>
             </TabItem>
         </TabControl>
         <!-- Desc / Asc -->
