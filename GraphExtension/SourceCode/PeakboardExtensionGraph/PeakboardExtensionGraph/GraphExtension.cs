@@ -3,8 +3,10 @@ using PeakboardExtensionGraph.AppOnly;
 using PeakboardExtensionGraph.UserAuth;
 using PeakboardExtensionGraph.UserAuthFunctions;
 
+
 namespace PeakboardExtensionGraph
 {
+    [ExtensionIcon("PeakboardExtensionGraph.graph_clean.png")]
     public class GraphExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
@@ -12,8 +14,8 @@ namespace PeakboardExtensionGraph
             return new ExtensionDefinition
             {
                 ID = "MsGraph", // Must be unqiue over all extensions, so may use a namespace notation
-                Name = "MsGraph Extension",
-                Description = "This is an Extension for accessing MsGraph data",
+                Name = "Microsoft Graph Extension",
+                Description = "This is an Extension for accessing MS-Graph data",
                 Version = "1.0",
                 Author = "Peakboard Team",
                 Company = "Peakboard GmbH",

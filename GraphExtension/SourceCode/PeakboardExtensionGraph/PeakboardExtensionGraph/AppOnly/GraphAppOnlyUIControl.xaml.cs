@@ -251,7 +251,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 return;
             }
 
-            MessageBox.Show("Everything seems to be fine...");
+            MessageBox.Show("Request URI is valid.");
         }
 
         private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)

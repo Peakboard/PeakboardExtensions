@@ -233,11 +233,11 @@ namespace PeakboardExtensionGraph.UserAuth
             catch (Exception ex)
             {
                 // catch exception and print message if the call contains error
-                MessageBox.Show($"Invalid call: {ex.Message}");
+                MessageBox.Show($"Invalid Call: {ex.Message}");
                 return;
             }
 
-            MessageBox.Show("Everything seems to be fine...");
+            MessageBox.Show("Request URI is valid.");
         }
 
         private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
@@ -278,9 +278,13 @@ namespace PeakboardExtensionGraph.UserAuth
                 _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
                 await _graphHelper.InitGraphAsync((code, url) =>
                 {
+                    Clipboard.SetText(code);
+                    
+                    MessageBox.Show($"User code {code} copied to clipboard.");
+                    
                     // open web browser
                     Process.Start(url);
-                    Clipboard.SetText(code);
+                    
                     return Task.FromResult(0);
                 });
                 
