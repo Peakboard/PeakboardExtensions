@@ -91,6 +91,10 @@
     </ItemGroup>
     <ItemGroup>
       <Content Include="Extension.xml" />
+      <Content Include="graph_clean.png" />
+      <Content Include="ms_graph.png" />
+      <Content Include="ms_graph_transparent.png" />
+      <Content Include="pb_datasource_ms_graph.svg" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
     <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
@@ -104,6 +108,7 @@
         <Content Include="Extension.xml">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
+        <EmbeddedResource Include="graph_clean.png" />
     </ItemGroup>
     <ItemGroup>
       <Page Include="AppOnly\GraphAppOnlyUIControl.xaml" />

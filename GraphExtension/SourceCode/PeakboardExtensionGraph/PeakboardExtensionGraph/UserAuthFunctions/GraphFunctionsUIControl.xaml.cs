@@ -62,14 +62,18 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             string[] jsonObjects = paramArr[9].Split('|');
             
             _functions = new Dictionary<string, Tuple<string,string>>();
-            if (jsonObjects.Length == funcNames.Length && funcNames.Length == funcUrls.Length)
+            if (jsonObjects.Length == funcNames.Length && funcNames.Length == funcUrls.Length && !String.IsNullOrWhiteSpace(paramArr[7]))
             {
                 for (int i = 0; i < funcNames.Length; i++)
                 {
                     _functions.Add(funcNames[i], new Tuple<string, string>(funcUrls[i], jsonObjects[i]));
                 }
             }
-            
+            else if(!String.IsNullOrWhiteSpace(paramArr[7]))
+            {
+                this.Log?.Verbose("Function arrays lengths vary. Parameter string might be corrupted. -> Removed all functions");
+            }
+
             // try to restore graph connection
             RestoreGraphConnection(paramArr[0], paramArr[1], paramArr[2], paramArr[6]);
             UpdateListBox();
@@ -89,7 +93,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             string json = FuncBody.Text;
 
             // check if every input field is completed
-            if (String.IsNullOrEmpty(func) || String.IsNullOrEmpty(url) || String.IsNullOrEmpty(json))
+            if (String.IsNullOrWhiteSpace(func) || String.IsNullOrWhiteSpace(url) || String.IsNullOrWhiteSpace(json))
             {
                 ErrorMessage.Visibility = Visibility.Visible;
                 return;
@@ -173,9 +177,12 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
                 _graphHelper = new GraphHelperUserAuth(ClientId.Text, TenantId.Text, Permissions.Text);
                 await _graphHelper.InitGraphAsync((code, url) =>
                 {
+                    Clipboard.SetText(code);
+                    
+                    MessageBox.Show($"User code {code} copied to clipboard.");
+                    
                     // open web browser
                     Process.Start(url);
-                    Clipboard.SetText(code);
                     return Task.FromResult(0);
                 });
             }

@@ -8,6 +8,7 @@ using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionGraph.UserAuth
 {
+    [CustomListIcon("PeakboardExtensionGraph.graph_clean.png")]
     [Serializable]
     public class MsGraphCustomList : CustomListBase
     {

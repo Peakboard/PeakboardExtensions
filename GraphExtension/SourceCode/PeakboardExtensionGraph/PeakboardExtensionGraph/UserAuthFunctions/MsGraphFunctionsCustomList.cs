@@ -1,15 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using System.Windows;
-using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
 using PeakboardExtensionGraph.UserAuth;
 
 namespace PeakboardExtensionGraph.UserAuthFunctions
 {
+    [CustomListIcon("PeakboardExtensionGraph.graph_clean.png")]
     [Serializable]
     public class MsGraphFunctionsCustomList : CustomListBase
     {
@@ -19,7 +16,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             {
                 ID = $"MsGraphFunctionsCustomList",
                 Name = "Microsoft Graph Functions",
-                Description = "Sends post-requests to Ms-Graph API",
+                Description = "Sends post-requests to MS-Graph API",
                 PropertyInputPossible = true,
                 Functions = new CustomListFunctionDefinitionCollection
                 {

@@ -7,6 +7,7 @@ using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionGraph.AppOnly
 {
+    [CustomListIcon("PeakboardExtensionGraph.graph_clean.png")]
     [Serializable]
     public class MsGraphAppOnlyCustomList : CustomListBase
     {

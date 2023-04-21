@@ -229,7 +229,7 @@ namespace PeakboardExtensionGraph.UserAuth
             
             // post request
             var response = await HttpClient.SendAsync(request);
-            
+
             // return if post succeeded
             return response.IsSuccessStatusCode;
         }
