@@ -1,0 +1,292 @@
+<controls:CustomListUserControlBase x:Class="PeakboardExtensionGraph.UserAuth.GraphUiControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:PeakboardExtensionGraph"
+             xmlns:controls="clr-namespace:Peakboard.ExtensionKit;assembly=Peakboard.ExtensionKit"
+             mc:Ignorable="d" Background="#F5F5F6">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90" />
+            <ColumnDefinition Width="380" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <!-- Client ID -->
+        <TextBlock Grid.Column="0" Grid.Row="0" Text="Client ID" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="0" Name="ClientId" Text="" VerticalContentAlignment="Center" Margin="3">
+            <TextBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Client ID</TextBlock>
+                    <TextBlock>
+                        Client ID of the Azure AD app
+                        <LineBreak />
+                        that shall be accessed
+                    </TextBlock>
+                </StackPanel>
+            </TextBox.ToolTip>
+        </TextBox>
+        <!-- Tenant ID -->
+        <TextBlock Grid.Column="0" Grid.Row="1" Text="Tenant ID" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="1" Name="TenantId" Text="" VerticalContentAlignment="Center" Margin="3">
+            <TextBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Tenant ID</TextBlock>
+                    <TextBlock>
+                        Tenant ID of the Azure AD app
+                        <LineBreak />
+                        that shall be accessed
+                    </TextBlock>
+                </StackPanel>
+            </TextBox.ToolTip>
+        </TextBox>
+        <!-- Permissions -->
+        <TextBlock Grid.Column="0" Grid.Row="2" Text="Permissions" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="2" Name="Permissions" Text="user.read offline_access" VerticalContentAlignment="Center" Margin="3">
+            <TextBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Permissions</TextBlock>
+                    <TextBlock>
+                        Input the permissions delegated 
+                        <LineBreak/>
+                        from the user to the application.
+                        <LineBreak/>
+                        Each permission seperated by 1 space character
+                    </TextBlock>
+                    <Border BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0,8" />
+                    <TextBlock FontStyle="Italic">Example input: user.read mail.read ...</TextBlock>
+                </StackPanel>
+            </TextBox.ToolTip>
+        </TextBox>
+        <!-- Authenticate Button -->
+        <Button Grid.Column="1" Grid.Row="3" Name="BtnAuth" Content="Authenticate" Margin="3,3,3,10" HorizontalAlignment="Right" Width="130" Click="btnAuth_OnClick">
+        </Button>
+        <!-- Request Data -->
+        <TextBlock Grid.Column="0" Grid.Row="4" Text="Request Data" Margin="3"/>
+        <ComboBox Grid.Column="1" Grid.Row="4" IsEnabled="False" HorizontalAlignment="Left" Width="320"  VerticalContentAlignment="Center" Name="RequestBox" Margin="3,3,3,3" SelectionChanged="RequestBox_SelectionChanged">
+            <ComboBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Request Data</TextBlock>
+                    <TextBlock>
+                        Select the request data
+                        <LineBreak />
+                        the select and orderby lists get updated  
+                        <LineBreak />
+                        automatically
+                    </TextBlock>
+                </StackPanel>
+            </ComboBox.ToolTip>
+        </ComboBox>
+        <Button Grid.Column="1" Grid.Row="4" Name="RemoveEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Remove" Width="50" Margin="3" Click="RemoveEntityButton_OnClick">
+            <Button.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Remove Entity</TextBlock>
+                    <TextBlock>
+                        Remove a custom entity
+                        <LineBreak />
+                        from the dropdown menu.
+                    </TextBlock>
+                </StackPanel>
+            </Button.ToolTip>
+        </Button>
+        <!-- Add Entity -->
+        <TextBlock Grid.Column="0" Grid.Row="5" Text="Add entity" Margin="3"/>
+        <Grid Grid.Column="1" Grid.Row="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="40" />
+                <ColumnDefinition Width="90" />
+                <ColumnDefinition Width="25" />
+                <ColumnDefinition Width="170" />
+                <ColumnDefinition Width="55" />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text="Name" Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Name="CustomEntityName" IsEnabled="False" VerticalContentAlignment="Center" Margin="3"/>
+            <TextBlock Grid.Column="2" Grid.Row="0" Text="Url" Margin="3"/>
+            <TextBox Grid.Column="3" Grid.Row="0" Name="CustomEntityUrl" IsEnabled="False" VerticalContentAlignment="Center" Margin="3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
+                        <TextBlock>
+                            Url Suffix of the api endpoint starting after:
+                            <LineBreak />
+                            https://graph.microsoft.com/v1.0/me
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEntityButton_OnClick">
+                <Button.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
+                        <TextBlock>
+                            Add a custom entity to the
+                            <LineBreak />
+                            request data dropdown menu.
+                        </TextBlock>
+                    </StackPanel>
+                </Button.ToolTip>
+            </Button>
+        </Grid>
+        <!-- Select, Order by & Request Body Tabs -->
+        <TabControl Grid.Column="1" Grid.Row="6" IsEnabled="False" Name="TabControl" Margin="3">
+            <TabItem Header="Select">
+                <TabItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Select</TextBlock>
+                        <TextBlock>
+                            Select the fields you want in the table
+                            <LineBreak />
+                            None selected -> all
+                        </TextBlock>
+                    </StackPanel>
+                </TabItem.ToolTip>
+                <ListBox Height="100" SelectionMode="Multiple" Name="SelectList"></ListBox>
+            </TabItem>
+            <TabItem Header="Order by">
+                <TabItem.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Order by</TextBlock>
+                        <TextBlock>
+                            choose a field / fields that
+                            <LineBreak />
+                            determine the order
+                            <LineBreak />
+                            None selected -> no order specified
+                        </TextBlock>
+                    </StackPanel>
+                </TabItem.ToolTip>
+                <ListBox Height="100" SelectionMode="Multiple" Name="OrderList"></ListBox>
+            </TabItem>
+        </TabControl>
+        <!-- Desc / Asc -->
+        <TextBlock Grid.Column="1" Grid.Row="7" Text="sorting" HorizontalAlignment="Right" Margin="3 4 70 3"/>
+        <ComboBox Grid.Column="1" Name="OrderByMode" Grid.Row="7" Margin="3 3 3 10" HorizontalAlignment="Right" IsEnabled="False" Width="60">
+            <ComboBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Sorting order</TextBlock>
+                    <TextBlock>
+                        Switch between ascending and descending sort order
+                    </TextBlock>
+                </StackPanel>
+            </ComboBox.ToolTip>
+            <ComboBoxItem Content="Desc" IsSelected="True"></ComboBoxItem>
+            <ComboBoxItem Content="Asc" IsSelected="False"></ComboBoxItem>
+        </ComboBox>
+        <!-- Filter -->
+        <TextBlock Grid.Column="0" Grid.Row="8" Text="Filter" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="8" Name="Filter" IsEnabled="False" HorizontalAlignment="Left" VerticalContentAlignment="Center" Width="300" Margin="3 3 3 3">
+            <TextBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Filter</TextBlock>
+                    <TextBlock>
+                        Add a filter clause to the graph call.
+                        <LineBreak />
+                        Input has to be a correct condition
+                        <LineBreak />
+                        that can be appended to '$filter='
+                    </TextBlock>
+                    <Border BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0,8" />
+                    <TextBlock FontStyle="Italic">Example input: displayName eq 'John Doe'</TextBlock>
+                </StackPanel>
+            </TextBox.ToolTip>
+        </TextBox>
+        <CheckBox Grid.Column="1" Grid.Row="8" Name="ConsistencyBox" Content="Eventual" FlowDirection="RightToLeft" HorizontalAlignment="Right" IsEnabled="False" Margin="3">
+            <CheckBox.Resources>
+                <Style TargetType="{x:Type Path}">
+                    <Setter Property="FlowDirection" Value="LeftToRight" />
+                </Style>
+            </CheckBox.Resources>
+        </CheckBox>
+        <!-- Top / Skip -->
+        <TextBlock Grid.Column="0" Grid.Row="9" Text="Top" Margin="3"/>
+        <Grid Grid.Column="1" Grid.Row="9">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="175"/>
+                <ColumnDefinition Width="30"/>
+                <ColumnDefinition Width="175"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <!-- Top --> 
+            <TextBox Grid.Column="0" Grid.Row="0" Name="Top" IsEnabled="False" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Top</TextBlock>
+                        <TextBlock>
+                            Define how many objects are returned
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+            <!-- Skip -->
+            <TextBlock Grid.Column="1" Grid.Row="0" Text="Skip" HorizontalAlignment="Center" Margin="3 3 3 3"/>
+            <TextBox Grid.Column="2" Grid.Row="0" Name="Skip" IsEnabled="False" Text="" VerticalContentAlignment="Center" Margin="3 3 3 3">
+                <TextBox.ToolTip>
+                    <StackPanel>
+                        <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Skip</TextBlock>
+                        <TextBlock>
+                            Define how many objects (from the top) are skipped.
+                            <LineBreak />
+                            Empty -> 0 Skipped
+                        </TextBlock>
+                    </StackPanel>
+                </TextBox.ToolTip>
+            </TextBox>
+        </Grid>
+        <!-- Custom Call -->
+        <Border Grid.Column="1" Grid.Row="10" BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0 3 3 3" />
+        <CheckBox Grid.Column="0" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckBox" Content="Custom Call" HorizontalAlignment="Left" FlowDirection="RightToLeft" Margin="3" Click="CustomCallCheckBox_OnClick">
+            <CheckBox.Resources>
+                <Style TargetType="{x:Type Path}">
+                    <Setter Property="FlowDirection" Value="LeftToRight" />
+                </Style>
+            </CheckBox.Resources>
+        </CheckBox>
+        <TextBox Grid.Column="1" Grid.Row="11" IsEnabled="False" Name="CustomCallTextBox" Text="" Width="320" HorizontalAlignment="Left" VerticalContentAlignment="Center" Margin="3">
+            <TextBox.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Custom Call</TextBlock>
+                    <TextBlock>
+                        Create a custom graph call.
+                        <LineBreak />
+                        All the above components are disabled and ignored
+                        <LineBreak />
+                        Request parameters have to be added manually
+                    </TextBlock>
+                    <Border BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0,8" />
+                    <TextBlock FontStyle="Italic">Example input: /events?$select=start,end,subject...</TextBlock>
+                </StackPanel>
+            </TextBox.ToolTip>
+        </TextBox>
+        <Button Grid.Column="1" Grid.Row="11" IsEnabled="False" Name="CustomCallCheckButton" Content="Check" Width="50" HorizontalAlignment="Right" Margin="3" Click="CustomCallCheckButton_OnClick">
+            <Button.ToolTip>
+                <StackPanel>
+                    <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Custom Call</TextBlock>
+                    <TextBlock>
+                        Check if the custom call is valid.
+                    </TextBlock>
+                </StackPanel>
+            </Button.ToolTip>
+        </Button>
+        <!-- Refresh Token -->
+        <!--TextBox Grid.Column="0" Grid.Row="12" Visibility="Visible" Name="RefreshToken" Text="" Margin="3"/-->
+    </Grid>
+</controls:CustomListUserControlBase>
