@@ -15,7 +15,7 @@ namespace PeakboardExtensionGraph
             {
                 ID = "MsGraph", // Must be unqiue over all extensions, so may use a namespace notation
                 Name = "Microsoft Graph Extension",
-                Description = "This is an Extension for accessing MS-Graph data",
+                Description = "This is an Extension for accessing Microsoft Graph data",
                 Version = "1.0",
                 Author = "Peakboard Team",
                 Company = "Peakboard GmbH",

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -47,9 +48,19 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
         protected override void SetParameterOverride(string parameter)
         {
             ToggleUiComponents(false);
-            
-            if(String.IsNullOrEmpty(parameter)) return;
-            
+
+            if (String.IsNullOrEmpty(parameter))
+            {
+                // clear UI if new instance is created
+                _functions = new Dictionary<string, Tuple<string, string>>();
+                FuncName.Text = "";
+                FuncBody.Text = "";
+                FuncUrl.Text = "";
+                ErrorMessage.Visibility = Visibility.Hidden;
+                UpdateListBox();
+                return;
+            }
+
             // get azure app information
             string[] paramArr = parameter.Split(';');
             ClientId.Text = paramArr[0];
@@ -95,17 +106,22 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             // check if every input field is completed
             if (String.IsNullOrWhiteSpace(func) || String.IsNullOrWhiteSpace(url) || String.IsNullOrWhiteSpace(json))
             {
+                ErrorMessage.Text = "Please complete all input fields";
                 ErrorMessage.Visibility = Visibility.Visible;
                 return;
             }
             ErrorMessage.Visibility = Visibility.Hidden;
             
-            // replace forbidden characters
-            func = func.Replace(';', '_');
-            func = func.Replace('|', '_');
-            
+            // replace forbidden characters in url
             url = url.Replace(';', '_');
             url = url.Replace('|', '_');
+
+            if (!Regex.IsMatch(func, @"^[a-zA-Z0-9_]+$"))
+            {
+                ErrorMessage.Text = "Invalid character in Name field. Please only use letters, numbers and '_'";
+                ErrorMessage.Visibility = Visibility.Visible;
+                return;
+            }
             
             // remove function if already existed
             _functions.Remove(func);
@@ -145,6 +161,8 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
         
         private void ClearButton_OnClick(object sender, RoutedEventArgs e)
         {
+            ErrorMessage.Visibility = Visibility.Hidden;
+            
             FuncUrl.Text = "";
             FuncName.Text = "";
             FuncBody.Text = "";
