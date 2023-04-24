@@ -17,7 +17,7 @@ namespace ConsoleApplication1
         public static void Main(string[] args)
         {
             var helper = new GraphHelperAppOnly("067207ed-41a4-4402-b97f-b977babe0ec9",
-                "b4ff9807-402f-42b8-a89d-428363c55de7", "L-p8Q~F~BMTTbFgkymfawgGwYff4d0sqePB9vcBI");
+                "b4ff9807-402f-42b8-a89d-428363c55de7", "");
 
             helper.InitGraph().Wait();
 
@@ -106,31 +106,6 @@ namespace ConsoleApplication1
             task.Wait();*/
 
         }
-
-        private static int Min(int val1, int val2)
-        {
-            if (val1 <= val2) return val1;
-            else return val2;
-        }
-
-        private static void PrintVar(string value)
-        {
-            var values = value.Split('_');
-            switch (values[0])
-            {
-                case "s":
-                    Console.WriteLine($"String: {values[1]}");
-                    break;
-                case "d":
-                    Console.WriteLine($"Number: {values[1]}");
-                    break;
-                case "b":
-                    Console.WriteLine($"Bool: {values[1]}");
-                    break;
-                default:
-                    Console.WriteLine($"Unknown type: {value}");
-                    break;
-            }
-        }
+        
     }
 }
