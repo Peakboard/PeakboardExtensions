@@ -10,14 +10,14 @@ using PeakboardExtensionGraph.AppOnly;
 using PeakboardExtensionGraph.UserAuth;
 
 
-namespace ConsoleApplication1
+namespace GraphFunctionTestConsole
 {
     internal class Program
     {
         public static void Main(string[] args)
         {
-            var helper = new GraphHelperAppOnly("067207ed-41a4-4402-b97f-b977babe0ec9",
-                "b4ff9807-402f-42b8-a89d-428363c55de7", "");
+            var helper = new GraphHelperAppOnly("",
+                "", "");
 
             helper.InitGraph().Wait();
 
@@ -95,8 +95,7 @@ namespace ConsoleApplication1
             
             Console.WriteLine(jobj);*/
 
-            /*var helper = new GraphHelperUserAuth("067207ed-41a4-4402-b97f-b977babe0ec9",
-                "b4ff9807-402f-42b8-a89d-428363c55de7", RequestData.Permissions);
+            /*var helper = new GraphHelperUserAuth(");
             /*var task = helper.InitGraph((code, url) =>
             {
                 Console.WriteLine(code);

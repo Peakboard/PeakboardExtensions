@@ -33,7 +33,7 @@ namespace PeakboardExtensionGraph
             /*
              * Large Object Heap: code that allocates a lot of memory in LOH
              * Allocated object type: String
-             * Last observation: 12.04.2023 13:51 ConsoleApplication1.exe
+             * Last observation: 12.04.2023 13:51 GraphFunctionTestConsole.exe
              * Allocated size: 105,8 MB
              * TODO??
              */

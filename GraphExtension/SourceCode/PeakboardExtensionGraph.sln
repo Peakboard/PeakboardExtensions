@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PeakboardExtensionGraph", "PeakboardExtensionGraph\PeakboardExtensionGraph\PeakboardExtensionGraph.csproj", "{768D17C6-0E92-4A25-B1F5-85A5ABB26BA4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApplication1", "GraphFunctionTestConsole\ConsoleApplication1\ConsoleApplication1.csproj", "{5DC0C8F4-7B56-4BBB-A032-33E316BD72B2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GraphFunctionTestConsole", "GraphFunctionTestConsole\GraphFunctionTestConsole\GraphFunctionTestConsole.csproj", "{5DC0C8F4-7B56-4BBB-A032-33E316BD72B2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

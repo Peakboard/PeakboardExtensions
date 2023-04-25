@@ -7,8 +7,8 @@
         <ProjectGuid>{5DC0C8F4-7B56-4BBB-A032-33E316BD72B2}</ProjectGuid>
         <OutputType>Exe</OutputType>
         <AppDesignerFolder>Properties</AppDesignerFolder>
-        <RootNamespace>ConsoleApplication1</RootNamespace>
-        <AssemblyName>ConsoleApplication1</AssemblyName>
+        <RootNamespace>GraphFunctionTestConsole</RootNamespace>
+        <AssemblyName>GraphFunctionTestConsole</AssemblyName>
         <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
         <FileAlignment>512</FileAlignment>
         <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
