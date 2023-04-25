@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using PeakboardExtensionGraph;
 using PeakboardExtensionGraph.UserAuth;
 
-namespace ConsoleApplication1
+namespace GraphFunctionTestConsole
 {
     public class GraphHelperRandomTestGenerator
     {
