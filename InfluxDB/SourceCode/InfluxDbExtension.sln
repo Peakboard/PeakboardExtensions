@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfluxDbExtension", "InfluxDbExtension\InfluxDbExtension.csproj", "{77B51EE5-CE79-4660-BD96-652F9C78A536}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestConsole", "TestConsole\TestConsole.csproj", "{8135CF35-1C87-4409-9313-778A5F1F30EF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77B51EE5-CE79-4660-BD96-652F9C78A536}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B51EE5-CE79-4660-BD96-652F9C78A536}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B51EE5-CE79-4660-BD96-652F9C78A536}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B51EE5-CE79-4660-BD96-652F9C78A536}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8135CF35-1C87-4409-9313-778A5F1F30EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8135CF35-1C87-4409-9313-778A5F1F30EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8135CF35-1C87-4409-9313-778A5F1F30EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8135CF35-1C87-4409-9313-778A5F1F30EF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
