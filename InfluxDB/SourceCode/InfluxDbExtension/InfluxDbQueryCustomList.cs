@@ -165,6 +165,11 @@ namespace InfluxDbExtension
             while (!String.IsNullOrWhiteSpace(line))
             {
                 var values = line.Split(',');
+                /*if (values[0].Contains("#"))
+                {
+                    // TODO: Handle more than one table
+                    break;
+                }*/
                 var item = new CustomListObjectElement();
                 for (int i = 1; i < values.Length; i++)
                 {
@@ -173,10 +178,18 @@ namespace InfluxDbExtension
                         case "long":
                         case "double":
                         case "unsignedLong":
-                            item.Add(names[i], Double.Parse(values[i], CultureInfo.InvariantCulture));
+                            if (Double.TryParse(values[i],NumberStyles.Any, CultureInfo.InvariantCulture, out var doubleVal))
+                            {
+                                item.Add(names[i], doubleVal);
+                            }
+                            else item.Add(names[i], Double.NaN);
                             break;
                         case "boolean":
-                            item.Add(names[i], Boolean.Parse(values[i]));
+                            if (Boolean.TryParse(values[i], out var boolVal))
+                            {
+                                item.Add(names[i], boolVal);
+                            }
+                            else item.Add(names[i], false); 
                             break;
                         default:
                             item.Add(names[i], values[i]);
