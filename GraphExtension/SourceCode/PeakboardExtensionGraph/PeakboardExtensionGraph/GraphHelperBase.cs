@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -21,10 +22,10 @@ namespace PeakboardExtensionGraph
         protected string TenantId;
         
 
-        public async Task<string> GetAsync(string key = null, RequestParameters parameters = null)
+        public async Task<string> GetAsync(string requestUri = null, RequestParameters parameters = null)
         {
             // build request
-            var request = this.Builder.GetRequest(out var url, key, parameters);
+            var request = this.Builder.GetRequest(out var url, requestUri, parameters);
             
             // call graph api
             var response = await HttpClient.SendAsync(request);
@@ -40,9 +41,15 @@ namespace PeakboardExtensionGraph
             string jsonString = await response.Content.ReadAsStringAsync();
 
             // check response status code: Status code not 200 OK => ERROR
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (!response.IsSuccessStatusCode)
             { 
                 DeserializeError(jsonString, url);
+            }
+
+            // check response for content type
+            if (!response.Content.Headers.ContentType.MediaType.Contains("application/json"))
+            {
+                throw new MsGraphException($"Unsupported Content Type with call {url}");
             }
 
             return jsonString;

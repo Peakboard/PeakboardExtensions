@@ -17,7 +17,7 @@ namespace PeakboardExtensionGraph.AppOnly
             return new CustomListDefinition
             {
                 ID = $"MsGraphAppOnlyCustomList",
-                Name = "Microsoft Graph AppOnly List",
+                Name = "Microsoft Graph App-Only Access",
                 Description = "Returns data from MS-Graph API",
                 PropertyInputPossible = true,
             };

@@ -16,7 +16,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
         private readonly Dictionary<string, string> _options = new Dictionary<string, string>
         {
-            { "Users", "/users" }
+            { "Users", "https://graph.microsoft.com/v1.0/users" }
         };
 
         private Dictionary<string, string> _customEntities = new Dictionary<string, string>();
@@ -26,7 +26,7 @@ namespace PeakboardExtensionGraph.AppOnly
         private List<string> _orderByAttributes;
         private List<string> _selectAttributes;
 
-        private string _chosenRequest = "/users";
+        private string _chosenRequest = "https://graph.microsoft.com/v1.0/users";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
 
@@ -119,7 +119,7 @@ namespace PeakboardExtensionGraph.AppOnly
             if (String.IsNullOrEmpty(parameter))
             {
                 // called when new instance of data source is created
-                _chosenRequest = "/users";
+                _chosenRequest = "https://graph.microsoft.com/v1.0/users";
                 _chosenAttributes = new [] { "" };
                 _chosenOrder = new [] { "" };
                 _customEntities = new Dictionary<string, string>();
@@ -254,13 +254,20 @@ namespace PeakboardExtensionGraph.AppOnly
             MessageBox.Show("Request URI is valid.");
         }
 
-        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private async void CustomEndpointButton_OnClick(object sender, RoutedEventArgs e)
         {
-            if(CustomEntityName.Text != "" && CustomEntityUrl.Text != "")
+            if(CustomEndpointName.Text != "" && CustomEndpointUrl.Text != "")
             {
                 
-                string name = CustomEntityName.Text;
-                string url = CustomEntityUrl.Text;
+                string name = CustomEndpointName.Text;
+                string url = CustomEndpointUrl.Text;
+                
+                // check if input only contains url suffix
+                if (!url.StartsWith("https://graph.microsoft.com/v1.0"))
+                {
+                    url = "https://graph.microsoft.com/v1.0" + url;
+                }
+                
                 // check if entity exists in Ms Graph
                 try
                 {
@@ -268,16 +275,16 @@ namespace PeakboardExtensionGraph.AppOnly
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Invalid Entity: {ex.Message}");
+                    MessageBox.Show($"Invalid endpoint: {ex.Message}");
                     return;
                 }
-                AddEntity(name, url);
+                AddEndpoint(name, url);
             }
         }
         
-        private void RemoveEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveEndpointButton_OnClick(object sender, RoutedEventArgs e)
         {
-            RemoveEntity();
+            RemoveEndpoint();
         }
         
         #endregion
@@ -493,8 +500,8 @@ namespace PeakboardExtensionGraph.AppOnly
                 TabControl.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
-                CustomEntityName.IsEnabled = false;
-                CustomEntityUrl.IsEnabled = false;
+                CustomEndpointName.IsEnabled = false;
+                CustomEndpointUrl.IsEnabled = false;
                 CustomEntityButton.IsEnabled = false;
                 OrderByMode.IsEnabled = false;
                 Top.IsEnabled = false;
@@ -511,8 +518,8 @@ namespace PeakboardExtensionGraph.AppOnly
                 TabControl.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
-                CustomEntityName.IsEnabled = true;
-                CustomEntityUrl.IsEnabled = true;
+                CustomEndpointName.IsEnabled = true;
+                CustomEndpointUrl.IsEnabled = true;
                 CustomEntityButton.IsEnabled = true;
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
@@ -526,8 +533,8 @@ namespace PeakboardExtensionGraph.AppOnly
             
             RequestBox.IsEnabled = state;
             RemoveEntityButton.IsEnabled = state;
-            CustomEntityName.IsEnabled = state;
-            CustomEntityUrl.IsEnabled = state;
+            CustomEndpointName.IsEnabled = state;
+            CustomEndpointUrl.IsEnabled = state;
             CustomEntityButton.IsEnabled = state;
             TabControl.IsEnabled = state;
             OrderByMode.IsEnabled = state;
@@ -538,7 +545,7 @@ namespace PeakboardExtensionGraph.AppOnly
             ConsistencyBox.IsEnabled = state;
         }
 
-        private void AddEntity(string name, string url)
+        private void AddEndpoint(string name, string url)
         {
             // check if entity already exists
             if (_options.ContainsKey(name) || _customEntities.ContainsKey(name))
@@ -564,12 +571,12 @@ namespace PeakboardExtensionGraph.AppOnly
                     IsSelected = true
                 });
                 _customEntities.Add(name, url);
-                CustomEntityName.Text = "";
-                CustomEntityUrl.Text = "";
+                CustomEndpointName.Text = "";
+                CustomEndpointUrl.Text = "";
             }
         }
 
-        private void RemoveEntity()
+        private void RemoveEndpoint()
         {
             string key = ((ComboBoxItem)RequestBox.SelectedItem).Content.ToString();
             
