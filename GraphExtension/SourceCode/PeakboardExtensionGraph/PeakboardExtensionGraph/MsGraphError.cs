@@ -20,7 +20,7 @@ namespace PeakboardExtensionGraph
         public string RequestClientId { get; set; }
     }
 
-    public class MsGraphException : Exception
+    public class MsGraphException : InvalidOperationException
     {
         public string Url { get; }
         public string ErrorCode { get; }

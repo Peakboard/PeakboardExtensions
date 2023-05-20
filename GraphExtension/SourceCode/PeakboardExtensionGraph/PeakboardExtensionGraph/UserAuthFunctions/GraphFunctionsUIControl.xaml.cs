@@ -123,6 +123,12 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
                 return;
             }
             
+            // check if input only contains url suffix
+            if (!url.StartsWith("https://graph.microsoft.com/v1.0/me"))
+            {
+                url = "https://graph.microsoft.com/v1.0/me" + url;
+            }
+            
             // remove function if already existed
             _functions.Remove(func);
             

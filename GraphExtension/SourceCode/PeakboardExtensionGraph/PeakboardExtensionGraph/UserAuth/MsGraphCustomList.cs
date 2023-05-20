@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -17,7 +18,7 @@ namespace PeakboardExtensionGraph.UserAuth
             return new CustomListDefinition
             {
                 ID = $"MsGraphUserAuthCustomList",
-                Name = "Microsoft Graph UserAuth List",
+                Name = "Microsoft Graph User-Delegated Access",
                 Description = "Returns data from MS-Graph API",
                 PropertyInputPossible = true,
                 Functions = new CustomListFunctionDefinitionCollection
@@ -139,6 +140,31 @@ namespace PeakboardExtensionGraph.UserAuth
             return new GraphUiControl();
         }
 
+        protected override void CheckDataOverride(CustomListData data)
+        {
+            string[] parameters = data.Parameter.Split(';');
+            if (parameters.Length != 16)
+            {
+                throw new InvalidOperationException("Data is invalid");
+            }
+            if (String.IsNullOrEmpty(parameters[0]))
+            {
+                throw new InvalidOperationException("Client ID is missing");
+            }
+            if (String.IsNullOrEmpty(parameters[1]))
+            {
+                throw new InvalidOperationException("Tenant ID is missing");
+            }
+            if (String.IsNullOrEmpty(parameters[6]))
+            {
+                throw new InvalidOperationException("User did not authenticate");
+            }
+            if (String.IsNullOrEmpty(parameters[7]))
+            {
+                throw new InvalidOperationException("Query is missing");
+            }
+        }
+
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
             // get a helper
@@ -147,25 +173,45 @@ namespace PeakboardExtensionGraph.UserAuth
             // make graph call
             string request = data.Parameter.Split(';')[7];
             string customCall = data.Parameter.Split(';')[14];
+            string response;
 
             if (customCall != "") request = customCall;
 
-            var task = helper.GetAsync(request, BuildRequestParameters(data));
-            task.Wait();
-            var response = task.Result;
+            try
+            {
+                var task = helper.GetAsync(request, BuildRequestParameters(data));
+                task.Wait();
+                response = task.Result;
+            }
+            catch (MsGraphException mex)
+            {
+                throw new InvalidOperationException(
+                    $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
+            }
 
             var cols = new CustomListColumnCollection();
 
             // parse json to PB Columns
-            JsonTextReader reader = PreparedReader(response);
-
-            while (reader.Read())
+            try
             {
-                if (reader.TokenType == JsonToken.StartObject)
+                JsonTextReader reader = PreparedReader(response);
+
+                while (reader.Read())
                 {
-                    JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
-                    break;
+                    if (reader.TokenType == JsonToken.StartObject)
+                    {
+                        JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
+                        break;
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
             }
 
             return cols;
@@ -185,27 +231,46 @@ namespace PeakboardExtensionGraph.UserAuth
             // make graph call
             string request = data.Parameter.Split(';')[7];
             string customCall = data.Parameter.Split(';')[14];
+            string response;
 
             if (customCall != "") request = customCall;
 
-            var task = helper.GetAsync(request, BuildRequestParameters(data));
-            task.Wait();
-            var response = task.Result;
+            try{
+                var task = helper.GetAsync(request, BuildRequestParameters(data));
+                task.Wait();
+                response = task.Result;
+            }
+            catch (MsGraphException mex)
+            {
+                throw new InvalidOperationException(
+                    $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
+            }
 
             var items = new CustomListObjectElementCollection();
 
-            // parse response to PB table
-            JsonTextReader reader = PreparedReader(response);
-            JObject jObject = JObject.Parse(response);
-
-            while (reader.Read())
+            try
             {
-                if (reader.TokenType == JsonToken.StartObject)
+                // parse response to PB table
+                JsonTextReader reader = PreparedReader(response);
+                JObject jObject = JObject.Parse(response);
+
+                while (reader.Read())
                 {
-                    var item = CloneItem(emptyItem);
-                    JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
-                    items.Add(item);
+                    if (reader.TokenType == JsonToken.StartObject)
+                    {
+                        var item = CloneItem(emptyItem);
+                        JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
+                        items.Add(item);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
             }
 
             return items;
@@ -239,7 +304,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool SendMail(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            string url = "/sendMail";
+            string url = "https://graph.microsoft.com/v1.0/me/sendMail";
             //string body =
                 //"{\"message\": {\"subject\": \"$0$\",\"body\": {\"contentType\": \"Text\",\"content:\" \"$1$\"}, \"toRecipients\": [{\"emailAddress\": {\"address\": \"$2$\"} }] }}";
 
@@ -280,7 +345,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddTask(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            string url = "/todo/lists/{0}/tasks";
+            string url = "https://graph.microsoft.com/v1.0/me/todo/lists/{0}/tasks";
             string body = "{\"title\": \"$0$\"}";
 
             if (values.Count == 2)
@@ -301,7 +366,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddEvent(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            string url = "/events";
+            string url = "https://graph.microsoft.com/v1.0/me/events";
             string body = @"{
                 ""subject"": ""$0$"",
                 ""start"": {

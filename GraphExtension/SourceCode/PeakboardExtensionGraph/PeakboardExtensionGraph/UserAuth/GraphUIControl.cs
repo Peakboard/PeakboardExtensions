@@ -15,12 +15,12 @@ namespace PeakboardExtensionGraph.UserAuth
     {
         private readonly Dictionary<string, string> _options = new Dictionary<string, string>
         {
-            {"Me", ""},
-            {"Events", "/events"},
-            {"Contacts", "/contacts"},
-            {"Messages", "/messages"},
-            {"People", "/people"},
-            {"TodoLists", "/todo/lists"}
+            {"Me", "https://graph.microsoft.com/v1.0/me"},
+            {"Events", "https://graph.microsoft.com/v1.0/me/events"},
+            {"Contacts", "https://graph.microsoft.com/v1.0/me/contacts"},
+            {"Messages", "https://graph.microsoft.com/v1.0/me/messages"},
+            {"People", "https://graph.microsoft.com/v1.0/me/people"},
+            {"TodoLists", "https://graph.microsoft.com/v1.0/me/todo/lists"}
         };
 
         private Dictionary<string, string> _customEntities = new Dictionary<string, string>();
@@ -30,7 +30,7 @@ namespace PeakboardExtensionGraph.UserAuth
         private List<string> _selectAttributes;
         private List<string> _orderByAttributes;
 
-        private string _chosenRequest = "";
+        private string _chosenRequest = "https://graph.microsoft.com/v1.0/me";
         private string[] _chosenAttributes = { "" };
         private string[] _chosenOrder = { "" };
 
@@ -106,8 +106,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
             return 
                 // Azure App Information: 0 - 6
-                $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{_graphHelper.GetAccessToken()};" +
-                $"{_graphHelper.GetExpirationTime()};{_graphHelper.GetMillis()};{_graphHelper.GetRefreshToken()};" +
+                $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{_graphHelper.GetAccessToken() ?? ""};" +
+                $"{_graphHelper.GetExpirationTime() ?? "0"};{_graphHelper.GetMillis()};{_graphHelper.GetRefreshToken() ?? ""};" +
                 
                 // Query Information: 7 - 14
                 $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
@@ -128,7 +128,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
                 _graphHelper = null;
                 
-                _chosenRequest = "";
+                _chosenRequest = "https://graph.microsoft.com/v1.0/me";
                 _chosenAttributes = new [] { "" };
                 _chosenOrder = new [] { "" };
                 _customEntities = new Dictionary<string, string>();
@@ -240,29 +240,36 @@ namespace PeakboardExtensionGraph.UserAuth
             MessageBox.Show("Request URI is valid.");
         }
 
-        private async void CustomEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private async void CustomEndpointButton_OnClick(object sender, RoutedEventArgs e)
         {
-            if(CustomEntityName.Text != "" && CustomEntityUrl.Text != "")
+            if(CustomEnpointName.Text != "" && CustomEndpointUrl.Text != "")
             {
-                string name = CustomEntityName.Text;
-                string url = CustomEntityUrl.Text;
-                // check if entity exists ins Ms Graph
+                string name = CustomEnpointName.Text;
+                string url = CustomEndpointUrl.Text;
+
+                // check if input only contains url suffix
+                if (!url.StartsWith("https://graph.microsoft.com/v1.0/me"))
+                {
+                    url = "https://graph.microsoft.com/v1.0/me" + url;
+                }
+                
+                // check if endpoint exists in Ms Graph api
                 try
                 {
                     await _graphHelper.GetAsync(url);
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Invalid Entity: {ex.Message}");
+                    MessageBox.Show($"Invalid endpoint: {ex.Message}");
                     return;
                 }
-                AddEntity(name, url);
+                AddEndpoint(name, url);
             }
         }
         
-        private void RemoveEntityButton_OnClick(object sender, RoutedEventArgs e)
+        private void RemoveEndpointButton_OnClick(object sender, RoutedEventArgs e)
         {
-            RemoveEntity();
+            RemoveEndpoint();
         }
         
         #endregion
@@ -517,8 +524,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 TabControl.IsEnabled = false;
                 Filter.IsEnabled = false;
                 ConsistencyBox.IsEnabled = false;
-                CustomEntityName.IsEnabled = false;
-                CustomEntityUrl.IsEnabled = false;
+                CustomEnpointName.IsEnabled = false;
+                CustomEndpointUrl.IsEnabled = false;
                 CustomEntityButton.IsEnabled = false;
                 OrderByMode.IsEnabled = false;
                 Top.IsEnabled = false;
@@ -535,8 +542,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 TabControl.IsEnabled = true;
                 Filter.IsEnabled = true;
                 ConsistencyBox.IsEnabled = true;
-                CustomEntityName.IsEnabled = true;
-                CustomEntityUrl.IsEnabled = true;
+                CustomEnpointName.IsEnabled = true;
+                CustomEndpointUrl.IsEnabled = true;
                 CustomEntityButton.IsEnabled = true;
                 OrderByMode.IsEnabled = true;
                 Top.IsEnabled = true;
@@ -550,8 +557,8 @@ namespace PeakboardExtensionGraph.UserAuth
             
             RequestBox.IsEnabled = state;
             RemoveEntityButton.IsEnabled = state;
-            CustomEntityName.IsEnabled = state;
-            CustomEntityUrl.IsEnabled = state;
+            CustomEnpointName.IsEnabled = state;
+            CustomEndpointUrl.IsEnabled = state;
             CustomEntityButton.IsEnabled = state;
             TabControl.IsEnabled = state;
             OrderByMode.IsEnabled = state;
@@ -562,9 +569,9 @@ namespace PeakboardExtensionGraph.UserAuth
             ConsistencyBox.IsEnabled = state;
         }
         
-        private void AddEntity(string name, string url)
+        private void AddEndpoint(string name, string url)
         {
-            // check if entity already exists
+            // check if endpoint already exists
             if (_options.ContainsKey(name) || _customEntities.ContainsKey(name))
             {
                 MessageBox.Show("Name already exists");
@@ -588,12 +595,12 @@ namespace PeakboardExtensionGraph.UserAuth
                     IsSelected = true
                 });
                 _customEntities.Add(name, url);
-                CustomEntityName.Text = "";
-                CustomEntityUrl.Text = "";
+                CustomEnpointName.Text = "";
+                CustomEndpointUrl.Text = "";
             }
         }
 
-        private void RemoveEntity()
+        private void RemoveEndpoint()
         {
             string key = ((ComboBoxItem)RequestBox.SelectedItem).Content.ToString();
             
