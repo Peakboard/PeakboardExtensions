@@ -42,22 +42,47 @@ namespace PeakboardExtensionGraph.AppOnly
             
             var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
-            string response = task.Result;
+            GraphResponse response = task.Result;
             
             // get columns
             var cols = new CustomListColumnCollection();
-            
-            // parse json to PB Columns
-            JsonTextReader reader = PreparedReader(response);
 
-            while (reader.Read())
+            if(response.Type == GraphContentType.Json)
             {
-                if (reader.TokenType == JsonToken.StartObject)
+                // parse json to PB Columns
+                JsonTextReader reader = PreparedReader(response.Content);
+
+                while (reader.Read())
                 {
-                    JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
-                    break;
+                    if (reader.TokenType == JsonToken.StartObject)
+                    {
+                        JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
+                        break;
+                    }
+                }
+
+                
+            }
+            else if (response.Type == GraphContentType.OctetStream)
+            {
+                var reader = new StringReader(response.Content);
+                string[] colNames = reader.ReadLine()?.Split(',');
+
+                if (colNames == null)
+                {
+                    throw new InvalidOperationException("Response is empty");
+                }
+
+                foreach (var colName in colNames)
+                {
+                    cols.Add(new CustomListColumn()
+                    {
+                        Name = colName,
+                        Type = CustomListColumnTypes.String
+                    });
                 }
             }
+            
             return cols;
         }
 
@@ -79,22 +104,47 @@ namespace PeakboardExtensionGraph.AppOnly
             
             var task = helper.GetAsync(request, BuildRequestParameters(data));
             task.Wait();
-            string response = task.Result; // json object response
+            GraphResponse response = task.Result; // json object response
             
             // get items
             var items = new CustomListObjectElementCollection();
-            
-            // parse json to PB Columns
-            JsonTextReader reader = PreparedReader(response);
-            JObject jObject = JObject.Parse(response);
 
-            while (reader.Read())
-            {
-                if (reader.TokenType == JsonToken.StartObject)
+            if(response.Type == GraphContentType.Json){
+                // parse json to PB Columns
+                JsonTextReader reader = PreparedReader(response.Content);
+                JObject jObject = JObject.Parse(response.Content);
+
+                while (reader.Read())
                 {
-                    var item = CloneItem(emptyItem);
-                    JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
+                    if (reader.TokenType == JsonToken.StartObject)
+                    {
+                        var item = CloneItem(emptyItem);
+                        JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
+                        items.Add(item);
+                    }
+                }
+            }
+            else if (response.Type == GraphContentType.OctetStream)
+            {
+                var reader = new StringReader(response.Content);
+                string[] colNames = reader.ReadLine()?.Split(',');
+
+                if (colNames == null)
+                {
+                    throw new InvalidOperationException("Response is empty");
+                }
+
+                string row = reader.ReadLine();
+                while(row != null)
+                {
+                    string[] values = row.Split(',');
+                    var item = new CustomListObjectElement();
+                    for (int i = 0; i < values.Length; i++)
+                    {
+                        item.Add(colNames[i], values[i]);
+                    }
                     items.Add(item);
+                    row = reader.ReadLine();
                 }
             }
             

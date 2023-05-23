@@ -22,7 +22,7 @@ namespace PeakboardExtensionGraph
         protected string TenantId;
         
 
-        public async Task<string> GetAsync(string requestUri = null, RequestParameters parameters = null)
+        public async Task<GraphResponse> GetAsync(string requestUri = null, RequestParameters parameters = null)
         {
             // build request
             var request = this.Builder.GetRequest(out var url, requestUri, parameters);
@@ -38,21 +38,36 @@ namespace PeakboardExtensionGraph
              * Allocated size: 105,8 MB
              * TODO??
              */
-            string jsonString = await response.Content.ReadAsStringAsync();
+            string content = await response.Content.ReadAsStringAsync();
 
             // check response status code: Status code not 200 OK => ERROR
             if (!response.IsSuccessStatusCode)
             { 
-                DeserializeError(jsonString, url);
+                DeserializeError(content, url);
             }
+            
 
             // check response for content type
-            if (!response.Content.Headers.ContentType.MediaType.Contains("application/json"))
+            if (response.Content.Headers.ContentType.MediaType.Contains("application/json"))
+            {
+                return new GraphResponse()
+                {
+                    Content = content,
+                    Type = GraphContentType.Json
+                };
+            }
+            if(response.Content.Headers.ContentType.MediaType.Contains("application/octet-stream"))
+            {
+                return new GraphResponse()
+                {
+                    Content = content,
+                    Type = GraphContentType.OctetStream
+                };
+            }
+            else
             {
                 throw new MsGraphException($"Unsupported Content Type with call {url}");
             }
-
-            return jsonString;
         }
 
         public static void DeserializeError(string json, string url = null)

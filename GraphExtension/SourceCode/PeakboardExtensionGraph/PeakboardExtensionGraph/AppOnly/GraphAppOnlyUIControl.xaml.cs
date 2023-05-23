@@ -263,9 +263,9 @@ namespace PeakboardExtensionGraph.AppOnly
                 string url = CustomEndpointUrl.Text;
                 
                 // check if input only contains url suffix
-                if (!url.StartsWith("https://graph.microsoft.com/v1.0"))
+                if (!url.StartsWith("https://graph.microsoft.com"))
                 {
-                    url = "https://graph.microsoft.com/v1.0" + url;
+                    url = "https://graph.microsoft.com" + url;
                 }
                 
                 // check if entity exists in Ms Graph
@@ -329,9 +329,16 @@ namespace PeakboardExtensionGraph.AppOnly
             _chosenOrder = new [] { "" };
         }
 
-        private void UpdateSelectList(string response)
+        private void UpdateSelectList(GraphResponse response)
         {
-            var reader = PreparedReader(response);
+            if (response.Type != GraphContentType.Json)
+            {
+                // return empty listbox if type is not json (e.g. CSV)
+                SelectList.Items.Clear();
+                return;
+            }
+            
+            var reader = PreparedReader(response.Content);
             // delete old entries
             _selectAttributes = new List<string>();
             
@@ -369,9 +376,16 @@ namespace PeakboardExtensionGraph.AppOnly
             }
         }
 
-        private void UpdateOrderByList(string response)
+        private void UpdateOrderByList(GraphResponse response)
         {
-            var reader = PreparedReader(response);
+            if (response.Type != GraphContentType.Json)
+            {
+                // return empty listbox if type is not json (e.g. CSV)
+                OrderList.Items.Clear();
+                return;
+            }
+            
+            var reader = PreparedReader(response.Content);
             bool value = false;
             string lastname = "";
             
