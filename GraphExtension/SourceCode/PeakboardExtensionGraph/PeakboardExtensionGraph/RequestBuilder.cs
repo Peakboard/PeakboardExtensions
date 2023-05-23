@@ -46,7 +46,7 @@ namespace PeakboardExtensionGraph
                 }
                 
                 // append skipped entries
-                if (parameters.Skip != 0)
+                if (parameters.Skip > 0)
                 {
                     if (queryParams != "?")
                     {

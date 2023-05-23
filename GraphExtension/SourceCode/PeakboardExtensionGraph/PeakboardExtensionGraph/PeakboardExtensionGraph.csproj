@@ -72,11 +72,16 @@
         <Compile Include="AppOnly\MsGraphAppOnlyCustomList.cs" />
         <Compile Include="GraphExtension.cs" />
         <Compile Include="GraphHelperBase.cs" />
+        <Compile Include="GraphResponse.cs" />
         <Compile Include="JsonHelper.cs" />
         <Compile Include="MsGraphError.cs" />
         <Compile Include="Properties\AssemblyInfo.cs" />
         <Compile Include="RequestBuilder.cs" />
         <Compile Include="RequestParameters.cs" />
+        <Compile Include="Settings\AppOnlySettings.cs" />
+        <Compile Include="Settings\FunctionSettings.cs" />
+        <Compile Include="Settings\SettingsBase.cs" />
+        <Compile Include="Settings\UserAuthSettings.cs" />
         <Compile Include="UserAuthFunctions\GraphFunctionsUIControl.xaml.cs" />
         <Compile Include="UserAuthFunctions\MsGraphFunctionsCustomList.cs" />
         <Compile Include="UserAuth\GraphHelperUserAuth.cs" />

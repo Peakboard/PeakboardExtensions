@@ -6,6 +6,7 @@ using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Peakboard.ExtensionKit;
+using PeakboardExtensionGraph.Settings;
 
 namespace PeakboardExtensionGraph.UserAuth
 {
@@ -142,24 +143,38 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override void CheckDataOverride(CustomListData data)
         {
-            string[] parameters = data.Parameter.Split(';');
-            if (parameters.Length != 16)
+            if (String.IsNullOrEmpty(data.Parameter))
             {
-                throw new InvalidOperationException("Data is invalid");
+                throw new InvalidOperationException("Settings for Graph Connection not found");
             }
-            if (String.IsNullOrEmpty(parameters[0]))
+
+            UserAuthSettings settings;
+            try
+            {
+                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+            
+            if (settings.Parameters == null && string.IsNullOrEmpty(settings.CustomCall))
+            {
+                this.Log?.Verbose("No Query Parameters available. Extracting entire objects");
+            }
+            if (String.IsNullOrEmpty(settings.ClientId))
             {
                 throw new InvalidOperationException("Client ID is missing");
             }
-            if (String.IsNullOrEmpty(parameters[1]))
+            if (String.IsNullOrEmpty(settings.TenantId))
             {
                 throw new InvalidOperationException("Tenant ID is missing");
             }
-            if (String.IsNullOrEmpty(parameters[6]))
+            if (String.IsNullOrEmpty(settings.RefreshToken))
             {
-                throw new InvalidOperationException("User did not authenticate");
+                throw new InvalidOperationException("Tokens are missing. User did not Authenticate");
             }
-            if (String.IsNullOrEmpty(parameters[7]))
+            if (String.IsNullOrEmpty(settings.EndpointUri) && String.IsNullOrEmpty(settings.CustomCall))
             {
                 throw new InvalidOperationException("Query is missing");
             }
@@ -167,26 +182,36 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
+            // get graph settings
+            UserAuthSettings settings;
+            try{
+                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+            
             // get a helper
-            var helper = GetGraphHelper(data);
+            var helper = GetGraphHelper(settings, data);
 
             // make graph call
-            string request = data.Parameter.Split(';')[7];
-            string customCall = data.Parameter.Split(';')[14];
-            string response;
+            string request = settings.EndpointUri; //data.Parameter.Split(';')[7];
+            string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
+            GraphResponse response;
 
             if (customCall != "") request = customCall;
 
             try
             {
-                var task = helper.GetAsync(request, BuildRequestParameters(data));
+                var task = helper.GetAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
                 task.Wait();
                 response = task.Result;
             }
             catch (MsGraphException mex)
             {
                 throw new InvalidOperationException(
-                    $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+                    $"Microsoft Graph Error\n Http-Status-Code: {mex.ErrorCode}\nMessage: {mex.Message}");
             }
             catch (Exception ex)
             {
@@ -195,23 +220,44 @@ namespace PeakboardExtensionGraph.UserAuth
 
             var cols = new CustomListColumnCollection();
 
-            // parse json to PB Columns
-            try
-            {
-                JsonTextReader reader = PreparedReader(response);
-
-                while (reader.Read())
+            if(response.Type == GraphContentType.Json){
+                // parse json to PB Columns
+                try
                 {
-                    if (reader.TokenType == JsonToken.StartObject)
+                    JsonTextReader reader = PreparedReader(response.Content);
+
+                    while (reader.Read())
                     {
-                        JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
-                        break;
+                        if (reader.TokenType == JsonToken.StartObject)
+                        {
+                            JsonHelper.ColumnsWalkThroughObject(reader, "root", cols);
+                            break;
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else if (response.Type == GraphContentType.OctetStream)
             {
-                throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
+                var reader = new StringReader(response.Content);
+                string[] colNames = reader.ReadLine()?.Split(',');
+
+                if (colNames == null)
+                {
+                    throw new InvalidOperationException("Response is empty");
+                }
+
+                foreach (var colName in colNames)
+                {
+                    cols.Add(new CustomListColumn()
+                    {
+                        Name = colName,
+                        Type = CustomListColumnTypes.String
+                    });
+                }
             }
 
             return cols;
@@ -220,23 +266,33 @@ namespace PeakboardExtensionGraph.UserAuth
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
+            // get graph settings
+            UserAuthSettings settings;
+            try{
+                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+            
             // create an item with empty values
             var expectedKeys = GetColumnsOverride(data);
             var emptyItem = new CustomListObjectElement();
             SetKeys(emptyItem, expectedKeys);
 
             // get a graph helper
-            var helper = GetGraphHelper(data);
+            var helper = GetGraphHelper(settings, data);
             
             // make graph call
-            string request = data.Parameter.Split(';')[7];
-            string customCall = data.Parameter.Split(';')[14];
-            string response;
+            string request = settings.EndpointUri; //data.Parameter.Split(';')[7];
+            string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
+            GraphResponse response;
 
             if (customCall != "") request = customCall;
 
             try{
-                var task = helper.GetAsync(request, BuildRequestParameters(data));
+                var task = helper.GetAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
                 task.Wait();
                 response = task.Result;
             }
@@ -252,25 +308,50 @@ namespace PeakboardExtensionGraph.UserAuth
 
             var items = new CustomListObjectElementCollection();
 
-            try
-            {
-                // parse response to PB table
-                JsonTextReader reader = PreparedReader(response);
-                JObject jObject = JObject.Parse(response);
-
-                while (reader.Read())
+            if(response.Type == GraphContentType.Json){
+                try
                 {
-                    if (reader.TokenType == JsonToken.StartObject)
+                    // parse response to PB table
+                    JsonTextReader reader = PreparedReader(response.Content);
+                    JObject jObject = JObject.Parse(response.Content);
+
+                    while (reader.Read())
                     {
-                        var item = CloneItem(emptyItem);
-                        JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
-                        items.Add(item);
+                        if (reader.TokenType == JsonToken.StartObject)
+                        {
+                            var item = CloneItem(emptyItem);
+                            JsonHelper.ItemsWalkThroughObject(reader, "root", item, jObject);
+                            items.Add(item);
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+            else if (response.Type == GraphContentType.OctetStream)
             {
-                throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
+                var reader = new StringReader(response.Content);
+                string[] colNames = reader.ReadLine()?.Split(',');
+
+                if (colNames == null)
+                {
+                    throw new InvalidOperationException("Response is empty");
+                }
+
+                string row = reader.ReadLine();
+                while(row != null)
+                {
+                    string[] values = row.Split(',');
+                    var item = new CustomListObjectElement();
+                    for (int i = 0; i < values.Length; i++)
+                    {
+                        item.Add(colNames[i], values[i]);
+                    }
+                    items.Add(item);
+                    row = reader.ReadLine();
+                }
             }
 
             return items;
@@ -304,6 +385,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool SendMail(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
+            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            
             string url = "https://graph.microsoft.com/v1.0/me/sendMail";
             //string body =
                 //"{\"message\": {\"subject\": \"$0$\",\"body\": {\"contentType\": \"Text\",\"content:\" \"$1$\"}, \"toRecipients\": [{\"emailAddress\": {\"address\": \"$2$\"} }] }}";
@@ -332,7 +415,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 formattedBody = formattedBody.Replace("$1$", values[1].StringValue);
                 formattedBody = formattedBody.Replace("$2$", values[2].StringValue);
 
-                var helper = GetGraphHelper(data);
+                var helper = GetGraphHelper(settings, data);
 
                 var task = helper.PostAsync(url, formattedBody);
                 task.Wait();
@@ -345,6 +428,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddTask(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
+            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            
             string url = "https://graph.microsoft.com/v1.0/me/todo/lists/{0}/tasks";
             string body = "{\"title\": \"$0$\"}";
 
@@ -353,7 +438,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 var formattedUrl = String.Format(url, values[0].StringValue);
                 var formattedBody = body.Replace("$0$", values[1].StringValue);
 
-                var helper = GetGraphHelper(data);
+                var helper = GetGraphHelper(settings, data);
 
                 var task = helper.PostAsync(formattedUrl, formattedBody);
                 task.Wait();
@@ -366,6 +451,8 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddEvent(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
+            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            
             string url = "https://graph.microsoft.com/v1.0/me/events";
             string body = @"{
                 ""subject"": ""$0$"",
@@ -386,7 +473,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 formattedBody = formattedBody.Replace("$1$", values[1].StringValue);
                 formattedBody = formattedBody.Replace("$2$", values[2].StringValue);
 
-                var helper = GetGraphHelper(data);
+                var helper = GetGraphHelper(settings, data);
 
                 var task = helper.PostAsync(url, formattedBody);
                 task.Wait();
@@ -401,28 +488,28 @@ namespace PeakboardExtensionGraph.UserAuth
 
         #region HelperMethods
 
-        private GraphHelperUserAuth GetGraphHelper(CustomListData data)
+        private GraphHelperUserAuth GetGraphHelper(UserAuthSettings settings, CustomListData data)
         {
             this.Log?.Verbose("Initializing GraphHelper");
             GraphHelperUserAuth helper;
             // get refresh token
-            string refreshToken = data.Parameter.Split(';')[6];
+            string refreshToken = settings.RefreshToken; //data.Parameter.Split(';')[6];
 
             // check if refresh token is available
             if (string.IsNullOrEmpty(refreshToken))
             {
                 // if refresh token isn't available -> user did not authenticate
-                throw new NullReferenceException("Refresh token not initialized: User did not authenticate");
+                throw new InvalidOperationException("Refresh token not initialized: User did not authenticate");
             }
             else
             {
                 // get parameters for azure app
-                string clientId = data.Parameter.Split(';')[0];
-                string tenantId = data.Parameter.Split(';')[1];
-                string permissions = data.Parameter.Split(';')[2];
-                string accessToken = data.Parameter.Split(';')[3];
-                string expiresIn = data.Parameter.Split(';')[4];
-                long millis = Int64.Parse(data.Parameter.Split(';')[5]);
+                string clientId = settings.ClientId; //data.Parameter.Split(';')[0];
+                string tenantId = settings.TenantId;//data.Parameter.Split(';')[1];
+                string permissions = settings.Scope; //data.Parameter.Split(';')[2];
+                string accessToken = settings.AccessToken; //data.Parameter.Split(';')[3];
+                string expiresIn = settings.ExpirationTime;//data.Parameter.Split(';')[4];
+                long millis = settings.Millis; //Int64.Parse(data.Parameter.Split(';')[5]);
 
                 // if available initialize with access token (in runtime)
                 helper = new GraphHelperUserAuth(clientId, tenantId, permissions);
@@ -477,7 +564,7 @@ namespace PeakboardExtensionGraph.UserAuth
             CustomListData data)
         {
             // replace tokens in parameter if renewed
-            var values = data.Parameter.Split(';');
+            /*var values = data.Parameter.Split(';');
             values[3] = accessToken;
             values[4] = expiresIn;
             values[5] = millis.ToString();
@@ -487,7 +574,14 @@ namespace PeakboardExtensionGraph.UserAuth
             for (int i = 1; i < values.Length; i++)
             {
                 result += $";{values[i]}";
-            }
+            }*/
+            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            settings.AccessToken = accessToken;
+            settings.ExpirationTime = expiresIn;
+            settings.Millis = millis;
+            settings.RefreshToken = refreshToken;
+
+            var result = JsonConvert.SerializeObject(settings);
 
             data.Parameter = result;
         }
@@ -556,13 +650,13 @@ namespace PeakboardExtensionGraph.UserAuth
                 switch (column.Type)
                 {
                     case CustomListColumnTypes.Boolean:
-                        item.Add(key, null); 
+                        item.Add(key, false); 
                         break;
                     case CustomListColumnTypes.Number:
-                        item.Add(key, null); 
+                        item.Add(key, Double.NaN); 
                         break;
                     case CustomListColumnTypes.String:
-                        item.Add(key, null);
+                        item.Add(key, "");
                         break;
                 }
                 
