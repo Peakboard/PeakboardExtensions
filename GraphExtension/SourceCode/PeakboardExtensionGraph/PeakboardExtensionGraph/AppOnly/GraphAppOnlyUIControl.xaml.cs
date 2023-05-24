@@ -7,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Newtonsoft.Json;
 using Peakboard.ExtensionKit;
+using PeakboardExtensionGraph.Settings;
 
 
 namespace PeakboardExtensionGraph.AppOnly
@@ -99,16 +100,46 @@ namespace PeakboardExtensionGraph.AppOnly
                 customCall = CustomCallTextBox.Text;
             }
             
-            return 
-                // Azure app information
-                $"{ClientId.Text};{TenantId.Text};{Secret.Text};" +
-                
-                // Query information
-                $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
-                $"{Top.Text};{Skip.Text};{customCall};" +
-                
-                // only relevant for UI
-                $"{customEntities}";
+            Int32.TryParse(Top.Text, out var top);
+            Int32.TryParse(Skip.Text, out var skip);
+
+            var settings = new AppOnlySettings()
+            {
+                ClientId = this.ClientId.Text,
+                TenantId = this.TenantId.Text,
+                Secret = this.Secret.Text,
+
+                EndpointUri = data,
+                CustomCall = customCall,
+                Parameters = new RequestParameters()
+                {
+                    Select = select,
+                    OrderBy = orderBy,
+                    Filter = this.Filter.Text,
+                    ConsistencyLevelEventual = ConsistencyBox.IsChecked == true,
+                    Top = top,
+                    Skip = skip
+                },
+                CustomEntities = _customEntities
+            };
+            
+            /*if (CustomCallCheckBox.IsChecked == true)
+            {
+                settings.Parameters = null;
+            }*/
+
+            var json = JsonConvert.SerializeObject(settings);
+
+            return json;
+            /* Azure app information
+            $"{ClientId.Text};{TenantId.Text};{Secret.Text};" +
+            
+            // Query information
+            $"{data};{select};{orderBy};{Filter.Text};{(ConsistencyBox.IsChecked == true ? "true" : "false")};" +
+            $"{Top.Text};{Skip.Text};{customCall};" +
+            
+            // only relevant for UI
+            $"{customEntities}";*/
         }
 
         protected override void SetParameterOverride(string parameter)
@@ -116,7 +147,22 @@ namespace PeakboardExtensionGraph.AppOnly
             ToggleUiComponents(false);
             _uiInitialized = false;
             
-            if (String.IsNullOrEmpty(parameter))
+            AppOnlySettings settings;
+
+            try
+            {
+                settings = JsonConvert.DeserializeObject<AppOnlySettings>(parameter);
+            }
+            catch (JsonException)
+            {
+                settings = AppOnlySettings.ConvertOldParameter(parameter);
+            }
+            catch (Exception)
+            {
+                settings = null;
+            }
+            
+            if (String.IsNullOrEmpty(parameter) || settings == null)
             {
                 // called when new instance of data source is created
                 _chosenRequest = "https://graph.microsoft.com/v1.0/users";
@@ -131,55 +177,56 @@ namespace PeakboardExtensionGraph.AppOnly
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
                 
+                return;
+            }
+
+            string[] paramArr = parameter.Split(';');
+            
+            settings.Validate();
+
+            ClientId.Text = settings.ClientId; //paramArr[0];
+            TenantId.Text = settings.TenantId; //paramArr[1];
+            Secret.Text = settings.Secret; //paramArr[2];
+
+            _chosenRequest = settings.EndpointUri; //paramArr[3];
+            _chosenAttributes = settings.Parameters.Select.Split(','); //paramArr[4].Split(',');
+            _chosenOrder = settings.Parameters.OrderBy.Split(','); //paramArr[5].Split(',');
+
+            Filter.Text = settings.Parameters.Filter ?? ""; //paramArr[6];
+            ConsistencyBox.IsChecked = settings.Parameters.ConsistencyLevelEventual; //(paramArr[7] == "true");
+            Top.Text = settings.Parameters.Top.ToString(); //paramArr[8];
+            Skip.Text = settings.Parameters.Skip.ToString(); //paramArr[9];
+            CustomCallCheckBox.IsChecked = (settings.CustomCall != ""); //(paramArr[10] != "");
+            CustomCallTextBox.Text = settings.CustomCall; //paramArr[10];
+                
+            //var customEntities = paramArr[11];
+
+            if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
+            {
+                // set sorting order to ascending
+                ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
             }
             else
             {
-                string[] paramArr = parameter.Split(';');
-
-                ClientId.Text = paramArr[0];
-                TenantId.Text = paramArr[1];
-                Secret.Text = paramArr[2];
-
-                _chosenRequest = paramArr[3];
-                _chosenAttributes = paramArr[4].Split(',');
-                _chosenOrder = paramArr[5].Split(',');
-
-                Filter.Text = paramArr[6];
-                ConsistencyBox.IsChecked = (paramArr[7] == "true");
-                Top.Text = paramArr[8];
-                Skip.Text = paramArr[9];
-                CustomCallCheckBox.IsChecked = (paramArr[10] != "");
-                CustomCallTextBox.Text = paramArr[10];
-                
-                var customEntities = paramArr[11];
-
-                if (_chosenOrder.Length > 0 && !_chosenOrder[0].EndsWith("desc"))
+                // remove ' desc' from orderBy attributes
+                for (int i = 0; i < _chosenOrder.Length; i++)
                 {
-                    // set sorting order to ascending
-                    ((ComboBoxItem)OrderByMode.Items[1]).IsSelected = true;
-                }
-                else
-                {
-                    // remove ' desc' from orderBy attributes
-                    for (int i = 0; i < _chosenOrder.Length; i++)
-                    {
-                        _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
-                    }
-                }
-                
-                // init custom entities dictionary
-                _customEntities = new Dictionary<string, string>();
-
-                if(customEntities != ""){
-                    string[] enitities = customEntities.Split(' ');
-                    foreach (var entity in enitities)
-                    {
-                        _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
-                    }
+                    _chosenOrder[i] = _chosenOrder[i].Remove(_chosenOrder[i].Length - 5);
                 }
             }
+                
+            // init custom entities dictionary
+            _customEntities = settings.CustomEntities; //new Dictionary<string, string>();
 
-            var task = RestoreGraphConnection(parameter);
+            /*if(customEntities != ""){
+                string[] enitities = customEntities.Split(' ');
+                foreach (var entity in enitities)
+                {
+                    _customEntities.Add(entity.Split(',')[0], entity.Split(',')[1]);
+                }
+            }*/
+
+            var task = RestoreGraphConnection(settings);
         }
         
         #region EventListener
@@ -199,7 +246,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 
                 // init dropdown & list boxes
                 InitializeRequestDropdown();
-                var response = await _helper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                var response = await _helper.ExtractAsync(_chosenRequest, new RequestParameters() { Top = 1 });
                 UpdateSelectList(response);
                 UpdateOrderByList(response);
             }
@@ -242,7 +289,7 @@ namespace PeakboardExtensionGraph.AppOnly
             // check if custom call works
             try
             {
-                await _helper.GetAsync(CustomCallTextBox.Text);
+                await _helper.ExtractAsync(CustomCallTextBox.Text);
             }
             catch (Exception ex)
             {
@@ -271,7 +318,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 // check if entity exists in Ms Graph
                 try
                 {
-                    await _helper.GetAsync(url);
+                    await _helper.ExtractAsync(url);
                 }
                 catch (Exception ex)
                 {
@@ -298,7 +345,7 @@ namespace PeakboardExtensionGraph.AppOnly
 
             // make a graph call and update select & order by combo boxes
             try {
-                var response = await _helper.GetAsync(data, new RequestParameters()
+                var response = await _helper.ExtractAsync(data, new RequestParameters()
                 {
                     Top = 1
                 });
@@ -308,7 +355,7 @@ namespace PeakboardExtensionGraph.AppOnly
             catch (Exception ex)
             {
                 // catch potential exception caused by graph error
-                MessageBox.Show(ex.Message);
+                MessageBox.Show($"Error extracting Object fields: {ex.Message}");
                 if (RequestBox != null) RequestBox.IsEnabled = true;
                 
                 // clear saved selections after error
@@ -604,27 +651,23 @@ namespace PeakboardExtensionGraph.AppOnly
             
         }
         
-        private async Task RestoreGraphConnection(string parameter)
+        private async Task RestoreGraphConnection(AppOnlySettings settings)
         {
             // Set state of UI depending on state of Graph Connection
-            
-            // case 1: New datasource is created -> Graph connection never existed
-            // Do nothing -> there is nothing that can be restored
-            if(String.IsNullOrEmpty(parameter)) return;
 
-            string clientId = parameter.Split(';')[0];
-            string tenantId = parameter.Split(';')[1];
-            string secret = parameter.Split(';')[2];
+            //string clientId = parameter.Split(';')[0];
+            //string tenantId = parameter.Split(';')[1];
+            //string secret = parameter.Split(';')[2];
 
-            // case 2: Existing datasource is restored & client secret is still valid 
+            // case 1: Existing datasource is restored & client secret is still valid 
             // -> Initialize GraphHelper & restore ui configuration
             try
             {
-                _helper = new GraphHelperAppOnly(clientId, tenantId, secret);
+                _helper = new GraphHelperAppOnly(settings.ClientId, settings.TenantId, settings.Secret);
                 await _helper.InitGraph();
                 
                 InitializeRequestDropdown();
-                var response = await _helper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                var response = await _helper.ExtractAsync(_chosenRequest, new RequestParameters() { Top = 1 });
                 UpdateSelectList(response);
                 UpdateOrderByList(response);
                 
@@ -632,7 +675,7 @@ namespace PeakboardExtensionGraph.AppOnly
                 ToggleCustomCall();
                 _uiInitialized = true;
             }
-            // case 3: Existing datasource is restored & client secret expired
+            // case 2: Existing datasource is restored & client secret expired
             // Lock UI -> parameters cant be restored until access is granted
             // Wait for connection through connect button
             catch (Exception)

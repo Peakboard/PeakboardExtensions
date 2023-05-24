@@ -14,6 +14,7 @@ namespace PeakboardExtensionGraph.Settings
         public long Millis { get; set; }
         
         public string CustomCall { get; set; }
+        public string RequestBody { get; set; }
         public Dictionary<string, string> CustomEntities { get; set; }
         
         public static UserAuthSettings ConvertOldParameter(string parameter)
@@ -25,6 +26,11 @@ namespace PeakboardExtensionGraph.Settings
             Int64.TryParse(parameters[5], out var millis);
             Int32.TryParse(parameters[12], out var top);
             Int32.TryParse(parameters[13], out var skip);
+
+            string endpointUrl = parameters[7];
+
+            if (!endpointUrl.StartsWith("https://graph.microsoft.com"))
+                endpointUrl = "https://graph.microsoft.com/v1.0/me" + endpointUrl;
             
             var customEndpoints = new Dictionary<string, string>();
 
@@ -32,7 +38,10 @@ namespace PeakboardExtensionGraph.Settings
                 string[] endpoints = parameters[15].Split(' ');
                 foreach (var endpoint in endpoints)
                 {
-                    customEndpoints.Add(endpoint.Split(',')[0], endpoint.Split(',')[1]);
+                    string url = endpoint.Split(',')[1];
+                    if (!url.StartsWith("https://graph.microsoft.com")) url = "https://graph.microsoft.com/v1.0" + url;
+                    
+                    customEndpoints.Add(endpoint.Split(',')[0], url);
                 }
             }
 
@@ -45,7 +54,7 @@ namespace PeakboardExtensionGraph.Settings
                 ExpirationTime = parameters[4],
                 Millis = millis,
                 RefreshToken = parameters[6],
-                EndpointUri = parameters[7],
+                EndpointUri = endpointUrl,
                 Parameters = new RequestParameters()
                 {
                     Select = parameters[8],
@@ -58,6 +67,26 @@ namespace PeakboardExtensionGraph.Settings
                 CustomCall = parameters[14],
                 CustomEntities = customEndpoints
             };
+        }
+        
+        public void Validate()
+        {
+            if (ClientId == null) ClientId = "";
+            if (TenantId == null) TenantId = "";
+            if (Scope == null) Scope = "user.read offline_access";
+            if (AccessToken == null) AccessToken = "";
+            if (ExpirationTime == null) ExpirationTime = "0";
+            if (RefreshToken == null) RefreshToken = "";
+            if (EndpointUri == null) EndpointUri = "https://graph.microsoft.com/v1.0/me";
+            if (Parameters == null) Parameters = new RequestParameters()
+            {
+                Select = "",
+                OrderBy = "",
+                ConsistencyLevelEventual = false,
+                Filter = ""
+            };
+            if (CustomCall == null) CustomCall = "";
+            if (CustomEntities == null) CustomEntities = new Dictionary<string, string>();
         }
     }
     

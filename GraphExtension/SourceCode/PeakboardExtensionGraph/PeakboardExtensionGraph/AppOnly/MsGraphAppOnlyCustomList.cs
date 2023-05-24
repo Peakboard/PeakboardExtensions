@@ -1,9 +1,11 @@
 ﻿using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Peakboard.ExtensionKit;
+using PeakboardExtensionGraph.Settings;
 
 namespace PeakboardExtensionGraph.AppOnly
 {
@@ -29,20 +31,95 @@ namespace PeakboardExtensionGraph.AppOnly
             return new GraphAppOnlyUiControl();
         }
 
+        protected override void CheckDataOverride(CustomListData data)
+        {
+
+            if (String.IsNullOrEmpty(data.Parameter))
+            {
+                throw new InvalidOperationException("Settings for Graph Connection not found");
+            }
+
+            AppOnlySettings settings;
+            try
+            {
+                settings = JsonConvert.DeserializeObject<AppOnlySettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException(
+                    "Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+
+            if (settings.Parameters == null && string.IsNullOrEmpty(settings.CustomCall))
+            {
+                this.Log?.Verbose("No Query Parameters available. Extracting entire objects");
+            }
+            if (String.IsNullOrEmpty(settings.ClientId))
+            {
+                throw new InvalidOperationException("Client ID is missing");
+            }
+            if (String.IsNullOrEmpty(settings.TenantId))
+            {
+                throw new InvalidOperationException("Tenant ID is missing");
+            }
+            if (String.IsNullOrEmpty(settings.Secret))
+            {
+                throw new InvalidOperationException("Secret is missing");
+            }
+            if (String.IsNullOrEmpty(settings.EndpointUri) && String.IsNullOrEmpty(settings.CustomCall))
+            {
+                throw new InvalidOperationException("Query is missing");
+            }
+            
+
+        }
+
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
+            AppOnlySettings settings;
+            try
+            {
+                settings = JsonConvert.DeserializeObject<AppOnlySettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException(
+                    "Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+            
             // Initialize GraphHelper
-            var helper = InitializeGraph(data);
+            var helper = GetGraphHelper(settings);
 
             // make graph call
-            string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[10];
+            string request = settings.EndpointUri; //data.Parameter.Split(';')[3];
+            string customCall = settings.CustomCall; //data.Parameter.Split(';')[10];
+            GraphResponse response;
 
             if (customCall != "") request = customCall;
-            
-            var task = helper.GetAsync(request, BuildRequestParameters(data));
-            task.Wait();
-            GraphResponse response = task.Result;
+
+            try
+            {
+                Task<GraphResponse> task;
+                if (customCall == "")
+                {
+                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                }
+                else
+                {
+                    task = helper.ExtractAsync(customCall);
+                }
+                task.Wait();
+                response = task.Result;
+            }
+            catch (MsGraphException mex)
+            {
+                throw new InvalidOperationException(
+                    $"Microsoft Graph Error\n Http-Status-Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
+            }
             
             // get columns
             var cols = new CustomListColumnCollection();
@@ -88,23 +165,53 @@ namespace PeakboardExtensionGraph.AppOnly
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
+            AppOnlySettings settings;
+            try{
+                settings = JsonConvert.DeserializeObject<AppOnlySettings>(data.Parameter);
+            }
+            catch (JsonException)
+            {
+                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+            }
+            
             // create an item with empty values
             var expectedKeys = GetColumnsOverride(data);
             var emptyItem = new CustomListObjectElement();
             SetKeys(emptyItem, expectedKeys);
             
             // Initialize GraphHelper
-            var helper = InitializeGraph(data);
+            var helper = GetGraphHelper(settings);
 
             // make graph call
-            string request = data.Parameter.Split(';')[3];
-            string customCall = data.Parameter.Split(';')[10];
+            string request = settings.EndpointUri; //data.Parameter.Split(';')[3];
+            string customCall = settings.CustomCall; //data.Parameter.Split(';')[10];
+            GraphResponse response;
 
             if (customCall != "") request = customCall;
-            
-            var task = helper.GetAsync(request, BuildRequestParameters(data));
-            task.Wait();
-            GraphResponse response = task.Result; // json object response
+
+            try
+            {
+                Task<GraphResponse> task;
+                if (customCall == "")
+                {
+                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                }
+                else
+                {
+                    task = helper.ExtractAsync(customCall);
+                }
+                task.Wait();
+                response = task.Result;
+            }
+            catch (MsGraphException mex)
+            {
+                throw new InvalidOperationException(
+                    $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
+            }
             
             // get items
             var items = new CustomListObjectElementCollection();
@@ -147,18 +254,19 @@ namespace PeakboardExtensionGraph.AppOnly
                     row = reader.ReadLine();
                 }
             }
-            
+
             return items;
         }
 
         #region HelperMethods
         
-        private GraphHelperAppOnly InitializeGraph(CustomListData data)
+        private GraphHelperAppOnly GetGraphHelper(AppOnlySettings settings)
         {
-            string[] paramArr = data.Parameter.Split(';');
+            //string[] paramArr = data.Parameter.Split(';');
             
-            // init connection
-            var helper = new GraphHelperAppOnly(paramArr[0], paramArr[1], paramArr[2]);
+            // get a graph helper instance
+            //var helper = new GraphHelperAppOnly(paramArr[0], paramArr[1], paramArr[2]);
+            var helper = new GraphHelperAppOnly(settings.ClientId, settings.TenantId, settings.Secret);
             var task = helper.InitGraph();
             task.Wait();
 

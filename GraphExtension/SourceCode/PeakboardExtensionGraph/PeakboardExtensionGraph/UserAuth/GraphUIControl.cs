@@ -133,6 +133,11 @@ namespace PeakboardExtensionGraph.UserAuth
                 CustomEntities = _customEntities
             };
 
+            if (CustomCallCheckBox.IsChecked == true)
+            {
+                settings.RequestBody = this.RequestBodyTextBox.Text;
+            }
+
             var json = JsonConvert.SerializeObject(settings);
 
             return json;
@@ -185,12 +190,14 @@ namespace PeakboardExtensionGraph.UserAuth
                 Top.Text = "";
                 Skip.Text = "";
                 CustomCallTextBox.Text = "";
+                RequestBodyTextBox.Text = "";
+                
                 return;
             }
 
             // called when instance is created already and saves need to be restored
             var paramArr = parameter.Split(';');
-
+            settings.Validate();
             // init graph helper
             _graphHelper = new GraphHelperUserAuth(settings.ClientId, settings.TenantId, settings.Scope); 
             //new GraphHelperUserAuth(paramArr[0], paramArr[1], paramArr[2]);
@@ -207,8 +214,9 @@ namespace PeakboardExtensionGraph.UserAuth
             ConsistencyBox.IsChecked = settings.Parameters.ConsistencyLevelEventual; //(paramArr[11] == "true");
             Top.Text = settings.Parameters.Top.ToString(); //paramArr[12];
             Skip.Text = settings.Parameters.Skip.ToString(); //paramArr[13];
-            CustomCallCheckBox.IsChecked = settings.CustomCall != ""; //(paramArr[14] != "");
+            CustomCallCheckBox.IsChecked = (settings.CustomCall != ""); //(paramArr[14] != "");
             CustomCallTextBox.Text = settings.CustomCall; //paramArr[14];
+            RequestBodyTextBox.Text = settings.RequestBody ?? "";
 
             //var customEntities = paramArr[15];
 
@@ -273,16 +281,16 @@ namespace PeakboardExtensionGraph.UserAuth
             // check if custom call works
             try
             {
-                await _graphHelper.GetAsync(CustomCallTextBox.Text);
+                await _graphHelper.ExtractAsync(CustomCallTextBox.Text, RequestBodyTextBox.Text);
             }
             catch (Exception ex)
             {
                 // catch exception and print message if the call contains error
-                MessageBox.Show($"Invalid Call: {ex.Message}");
+                MessageBox.Show($"Invalid Request: {ex.Message}");
                 return;
             }
 
-            MessageBox.Show("Request URI is valid.");
+            MessageBox.Show("Request is valid.");
         }
 
         private async void CustomEndpointButton_OnClick(object sender, RoutedEventArgs e)
@@ -301,7 +309,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 // check if endpoint exists in Ms Graph api
                 try
                 {
-                    await _graphHelper.GetAsync(url);
+                    await _graphHelper.ExtractAsync(url);
                 }
                 catch (Exception ex)
                 {
@@ -342,7 +350,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 
                 // initialize combo boxes for graph calls & restore saved ui settings
                 InitializeRequestDropdown();
-                var response = await _graphHelper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                var response = await _graphHelper.ExtractAsync(_chosenRequest, new RequestParameters() { Top = 1 });
                 UpdateSelectList(response);
                 UpdateOrderByList(response);
             }
@@ -367,7 +375,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
             // make a graph call and update select & order by combo boxes
             try {
-                var response = await _graphHelper.GetAsync(data, new RequestParameters()
+                var response = await _graphHelper.ExtractAsync(data, new RequestParameters()
                 {
                     Top = 1
                 });
@@ -377,7 +385,7 @@ namespace PeakboardExtensionGraph.UserAuth
             catch (Exception ex)
             {
                 // catch potential exception caused by graph call error
-                MessageBox.Show($"Error while extracting Object fields: {ex.Message}");
+                MessageBox.Show($"Error extracting Object fields: {ex.Message}");
                 RequestBox.IsEnabled = true;
                 
                 // clear saved selections after error
@@ -576,6 +584,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 CustomCallTextBox.IsEnabled = true;
                 CustomCallCheckButton.IsEnabled = true;
+                RequestBodyTextBox.IsEnabled = true;
                 
                 // disable ui components that are not available for custom call to prevent error
                 RequestBox.IsEnabled = false;
@@ -594,6 +603,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 CustomCallTextBox.IsEnabled = false;
                 CustomCallCheckButton.IsEnabled = false;
+                RequestBodyTextBox.IsEnabled = false;
                 
                 // reenable ui components after custom call is deselected
                 RequestBox.IsEnabled = true;
@@ -690,7 +700,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 
                 // Initialize Dropdown & List boxes 
                 InitializeRequestDropdown();
-                var response = await _graphHelper.GetAsync(_chosenRequest, new RequestParameters() { Top = 1 });
+                var response = await _graphHelper.ExtractAsync(_chosenRequest, new RequestParameters() { Top = 1 });
                 UpdateSelectList(response);
                 UpdateOrderByList(response);
                 

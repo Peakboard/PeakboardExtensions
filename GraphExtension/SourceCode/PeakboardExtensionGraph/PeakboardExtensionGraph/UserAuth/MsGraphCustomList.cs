@@ -2,6 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -200,11 +201,19 @@ namespace PeakboardExtensionGraph.UserAuth
             string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
             GraphResponse response;
 
-            if (customCall != "") request = customCall;
+            //if (customCall != "") request = customCall;
 
             try
             {
-                var task = helper.GetAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                Task<GraphResponse> task;
+                if (customCall == "")
+                {
+                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                }
+                else
+                {
+                    task = helper.ExtractAsync(customCall, settings.RequestBody);
+                }
                 task.Wait();
                 response = task.Result;
             }
@@ -215,6 +224,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             catch (Exception ex)
             {
+                //this.Log?.Verbose(ex.StackTrace);
                 throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
             }
 
@@ -289,10 +299,18 @@ namespace PeakboardExtensionGraph.UserAuth
             string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
             GraphResponse response;
 
-            if (customCall != "") request = customCall;
+            //if (customCall != "") request = customCall;
 
             try{
-                var task = helper.GetAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                Task<GraphResponse> task;
+                if (customCall == "")
+                {
+                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                }
+                else
+                {
+                    task = helper.ExtractAsync(customCall, settings.RequestBody);
+                }
                 task.Wait();
                 response = task.Result;
             }
