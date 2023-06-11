@@ -11,5 +11,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
         public string displayName { get; set; }
         public string logicalName { get; set; }
 
+        public string AttributeType { get; set; }
     }
 }

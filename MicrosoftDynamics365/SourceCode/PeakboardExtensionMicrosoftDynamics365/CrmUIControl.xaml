@@ -25,19 +25,28 @@
         </Grid.RowDefinitions>
         <TextBlock Grid.Column="0" Grid.Row="0" Text="Url" Margin="3"/>
         <TextBox Grid.Column="1" Grid.Row="0" Name="link" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBlock Grid.Column="0" Grid.Row="1" Text="Username" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="1" Name="username" Text="" VerticalContentAlignment="Center" Margin="3"/>
-        <TextBlock Grid.Column="0" Grid.Row="2" Text="Password" Margin="3"/>
-        <PasswordBox Grid.Column="1" Grid.Row="2" Name="password" Password="" VerticalContentAlignment="Center" Margin="3"/>
+        <RadioButton Grid.Column="0" Grid.Row="1" Name="rbUserPass" Content="User / Password" IsChecked="True" VerticalAlignment="Center" Margin="3" GroupName="AuthenificationTypye" Checked="rbUserPass_Checked" />
+        
+        <StackPanel  Grid.Column="1" Grid.Row="1"  Orientation="Horizontal">
+            <TextBox Name="username" Text="" VerticalContentAlignment="Center" Margin="3" Width="150"/>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text=" / " Margin="3" />
+            <PasswordBox Name="password" Password=""  Margin="3"  Width="150"/>
+        </StackPanel>
+
+        <RadioButton Grid.Column="0" Grid.Row="2" Name="rbClientIDSecret" Content="Client ID / Secret" IsChecked="False" VerticalAlignment="Center" Margin="3" GroupName="AuthenificationTypye"  Checked="rbUserPass_Checked"  />
+
+        <StackPanel  Grid.Column="1" Grid.Row="2"  Orientation="Horizontal">
+            <TextBox Name="clientid" Text="" VerticalContentAlignment="Center" Margin="3" Width="150"/>
+            <TextBlock Grid.Column="0" Grid.Row="0" Text=" / " Margin="3" />
+            <TextBox Name="secret"  Margin="3"  Width="150"/>
+        </StackPanel>
+
         <TextBlock Grid.Column="0" Grid.Row="3" Text="Max Rows" Margin="3"/>
-        <TextBox Grid.Column="1" Grid.Row="3" Name="maxRows" VerticalContentAlignment="Center" Margin="3"/>
-        <Button Grid.Column="1" Grid.Row="4" Name="btnConnect" Content="Connect" Margin="3,3,3,10" HorizontalAlignment="Right" Width="100" Click="btnConnect_Click"></Button>
+        <TextBox Grid.Column="1" Grid.Row="3" Name="maxRows" VerticalContentAlignment="Center" HorizontalAlignment="Left"  Margin="3" Width="50"/>
+        <Button Grid.Column="1" Grid.Row="4" Name="btnConnect" Content="Connect" Margin="3,10,3,10" HorizontalAlignment="Left" Width="100" Click="btnConnect_Click"></Button>
         <RadioButton Grid.Column="0" Grid.Row="5" Name="rbView" Content="View" VerticalAlignment="Center" Margin="3" GroupName="TableOrView" Checked="rbView_Checked"/>
         <ComboBox Grid.Column="1" Grid.Row="5" Margin="3" Name="cboView" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True" ></ComboBox>
-        <RadioButton Grid.Column="0" Grid.Row="6" Name="rbEntity" Content="Entity / Table" VerticalAlignment="Center" Margin="3,25,3,3" GroupName="TableOrView" Checked="rbEntity_Checked"/>
-        <ComboBox Grid.Column="1" Grid.Row="6" Margin="3,25,3,3" Name="cboTable" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True"  SelectionChanged="cboTable_SelectionChanged"></ComboBox>
-        <Button Grid.Column="1" Grid.Row="7" Margin="3" Width="100" HorizontalAlignment="Right" Content="Search Columns" Name="btnTable" IsEnabled="False" Click="btnTable_Click" ></Button>
-        <TextBlock Grid.Column="0" Grid.Row="8" Text="Attributes / Columns" IsEnabled="False" Margin="3"/>
-        <ListBox Grid.Column="1" Grid.Row="8" Name="columns" VerticalContentAlignment="Center" Margin="3" Height="205" ScrollViewer.VerticalScrollBarVisibility="Visible"></ListBox>
+        <RadioButton Grid.Column="0" Grid.Row="6" Name="rbEntity" Content="Entity / Table" VerticalAlignment="Center" Margin="3,3,3,3" GroupName="TableOrView" Checked="rbEntity_Checked"/>
+        <ComboBox Grid.Column="1" Grid.Row="6" Margin="3,3,3,3" Name="cboTable" IsTextSearchEnabled="True" IsEnabled="False" IsEditable="True"></ComboBox>
     </Grid>
 </controls:CustomListUserControlBase>

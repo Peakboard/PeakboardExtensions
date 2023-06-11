@@ -17,9 +17,25 @@ namespace PeakboardExtensionMicrosoftDynamics365
 {
     public class CrmHelper
     {
-        public static CrmServiceClient TryConnection(string link, string username, string password)
+        public static CrmServiceClient TryConnection(string URL, string username, string password, string clientid, string clientsecret)
         {
-            string _CrmConnectionString = $@"Url = {link};AuthType = OAuth;UserName = {username};Password = {password};AppId = 51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri = app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto";
+            string _CrmConnectionString = string.Empty;
+            
+            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            {
+                _CrmConnectionString = $@"Url = {URL};AuthType = OAuth;UserName = {username};Password = {password};AppId = 51f81489-12ee-4a9e-aaae-a2591f45987d;RedirectUri = app://58145B91-0C36-4500-8554-080854F2AC97;LoginPrompt=Auto";
+            }
+            else if (!string.IsNullOrEmpty(clientid) && !string.IsNullOrEmpty(clientsecret))
+            {
+                _CrmConnectionString = $@"AuthType=ClientSecret;url={URL};ClientId={clientid};ClientSecret={clientsecret}";
+            }
+            else
+            {
+                throw new Exception("Either user name / password or client id / client secret must be set. Otherwise it doesn't make sense!");
+            }
+            
+
+
             CrmServiceClient crmConnection = new CrmServiceClient(_CrmConnectionString);
             try
             {
@@ -40,11 +56,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
             return crmConnection;
         }
 
-        public static List<CrmName> GetTablesName(string link, string username, string password)
+        public static List<CrmName> GetTablesName(string URL, string username, string password, string clientid, string clientsecret)
         {
             List<CrmName> tableList = new List<CrmName>();
 
-            CrmServiceClient service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(URL, username, password, clientid, clientsecret);
 
             if (service == null)
             {
@@ -65,7 +81,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     {
                         CrmName crmName = new CrmName
                         {
-                            displayName = c.DisplayName.UserLocalizedLabel?.Label ?? c.LogicalName,
+                            displayName = c.LogicalName,
                             logicalName = c.LogicalName
                         };
                         tableList.Add(crmName);
@@ -80,11 +96,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
             }
         }
 
-        public static List<CrmName> GetViewsName(string link, string username, string password)
+        public static List<CrmName> GetViewsName(string URL, string username, string password, string clientid, string clientsecret)
         {
             List<CrmName> viewList = new List<CrmName>();
 
-            CrmServiceClient service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(URL, username, password, clientid, clientsecret);
 
             if (service == null)
             {
@@ -95,7 +111,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                 try
                 {
                     QueryExpression personalViews = new QueryExpression("savedquery");
-                    personalViews.ColumnSet = new ColumnSet("name");
+                    personalViews.ColumnSet = new ColumnSet(true);
 
                     EntityCollection viewCollection = new EntityCollection();
 
@@ -105,7 +121,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     {
                         CrmName crmName = new CrmName
                         {
-                            displayName = c["name"].ToString(),
+                            displayName = c["returnedtypecode"].ToString() + " || " + c["name"].ToString(),
                             logicalName = c["name"].ToString()
                         };
                         viewList.Add(crmName);
@@ -121,11 +137,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
             }
         }
 
-        public static List<CrmName> GetTableColumns(string link, string username, string password, string table)
+        public static List<CrmName> GetTableColumns(string link, string username, string password, string clientid, string clientsecret, string table)
         {
             List<CrmName> columns=new List<CrmName>();
 
-            CrmServiceClient service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password, clientid, clientsecret);
 
             if (service == null)
             {
@@ -150,7 +166,8 @@ namespace PeakboardExtensionMicrosoftDynamics365
                             CrmName crmName = new CrmName
                             {
                                 displayName = c.DisplayName.UserLocalizedLabel?.Label ?? c.LogicalName,
-                                logicalName = c.LogicalName
+                                logicalName = c.LogicalName,
+                                AttributeType = c.AttributeType.ToString()
                             };
                             columns.Add(crmName);
                         }
@@ -168,54 +185,29 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
         }
 
-        public static CustomListColumnCollection GetEntityColumns(string link, string username, string password, string table, string displayName, string logicalName)
+        public static CustomListColumnCollection GetEntityColumns(string URL, string username, string password, string clientid, string clientsecret, string table)
         {
             CustomListColumnCollection columnCollection = new CustomListColumnCollection();
 
-            CrmServiceClient service = TryConnection(link, username, password);
-
-            if (service == null)
+            foreach (var e in CrmHelper.GetTableColumns(URL, username, password, clientid, clientsecret, table))
             {
-                return null;
-            }
-            else
-            {
-                QueryExpression qe = new QueryExpression(table.ToLower());
-
-                string[] newDisplayName = displayName.Split(',');
-                string[] newLogicalName = logicalName.Replace(" ", String.Empty).ToLower().Split(',');
-                qe.ColumnSet = new ColumnSet(newLogicalName);
-                EntityCollection ec = new EntityCollection();
-                try
-                {
-                    ec = service.RetrieveMultiple(qe);
-                }
-                catch
-                {
-                    return null;
-                }
-                
-                foreach (var c in qe.ColumnSet.Columns)
-                {
-                    if (ec.Entities[0].Attributes.Contains(c) && ec.Entities[0].Attributes?[c] is Money)
-                    {
-                        columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.Number));
-                    }
-                    else
-                    {
-                        columnCollection.Add(new CustomListColumn(c, CustomListColumnTypes.String));
-                    }
-                }
+                if (e.AttributeType.Equals("Money") || e.AttributeType.Equals("Integer") || e.AttributeType.Equals("BigInt"))
+                    columnCollection.Add(new CustomListColumn(e.logicalName, CustomListColumnTypes.Number));
+                else
+                    columnCollection.Add(new CustomListColumn(e.logicalName, CustomListColumnTypes.String));
             }
 
             return columnCollection;
         }
 
-        public static CustomListColumnCollection GetViewColumns(string link, string username, string password, string logicalNameView)
+        public static CustomListColumnCollection GetViewColumns(string link, string username, string password, string clientid, string clientsecret, string ViewName)
         {
+            if (ViewName.Contains(" || "))
+            {
+                ViewName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[1];
+            }
             CustomListColumnCollection columnCollection = new CustomListColumnCollection();
-
-            CrmServiceClient service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(link, username, password, clientid, clientsecret);
 
             if (service == null)
             {
@@ -236,7 +228,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                             {
                                 AttributeName = "name",
                                 Operator = ConditionOperator.Equal,
-                                Values = { logicalNameView }//View Name - "Active Accounts"
+                                Values = { ViewName }
                             },
                         }
                     }
@@ -277,11 +269,15 @@ namespace PeakboardExtensionMicrosoftDynamics365
             return columnCollection;
         }
 
-        public static CustomListObjectElementCollection GetDataFromView(string link, string username, string password, string maxRows, string logicalNameView)
+        public static CustomListObjectElementCollection GetViewData(string link, string username, string password, string clientid, string cliensecret, string maxRows, string ViewName)
         {
-            CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
+            if (ViewName.Contains(" || "))
+            {
+                ViewName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[1];
+            }
 
-            CrmServiceClient service = TryConnection(link, username, password);
+            CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
+            CrmServiceClient service = TryConnection(link, username, password, clientid, cliensecret);
 
             if (service == null)
             {
@@ -302,7 +298,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                         {
                             AttributeName = "name",
                             Operator = ConditionOperator.Equal,
-                            Values = { logicalNameView }//View Name - "Active Accounts"
+                            Values = { ViewName }//View Name - "Active Accounts"
                         },
                     }
                     }
@@ -387,91 +383,97 @@ namespace PeakboardExtensionMicrosoftDynamics365
             return itemsCollection;
         }
 
-        public static CustomListObjectElementCollection GetDataFromEntity(string link, string username, string password, string maxRows, string table, string displayName, string logicalName)
+        public static CustomListObjectElementCollection GetDataFromEntity(string URL, string username, string password, string clientid, string clientsecret, string maxRows, string table, string displayName, string logicalName)
         {
             CustomListObjectElementCollection itemsCollection = new CustomListObjectElementCollection();
-
-            CrmServiceClient service = TryConnection(link, username, password);
+            CrmServiceClient service = TryConnection(URL, username, password, clientid, clientsecret);
 
             if (service == null)
             {
                 return null;
             }
-            else
+
+            List<CrmName> MyColumns = CrmHelper.GetTableColumns(URL, username, password, clientid, clientsecret, table);
+            
+            System.Collections.Hashtable MyTypes = new System.Collections.Hashtable();
+            foreach (var e in CrmHelper.GetTableColumns(URL, username, password, clientid, clientsecret, table))
             {
-
-                QueryExpression qe = new QueryExpression(table.ToLower());
-
-                //string[] newDisplayName = displayName.Split(',');
-                string[] newLogicalName = logicalName.Replace(" ", String.Empty).ToLower().Split(',');
-                qe.ColumnSet = new ColumnSet(newLogicalName);
-                EntityCollection ec = new EntityCollection();
-
-                try
-                {
-                    ec= service.RetrieveMultiple(qe);
-                }
-                catch
-                {
-                    return null;
-                }
-
-                if (int.Parse(maxRows) > ec.Entities.Count)
-                {
-                    maxRows = ec.Entities.Count.ToString();
-                }
-                for (int i = 0; i < int.Parse(maxRows); i++)
-                {
-                    CustomListObjectElement item = new CustomListObjectElement();
-                    foreach (string column in newLogicalName)
-                    {
-                        string newString = "";
-
-						if (ec.Entities.Count == 0 || !ec.Entities[i].Attributes.Contains(column))
-						{
-							newString = "";
-						}
-						else
-						{
-							if (ec.Entities[i].Attributes[column] is OptionSetValue)
-							{
-								OptionSetValue o = new OptionSetValue();
-								o = (OptionSetValue)ec.Entities[i].Attributes[column];
-								newString = o.Value.ToString();
-							}
-							else if (ec.Entities[i].Attributes[column] is AliasedValue)
-							{
-								AliasedValue o = new AliasedValue();
-								o = (AliasedValue)ec.Entities[i].Attributes[column];
-								newString = o.Value.ToString();
-							}
-							else if (ec.Entities[i].Attributes[column] is EntityReference)
-							{
-								EntityReference o = new EntityReference();
-								o = (EntityReference)ec.Entities[i].Attributes[column];
-								newString = o.Name?.ToString() ?? "";
-							}
-							else if (ec.Entities[i].Attributes[column] is Money)
-							{
-								Money o = new Money();
-								o = (Money)ec.Entities[i].Attributes[column];
-								newString = o.Value.ToString();
-							}
-							else
-							{
-								newString = ec.Entities[i].Attributes[column].ToString();
-							}
-						}
-
-						item.Add(column, newString);
-                    }
-                    itemsCollection.Add(item);
-                }
+                MyTypes.Add(e.logicalName, e.AttributeType);
             }
 
+            QueryExpression qe = new QueryExpression(table.ToLower());
+            qe.ColumnSet = new ColumnSet(true);
+            EntityCollection ec = new EntityCollection();
 
+            int iMaxRows = 0;
+            if (int.TryParse(maxRows, out iMaxRows))
+            {
+                qe.TopCount = iMaxRows;
+            }
+                
+            ec= service.RetrieveMultiple(qe);
 
-        return itemsCollection;
+            System.Windows.MessageBox.Show("count=" + ec.Entities.Count.ToString());
+
+            if (!string.IsNullOrWhiteSpace(service.LastCrmError))
+                throw new Exception(service.LastCrmError);
+            
+
+            foreach (Entity entity in ec.Entities)
+            {
+                CustomListObjectElement item = new CustomListObjectElement();
+                foreach (CrmName column in MyColumns)
+                {
+                    string newString = "";
+
+                    if (entity.Attributes.Contains(column.logicalName))
+                    { 
+					    if (entity[column.logicalName] is OptionSetValue)
+					    {
+						    OptionSetValue o = new OptionSetValue();
+						    o = (OptionSetValue)entity[column.logicalName];
+						    newString = o.Value.ToString();
+					    }
+					    else if (entity[column.logicalName] is AliasedValue)
+					    {
+						    AliasedValue o = new AliasedValue();
+						    o = (AliasedValue)entity[column.logicalName];
+						    newString = o.Value.ToString();
+					    }
+					    else if (entity[column.logicalName] is EntityReference)
+					    {
+						    EntityReference o = new EntityReference();
+						    o = (EntityReference)entity[column.logicalName];
+						    newString = o.Id.ToString();
+					    }
+					    else if (entity[column.logicalName] is Money)
+					    {
+						    Money o = new Money();
+						    o = (Money)entity[column.logicalName];
+						    newString = o.Value.ToString();
+					    }
+					    else
+					    {
+						    newString = entity[column.logicalName].ToString();
+					    }
+                    }
+                    else
+                    {
+                        newString = "";
+                    }
+
+                    if (column.AttributeType.Equals("Money") || column.AttributeType.Equals("Integer") || column.AttributeType.Equals("BigInt"))
+                    {
+                        double d;
+                        if (!double.TryParse(newString, out d))
+                            newString = "0";
+                    }
+
+                    item.Add(column.logicalName, newString);
+                }
+                itemsCollection.Add(item);
+            }
+            return itemsCollection;
         }
     }
 }

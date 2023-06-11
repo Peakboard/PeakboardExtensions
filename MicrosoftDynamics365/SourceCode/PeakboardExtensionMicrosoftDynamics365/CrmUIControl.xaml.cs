@@ -29,59 +29,112 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
         protected override string GetParameterOverride()
         {
-            string logicalName = "";
-            string displayName = "";
-            string chooseEntityOrView = "";
-            string entityOrViewName = "";
+            string logicalName = string.Empty;
+            string displayName = string.Empty;
+            string ExtractionType = string.Empty;
+            string ObjectName = string.Empty;
+            string username = string.Empty;
+            string password = string.Empty;
+            string clientid = string.Empty;
+            string clientsecret = string.Empty;
+            string fetchxml = string.Empty;
+
+            if ((bool)this.rbUserPass.IsChecked)
+            {
+                username = this.username.Text;
+                password = this.password.Password;
+            }
+            else
+            {
+                clientid = this.clientid.Text;
+                clientsecret = this.secret.Text.Replace(";","SEMIKOLON");
+            }
+
 
             if (rbEntity.IsChecked == true)
             {
-                chooseEntityOrView = "Entity";
-
-                if (this.cboTable.Items.Contains((ComboBoxItem)this.cboTable.SelectedItem))
-                {
-                    entityOrViewName = ((ComboBoxItem)this.cboTable.SelectedItem).Tag.ToString();
-                }
-
-                foreach (CheckBox item in this.columns.Items)
-                {
-                    if (item.IsChecked == true)
-                    {
-                        logicalName += item.Tag.ToString() + ",";
-                        displayName += item.Content.ToString() + ",";
-                    }
-                }
-                if (logicalName.Length != 0)
-                {
-                    logicalName = logicalName.Substring(0, logicalName.Length - 1);
-                    displayName = displayName.Substring(0, displayName.Length - 1);
-                }
+                ExtractionType = "Entity";
+                ObjectName = this.cboTable.Text;
             }
             else if (rbView.IsChecked == true)
             {
-                chooseEntityOrView = "View";
-
-                if (this.cboView.Items.Contains((ComboBoxItem)this.cboView.SelectedItem))
-                {
-                    entityOrViewName = ((ComboBoxItem)this.cboView.SelectedItem).Tag.ToString();
-                }
-
+                ExtractionType = "View";
+                ObjectName = this.cboView.Text;
             }
 
-            return $"{this.link.Text};{this.username.Text};{this.password.Password};{this.maxRows.Text};{entityOrViewName};{displayName};{logicalName};{chooseEntityOrView}";
+            return $"{this.link.Text};{username};{password};{this.maxRows.Text};{ObjectName};{displayName};{logicalName};{ExtractionType};{clientid};{clientsecret};{fetchxml}";
         }
 
         protected override void SetParameterOverride(string parameter)
         {
             if(String.IsNullOrEmpty(parameter))
             {
+                this.link.Text = string.Empty;
+                this.username.Text = string.Empty;
+                this.password.Password = string.Empty;
+                this.maxRows.Text = "50";
+                this.clientid.Text = string.Empty;
+                this.secret.Text = string.Empty;
+                this.rbUserPass.IsChecked = true;
+                this.cboTable.Text = string.Empty;
+                this.cboView.Text = string.Empty;
+
                 return;
             }
 
-            this.link.Text = parameter.Split(';')[0];
-            this.username.Text = parameter.Split(';')[1];
-            this.password.Password = parameter.Split(';')[2];
-            this.maxRows.Text = parameter.Split(';')[3];
+            var mysplits = parameter.Split(';');
+            string URL = string.Empty;
+            string username = string.Empty;
+            string password = string.Empty;
+            string maxRows = string.Empty; ;
+            string ObjectName = string.Empty;
+            string DisplayNameColumns = string.Empty;
+            string LogicalNameColumns = string.Empty;
+            string ExtractionType = string.Empty;
+            string clientid = string.Empty;
+            string clientsecret = string.Empty;
+            string fetchxml = string.Empty;
+
+            if (mysplits.Length >= 8)
+            {
+                this.link.Text = mysplits[0];
+                this.username.Text = mysplits[1];
+                this.password.Password = mysplits[2];
+                this.maxRows.Text = mysplits[3];
+                ObjectName = mysplits[4];
+                DisplayNameColumns = mysplits[5];
+                LogicalNameColumns = mysplits[6];
+                ExtractionType = mysplits[7];
+            }
+
+            if (mysplits.Length >= 11)
+            {
+                this.clientid.Text = mysplits[8];
+                this.secret.Text = mysplits[9];
+                fetchxml = mysplits[10];
+            }
+
+            if (ExtractionType == "View")
+            {
+                this.rbView.IsChecked = true;
+                this.cboView.Text = ObjectName;
+            }
+            else if (ExtractionType == "Entity")
+            {
+                this.rbEntity.IsChecked = true;
+                this.cboTable.Text = ObjectName;
+            }
+
+            if (!string.IsNullOrWhiteSpace(this.clientid.Text) || !string.IsNullOrWhiteSpace(this.clientid.Text))
+            {
+                this.rbClientIDSecret.IsChecked = true;
+                rbUserPass_Checked(null, null);
+            }
+            else
+            {
+                this.rbUserPass.IsChecked = true;
+                rbUserPass_Checked(null, null);
+            }
         }
 
         protected override void ValidateParameterOverride()
@@ -98,7 +151,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             {
                 List<CrmName> tableList = new List<CrmName>();
 
-                tableList = CrmHelper.GetTablesName(this.link.Text, this.username.Text, this.password.Password);
+                tableList = CrmHelper.GetTablesName(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
 
                 if (tableList != null || tableList.Count != 0)
                 {
@@ -115,7 +168,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             
                 List<CrmName> viewList = new List<CrmName>();
 
-                viewList = CrmHelper.GetViewsName(this.link.Text, this.username.Text, this.password.Password);
+                viewList = CrmHelper.GetViewsName(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
 
                 if (viewList != null || viewList.Count != 0)
                 {
@@ -130,19 +183,17 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     }
                 }
 
-                MessageBox.Show("Connection succesfull! Select a View or an Entity.");
+                MessageBox.Show("Connection succesful! Select a View or an Entity.");
             }
             catch (Exception exception)
             {
-                MessageBox.Show("Connection failed! Try again or change connections properties!");
+                MessageBox.Show("Connection failed! Try again or change connections properties!\r\n(" + exception.Message +")");
             }
         }
 
         private void rbEntity_Checked(object sender, RoutedEventArgs e)
         {
             cboTable.IsEnabled = true;
-            btnTable.IsEnabled = true;
-            columns.IsEnabled = true;
             cboView.IsEnabled = false;
         }
 
@@ -150,34 +201,31 @@ namespace PeakboardExtensionMicrosoftDynamics365
         {
             cboView.IsEnabled = true;
             cboTable.IsEnabled = false;
-            btnTable.IsEnabled = false;
-            columns.IsEnabled = false;
         }
 
-        private void btnTable_Click(object sender, RoutedEventArgs e)
+        private void rbUserPass_Checked(object sender, RoutedEventArgs e)
         {
-            this.columns.Items.Clear();
             try
-            {
-                List<CrmName> columns = CrmHelper.GetTableColumns(this.link.Text, this.username.Text, this.password.Password, ((ComboBoxItem)this.cboTable.SelectedItem).Tag.ToString());
-                foreach (CrmName c in columns)
+            { 
+                if ((bool)(rbClientIDSecret.IsChecked ?? false))
                 {
-                    CheckBox cb = new CheckBox();
-                    cb.Content = c.displayName;
-                    cb.Tag = c.logicalName;
-                    this.columns.Items.Add(cb);
+                    this.clientid.IsEnabled = true;
+                    this.secret.IsEnabled = true;
+                    this.username.IsEnabled = false;
+                    this.password.IsEnabled = false;
+                }
+                else
+                {
+                    this.clientid.IsEnabled = false;
+                    this.secret.IsEnabled = false;
+                    this.username.IsEnabled = true;
+                    this.password.IsEnabled = true;
+
                 }
             }
-            catch(Exception exception)
-            {
-                MessageBox.Show("An error occurred while trying to load Columns for the selected Entity. Please try again.");
-            }
-            
+            catch (Exception)
+            { }
         }
 
-		private void cboTable_SelectionChanged(object sender, SelectionChangedEventArgs e)
-		{
-            this.columns.Items.Clear();
-        }
-	}
+    }
 }
