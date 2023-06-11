@@ -23,10 +23,10 @@ namespace PeakboardExtensionMicrosoftDynamics365
                 ID = "MicrosoftDynamics365",
                 Name = "Microsoft Dynamics 365",
                 Description = "This is an Extension for accessing Microsoft Dynamics 365 data.",
-                Version = "1.0",
+                Version = "2.0",
                 Author = "Peakboard Team",
                 Company = "Peakboard GmbH",
-                Copyright = "Copyright © 2021",
+                Copyright = "Copyright © 2023",
             };
         }
 
