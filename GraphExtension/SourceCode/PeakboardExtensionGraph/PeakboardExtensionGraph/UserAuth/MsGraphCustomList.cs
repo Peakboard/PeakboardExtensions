@@ -152,11 +152,13 @@ namespace PeakboardExtensionGraph.UserAuth
             UserAuthSettings settings;
             try
             {
-                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
+                if (settings == null) throw new InvalidOperationException("Settings are missing.");
             }
             catch (JsonException)
             {
-                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
             }
             
             if (settings.Parameters == null && string.IsNullOrEmpty(settings.CustomCall))
@@ -186,11 +188,13 @@ namespace PeakboardExtensionGraph.UserAuth
             // get graph settings
             UserAuthSettings settings;
             try{
-                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
+                if (settings == null) throw new InvalidOperationException("Settings are missing.");
             }
             catch (JsonException)
             {
-                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
             }
             
             // get a helper
@@ -199,34 +203,36 @@ namespace PeakboardExtensionGraph.UserAuth
             // make graph call
             string request = settings.EndpointUri; //data.Parameter.Split(';')[7];
             string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
+            
             GraphResponse response;
-
             //if (customCall != "") request = customCall;
-
             try
             {
-                Task<GraphResponse> task;
+                
                 if (customCall == "")
                 {
-                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                    response = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/).Result;
                 }
                 else
                 {
-                    task = helper.ExtractAsync(customCall, settings.RequestBody);
+                    response = helper.ExtractAsync(customCall, settings.RequestBody).Result;
                 }
-                task.Wait();
-                response = task.Result;
+                //task.Wait();
             }
-            catch (MsGraphException mex)
+            catch (AggregateException aex)
             {
-                throw new InvalidOperationException(
-                    $"Microsoft Graph Error\n Http-Status-Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+                if(aex.InnerException is MsGraphException mex)
+                {
+                    throw new InvalidOperationException(
+                        $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Error receiving response from Graph: {aex.InnerException?.Message ?? aex.Message}");
+                }
+                
             }
-            catch (Exception ex)
-            {
-                //this.Log?.Verbose(ex.StackTrace);
-                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
-            }
+            //response = task.Result;
 
             var cols = new CustomListColumnCollection();
 
@@ -279,11 +285,13 @@ namespace PeakboardExtensionGraph.UserAuth
             // get graph settings
             UserAuthSettings settings;
             try{
-                settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+                settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
+                if (settings == null) throw new InvalidOperationException("Settings are missing.");
             }
             catch (JsonException)
             {
-                throw new InvalidOperationException("Parameter string in old format. Update it by refreshing the datasource in the designer");
+                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
             }
             
             // create an item with empty values
@@ -297,32 +305,35 @@ namespace PeakboardExtensionGraph.UserAuth
             // make graph call
             string request = settings.EndpointUri; //data.Parameter.Split(';')[7];
             string customCall = settings.CustomCall; //data.Parameter.Split(';')[14];
+            
             GraphResponse response;
-
             //if (customCall != "") request = customCall;
 
             try{
-                Task<GraphResponse> task;
+                
                 if (customCall == "")
                 {
-                    task = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/);
+                    response = helper.ExtractAsync(request, settings.Parameters/*BuildRequestParameters(data)*/).Result;
                 }
                 else
                 {
-                    task = helper.ExtractAsync(customCall, settings.RequestBody);
+                    response = helper.ExtractAsync(customCall, settings.RequestBody).Result;
                 }
-                task.Wait();
-                response = task.Result;
+                //task.Wait();
             }
-            catch (MsGraphException mex)
+            catch (AggregateException aex)
             {
-                throw new InvalidOperationException(
-                    $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+                if(aex.InnerException is MsGraphException mex)
+                {
+                    throw new InvalidOperationException(
+                        $"Microsoft Graph Error\n Code: {mex.ErrorCode}\nMessage: {mex.Message}");
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Error receiving response from Graph: {aex.InnerException?.Message ?? aex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"Error while receiving response from Graph: {ex.Message}");
-            }
+            //response = task.Result;
 
             var items = new CustomListObjectElementCollection();
 
@@ -599,7 +610,8 @@ namespace PeakboardExtensionGraph.UserAuth
             settings.Millis = millis;
             settings.RefreshToken = refreshToken;
 
-            var result = JsonConvert.SerializeObject(settings);
+            //var result = JsonConvert.SerializeObject(settings);
+            var result = settings.GetParameterStringFromSettings();
 
             data.Parameter = result;
         }

@@ -8,11 +8,15 @@ namespace PeakboardExtensionGraph.Settings
     {
         public string Secret { get; set; }
         public string CustomCall { get; set; }
+        public string RequestBody { get; set; }
         public Dictionary<string, string> CustomEntities { get; set; }
 
-        public static AppOnlySettings ConvertOldParameter(string parameter)
+        public static AppOnlySettings GetSettingsFromParameterString(string parameter)
         {
             var parameters = parameter.Split(';');
+            
+            if (parameters.Length != 13) return null;
+            
             Int32.TryParse(parameters[8], out var top);
             Int32.TryParse(parameters[9], out var skip);
             
@@ -23,8 +27,8 @@ namespace PeakboardExtensionGraph.Settings
             
             var customEndpoints = new Dictionary<string, string>();
 
-            if(parameters[11] != ""){
-                string[] endpoints = parameters[11].Split(' ');
+            if(parameters[12] != ""){
+                string[] endpoints = parameters[12].Split(' ');
                 foreach (var endpoint in endpoints)
                 {
                     string url = endpoint.Split(',')[1];
@@ -50,8 +54,26 @@ namespace PeakboardExtensionGraph.Settings
                     Skip = skip
                 },
                 CustomCall = parameters[10],
+                RequestBody = parameters[11],
                 CustomEntities = customEndpoints
             };
+        }
+
+        public string GetParameterStringFromSettings()
+        {
+            string customEndpoints = "";
+            if (CustomEntities.Count != 0)
+            {
+                foreach (var endpoint in CustomEntities.Keys)
+                {
+                    customEndpoints += $"{endpoint},{CustomEntities[endpoint]} ";
+                }
+
+                customEndpoints = customEndpoints.Remove(customEndpoints.Length - 1);
+            }
+            
+            return $"{ClientId};{TenantId};{Secret};{EndpointUri};{Parameters.Select};{Parameters.OrderBy};{Parameters.Filter};" + 
+                   $"{Parameters.ConsistencyLevelEventual};{Parameters.Top};{Parameters.Skip};{CustomCall};{RequestBody};{customEndpoints}";
         }
 
         public void Validate()

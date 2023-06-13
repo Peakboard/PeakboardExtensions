@@ -138,9 +138,10 @@ namespace PeakboardExtensionGraph.UserAuth
                 settings.RequestBody = this.RequestBodyTextBox.Text;
             }
 
-            var json = JsonConvert.SerializeObject(settings);
+            //var json = JsonConvert.SerializeObject(settings);
+            var parameter = settings.GetParameterStringFromSettings();
 
-            return json;
+            return parameter;
             /* Azure App Information: 0 - 6
             $"{ClientId.Text};{TenantId.Text};{Permissions.Text};{_graphHelper.GetAccessToken() ?? ""};" +
             $"{_graphHelper.GetExpirationTime() ?? "0"};{_graphHelper.GetMillis()};{_graphHelper.GetRefreshToken() ?? ""};" +
@@ -166,7 +167,7 @@ namespace PeakboardExtensionGraph.UserAuth
             }
             catch (JsonException)
             {
-                settings = UserAuthSettings.ConvertOldParameter(parameter);
+                settings = UserAuthSettings.GetSettingsFromParameterString(parameter);
             }
             catch (Exception)
             {
@@ -636,6 +637,9 @@ namespace PeakboardExtensionGraph.UserAuth
             CustomCallCheckBox.IsEnabled = state;
             Filter.IsEnabled = state;
             ConsistencyBox.IsEnabled = state;
+            CustomCallTextBox.IsEnabled = state;
+            CustomCallCheckButton.IsEnabled = state;
+            RequestBodyTextBox.IsEnabled = state;
         }
         
         private void AddEndpoint(string name, string url)

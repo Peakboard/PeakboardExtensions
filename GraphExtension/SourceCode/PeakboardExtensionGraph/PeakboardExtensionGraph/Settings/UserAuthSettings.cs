@@ -14,14 +14,14 @@ namespace PeakboardExtensionGraph.Settings
         public long Millis { get; set; }
         
         public string CustomCall { get; set; }
-        public string RequestBody { get; set; }
+        public string RequestBody { get; set; } // TODO: Add to parameter string
         public Dictionary<string, string> CustomEntities { get; set; }
         
-        public static UserAuthSettings ConvertOldParameter(string parameter)
+        public static UserAuthSettings GetSettingsFromParameterString(string parameter)
         {
             var parameters = parameter.Split(';');
 
-            if (parameters.Length != 16) return null;
+            if (parameters.Length != 17) return null;
             
             Int64.TryParse(parameters[5], out var millis);
             Int32.TryParse(parameters[12], out var top);
@@ -34,8 +34,8 @@ namespace PeakboardExtensionGraph.Settings
             
             var customEndpoints = new Dictionary<string, string>();
 
-            if(parameters[15] != ""){
-                string[] endpoints = parameters[15].Split(' ');
+            if(parameters[16] != ""){
+                string[] endpoints = parameters[16].Split(' ');
                 foreach (var endpoint in endpoints)
                 {
                     string url = endpoint.Split(',')[1];
@@ -65,10 +65,30 @@ namespace PeakboardExtensionGraph.Settings
                     Skip = skip
                 },
                 CustomCall = parameters[14],
+                RequestBody = parameters[15],
                 CustomEntities = customEndpoints
             };
         }
-        
+
+        public string GetParameterStringFromSettings()
+        {
+            string customEndpoints = "";
+            if (CustomEntities.Count != 0)
+            {
+                foreach (var endpoint in CustomEntities.Keys)
+                {
+                    customEndpoints += $"{endpoint},{CustomEntities[endpoint]} ";
+                }
+
+                customEndpoints = customEndpoints.Remove(customEndpoints.Length - 1);
+            }
+            
+            return
+                $"{ClientId};{TenantId};{Scope};{AccessToken};{ExpirationTime};{Millis};{RefreshToken};{EndpointUri};" +
+                $"{Parameters.Select};{Parameters.OrderBy};{Parameters.Filter};{Parameters.ConsistencyLevelEventual};" +
+                $"{Parameters.Top};{Parameters.Skip};{CustomCall};{RequestBody};{customEndpoints}";
+        }
+
         public void Validate()
         {
             if (ClientId == null) ClientId = "";

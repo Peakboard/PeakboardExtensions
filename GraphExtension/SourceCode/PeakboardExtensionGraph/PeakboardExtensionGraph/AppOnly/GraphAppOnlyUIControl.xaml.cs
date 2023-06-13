@@ -123,14 +123,20 @@ namespace PeakboardExtensionGraph.AppOnly
                 CustomEntities = _customEntities
             };
             
+            if (CustomCallCheckBox.IsChecked == true)
+            {
+                settings.RequestBody = this.RequestBodyTextBox.Text;
+            }
+            
             /*if (CustomCallCheckBox.IsChecked == true)
             {
                 settings.Parameters = null;
             }*/
 
-            var json = JsonConvert.SerializeObject(settings);
+            //var json = JsonConvert.SerializeObject(settings);
+            var parameter = settings.GetParameterStringFromSettings();
 
-            return json;
+            return parameter;
             /* Azure app information
             $"{ClientId.Text};{TenantId.Text};{Secret.Text};" +
             
@@ -155,7 +161,7 @@ namespace PeakboardExtensionGraph.AppOnly
             }
             catch (JsonException)
             {
-                settings = AppOnlySettings.ConvertOldParameter(parameter);
+                settings = AppOnlySettings.GetSettingsFromParameterString(parameter);
             }
             catch (Exception)
             {
@@ -198,6 +204,7 @@ namespace PeakboardExtensionGraph.AppOnly
             Skip.Text = settings.Parameters.Skip.ToString(); //paramArr[9];
             CustomCallCheckBox.IsChecked = (settings.CustomCall != ""); //(paramArr[10] != "");
             CustomCallTextBox.Text = settings.CustomCall; //paramArr[10];
+            RequestBodyTextBox.Text = settings.RequestBody;
                 
             //var customEntities = paramArr[11];
 
@@ -604,6 +611,8 @@ namespace PeakboardExtensionGraph.AppOnly
             CustomCallCheckBox.IsEnabled = state;
             Filter.IsEnabled = state;
             ConsistencyBox.IsEnabled = state;
+            CustomCallTextBox.IsEnabled = state;
+            CustomCallCheckButton.IsEnabled = state;
         }
 
         private void AddEndpoint(string name, string url)
