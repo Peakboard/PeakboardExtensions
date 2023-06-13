@@ -23,6 +23,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
         <!-- Client ID -->
@@ -279,5 +280,7 @@
                 </StackPanel>
             </Button.ToolTip>
         </Button>
+        <TextBlock Grid.Column="0" Grid.Row="12" Text="Request Body" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="12" Name="RequestBodyTextBox" IsEnabled="False" VerticalAlignment="Top" Height="100" AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" Margin="3"/>
     </Grid>
 </controls:CustomListUserControlBase>
