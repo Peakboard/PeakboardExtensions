@@ -47,7 +47,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             else
             {
                 clientid = this.clientid.Text;
-                clientsecret = this.secret.Text.Replace(";","SEMIKOLON");
+                clientsecret = this.secret.Text;
             }
 
 
@@ -151,7 +151,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             {
                 List<CrmName> tableList = new List<CrmName>();
 
-                tableList = CrmHelper.GetTablesName(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
+                tableList = CrmHelper.GetTableNames(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
 
                 if (tableList != null || tableList.Count != 0)
                 {
@@ -168,7 +168,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             
                 List<CrmName> viewList = new List<CrmName>();
 
-                viewList = CrmHelper.GetViewsName(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
+                viewList = CrmHelper.GetViewNames(this.link.Text, this.username.Text, this.password.Password, this.clientid.Text, this.secret.Text);
 
                 if (viewList != null || viewList.Count != 0)
                 {
