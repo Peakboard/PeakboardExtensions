@@ -8,6 +8,7 @@ using Microsoft.Xrm.Tooling.Connector;
 using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
+using System.IdentityModel.Metadata;
 using System.Linq;
 using System.ServiceModel.Description;
 using System.Text;
@@ -37,18 +38,15 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
 
             CrmServiceClient crmConnection = new CrmServiceClient(_CrmConnectionString);
-            try
-            {
-                WhoAmIRequest request = new WhoAmIRequest();
-                WhoAmIResponse response = (WhoAmIResponse)
-                crmConnection.Execute(request);
 
-                if (response.UserId == null)
-                {
-                    return null;
-                }
-            }
-            catch (Exception ex)
+            if (!string.IsNullOrWhiteSpace(crmConnection.LastCrmError))
+                throw new Exception(crmConnection.LastCrmError);
+
+            WhoAmIRequest request = new WhoAmIRequest();
+            WhoAmIResponse response = (WhoAmIResponse)
+            crmConnection.Execute(request);
+
+            if (response.UserId == null)
             {
                 return null;
             }
@@ -56,7 +54,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             return crmConnection;
         }
 
-        public static List<CrmName> GetTablesName(string URL, string username, string password, string clientid, string clientsecret)
+        public static List<CrmName> GetTableNames(string URL, string username, string password, string clientid, string clientsecret)
         {
             List<CrmName> tableList = new List<CrmName>();
 
@@ -96,7 +94,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
             }
         }
 
-        public static List<CrmName> GetViewsName(string URL, string username, string password, string clientid, string clientsecret)
+        public static List<CrmName> GetViewNames(string URL, string username, string password, string clientid, string clientsecret)
         {
             List<CrmName> viewList = new List<CrmName>();
 
@@ -245,8 +243,7 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     var fetchToQueryExpressionResponse = (FetchXmlToQueryExpressionResponse)service.Execute(fetchToQueryExpressionRequest);
                     QueryExpression qe = fetchToQueryExpressionResponse.Query;
 
-                    EntityCollection ec = new EntityCollection();
-                    ec = service.RetrieveMultiple(qe);
+                    EntityCollection ec = service.RetrieveMultiple(qe);
 
                     foreach (var c in qe.ColumnSet.Columns)
                     {
@@ -336,9 +333,10 @@ namespace PeakboardExtensionMicrosoftDynamics365
                             {
                                 if (ec.Entities[i].Attributes[column] is OptionSetValue)
                                 {
-                                    OptionSetValue o = new OptionSetValue();
-                                    o = (OptionSetValue)ec.Entities[i].Attributes[column];
-                                    item.Add(column, o.Value.ToString());
+                                    if (ec.Entities[i].FormattedValues.Contains(column))
+                                        item.Add(column, ec.Entities[i].FormattedValues[column]);
+                                    else
+                                        item.Add(column, string.Empty);
                                 }
                                 else if (ec.Entities[i].Attributes[column] is AliasedValue)
                                 {
@@ -413,8 +411,6 @@ namespace PeakboardExtensionMicrosoftDynamics365
                 
             ec= service.RetrieveMultiple(qe);
 
-            System.Windows.MessageBox.Show("count=" + ec.Entities.Count.ToString());
-
             if (!string.IsNullOrWhiteSpace(service.LastCrmError))
                 throw new Exception(service.LastCrmError);
             
@@ -430,9 +426,15 @@ namespace PeakboardExtensionMicrosoftDynamics365
                     { 
 					    if (entity[column.logicalName] is OptionSetValue)
 					    {
-						    OptionSetValue o = new OptionSetValue();
-						    o = (OptionSetValue)entity[column.logicalName];
-						    newString = o.Value.ToString();
+                            if (entity.FormattedValues.Contains(column.logicalName))
+                            {
+                                newString = entity.FormattedValues[column.logicalName];
+                            }
+                            
+                            // ID:
+                            //OptionSetValue o = (OptionSetValue)entity[column.logicalName];
+						    //newString = o.Value.ToString();
+
 					    }
 					    else if (entity[column.logicalName] is AliasedValue)
 					    {
