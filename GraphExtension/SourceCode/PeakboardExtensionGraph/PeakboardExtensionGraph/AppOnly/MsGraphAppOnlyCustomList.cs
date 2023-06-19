@@ -45,12 +45,12 @@ namespace PeakboardExtensionGraph.AppOnly
                 //string json = data.Parameter;
                 //settings = JsonConvert.DeserializeObject<AppOnlySettings>(json);
                 settings = AppOnlySettings.GetSettingsFromParameterString(data.Parameter);
-                if (settings == null) throw new InvalidOperationException("Settings are missing.");
+                if (settings == null) throw new InvalidOperationException("Invalid parameter format");
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    $"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
+                    $"Error getting settings for graph: {ex.Message}");
             }
 
             if (settings.Parameters == null && string.IsNullOrEmpty(settings.CustomCall))
@@ -85,10 +85,10 @@ namespace PeakboardExtensionGraph.AppOnly
                 settings = AppOnlySettings.GetSettingsFromParameterString(data.Parameter);
                 if (settings == null) throw new InvalidOperationException("Settings are missing.");
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
                 throw new InvalidOperationException(
-                    "Parameter string in old format. Update it by refreshing the datasource in the designer");
+                    $"Error getting settings for graph: {ex.Message}");
             }
             
             // Initialize GraphHelper
@@ -145,8 +145,6 @@ namespace PeakboardExtensionGraph.AppOnly
                         break;
                     }
                 }
-
-                
             }
             else if (response.Type == GraphContentType.OctetStream)
             {
@@ -316,7 +314,7 @@ namespace PeakboardExtensionGraph.AppOnly
             return reader;
         }
 
-        private RequestParameters BuildRequestParameters(CustomListData data)
+        /*private RequestParameters BuildRequestParameters(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
 
@@ -353,8 +351,8 @@ namespace PeakboardExtensionGraph.AppOnly
                 8   =>  top
                 9   =>  skip
                 10  =>  custom call
-            */
-        }
+            
+        }*/
 
         private void SetKeys(CustomListObjectElement item, CustomListColumnCollection columns)
         {

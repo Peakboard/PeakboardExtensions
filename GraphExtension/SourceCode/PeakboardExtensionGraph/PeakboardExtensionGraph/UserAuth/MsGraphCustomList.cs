@@ -154,11 +154,12 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
                 settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
-                if (settings == null) throw new InvalidOperationException("Settings are missing.");
+                if (settings == null) throw new InvalidOperationException("Invalid parameter format");
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
-                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
+                throw new InvalidOperationException(
+                    $"Error getting settings for graph: {ex.Message}");
             }
             
             if (settings.Parameters == null && string.IsNullOrEmpty(settings.CustomCall))
@@ -190,11 +191,12 @@ namespace PeakboardExtensionGraph.UserAuth
             try{
                 //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
                 settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
-                if (settings == null) throw new InvalidOperationException("Settings are missing.");
+                if (settings == null) throw new InvalidOperationException("Invalid parameter format");
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
-                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
+                throw new InvalidOperationException(
+                    $"Error getting settings for graph: {ex.Message}");
             }
             
             // get a helper
@@ -287,11 +289,12 @@ namespace PeakboardExtensionGraph.UserAuth
             try{
                 //settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
                 settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
-                if (settings == null) throw new InvalidOperationException("Settings are missing.");
+                if (settings == null) throw new InvalidOperationException("Invalid parameter format");
             }
-            catch (JsonException)
+            catch (Exception ex)
             {
-                throw new InvalidOperationException($"Parameter string in old format. Update it by refreshing the datasource in the designer. Json: {data.Parameter}");
+                throw new InvalidOperationException(
+                    $"Error getting settings for graph: {ex.Message}");
             }
             
             // create an item with empty values
@@ -414,7 +417,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool SendMail(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            var settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
             
             string url = "https://graph.microsoft.com/v1.0/me/sendMail";
             //string body =
@@ -457,7 +460,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddTask(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            var settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
             
             string url = "https://graph.microsoft.com/v1.0/me/todo/lists/{0}/tasks";
             string body = "{\"title\": \"$0$\"}";
@@ -480,7 +483,7 @@ namespace PeakboardExtensionGraph.UserAuth
 
         private bool AddEvent(CustomListData data, CustomListExecuteFunctionValueCollection values)
         {
-            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            var settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
             
             string url = "https://graph.microsoft.com/v1.0/me/events";
             string body = @"{
@@ -604,7 +607,7 @@ namespace PeakboardExtensionGraph.UserAuth
             {
                 result += $";{values[i]}";
             }*/
-            var settings = JsonConvert.DeserializeObject<UserAuthSettings>(data.Parameter);
+            var settings = UserAuthSettings.GetSettingsFromParameterString(data.Parameter);
             settings.AccessToken = accessToken;
             settings.ExpirationTime = expiresIn;
             settings.Millis = millis;
@@ -616,7 +619,7 @@ namespace PeakboardExtensionGraph.UserAuth
             data.Parameter = result;
         }
 
-        private RequestParameters BuildRequestParameters(CustomListData data)
+        /*private RequestParameters BuildRequestParameters(CustomListData data)
         {
             string[] paramArr = data.Parameter.Split(';');
 
@@ -668,8 +671,8 @@ namespace PeakboardExtensionGraph.UserAuth
                 12  =>  top
                 13  =>  skip
                 14  =>  custom call
-            */
-        }
+            
+        }*/
         
         private void SetKeys(CustomListObjectElement item, CustomListColumnCollection columns)
         {
