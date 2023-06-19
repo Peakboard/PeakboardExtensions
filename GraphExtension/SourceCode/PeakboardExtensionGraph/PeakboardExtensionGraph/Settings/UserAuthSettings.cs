@@ -14,7 +14,7 @@ namespace PeakboardExtensionGraph.Settings
         public long Millis { get; set; }
         
         public string CustomCall { get; set; }
-        public string RequestBody { get; set; } // TODO: Add to parameter string
+        public string RequestBody { get; set; }
         public Dictionary<string, string> CustomEntities { get; set; }
         
         public static UserAuthSettings GetSettingsFromParameterString(string parameter)
