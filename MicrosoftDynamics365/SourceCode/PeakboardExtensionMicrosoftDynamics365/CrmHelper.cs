@@ -200,8 +200,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
         public static CustomListColumnCollection GetViewColumns(string link, string username, string password, string clientid, string clientsecret, string ViewName)
         {
+            string EntityName = string.Empty;
+
             if (ViewName.Contains(" || "))
             {
+                EntityName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[0];
                 ViewName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[1];
             }
             CustomListColumnCollection columnCollection = new CustomListColumnCollection();
@@ -227,6 +230,12 @@ namespace PeakboardExtensionMicrosoftDynamics365
                                 AttributeName = "name",
                                 Operator = ConditionOperator.Equal,
                                 Values = { ViewName }
+                            },
+                            new ConditionExpression
+                            {
+                                AttributeName = "returnedtypecode",
+                                Operator = ConditionOperator.Equal,
+                                Values = { EntityName }
                             },
                         }
                     }
@@ -268,8 +277,11 @@ namespace PeakboardExtensionMicrosoftDynamics365
 
         public static CustomListObjectElementCollection GetViewData(string link, string username, string password, string clientid, string cliensecret, string maxRows, string ViewName)
         {
+            string EntityName = string.Empty;
+
             if (ViewName.Contains(" || "))
             {
+                EntityName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[0];
                 ViewName = ViewName.Split(new string[] { " || " }, StringSplitOptions.None)[1];
             }
 
@@ -295,8 +307,14 @@ namespace PeakboardExtensionMicrosoftDynamics365
                         {
                             AttributeName = "name",
                             Operator = ConditionOperator.Equal,
-                            Values = { ViewName }//View Name - "Active Accounts"
+                            Values = { ViewName }
                         },
+                        new ConditionExpression
+                            {
+                                AttributeName = "returnedtypecode",
+                                Operator = ConditionOperator.Equal,
+                                Values = { EntityName }
+                            },
                     }
                     }
                 };
