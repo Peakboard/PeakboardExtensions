@@ -22,3 +22,6 @@ This is a ready-to-use extension for MySql databases.
 
 # PostgreSQL
 This is a ready-to-use extension for PostgreSQL databases.
+
+# Trello
+This is a ready-to-use extension for Trello integration.
