@@ -15,7 +15,7 @@ namespace PeakboardExtensionGraph.UserAuthFunctions
             return new CustomListDefinition
             {
                 ID = $"MsGraphFunctionsCustomList",
-                Name = "Microsoft Graph Functions",
+                Name = "Microsoft Graph User Functions",
                 Description = "Sends post-requests to MS-Graph API",
                 PropertyInputPossible = true,
                 Functions = new CustomListFunctionDefinitionCollection
