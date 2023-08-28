@@ -255,7 +255,7 @@ namespace PeakboardExtensionGraph.UserAuth
                 }
                 catch (Exception ex)
                 {
-                    throw new InvalidOperationException($"Error while reading Json response: {ex.Message}");
+                    throw new InvalidOperationException($"Error reading Json response: {ex.Message}");
                 }
             }
             else if (response.Type == GraphContentType.OctetStream)
