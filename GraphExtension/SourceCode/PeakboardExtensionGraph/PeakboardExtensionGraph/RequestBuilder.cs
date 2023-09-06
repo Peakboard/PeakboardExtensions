@@ -8,19 +8,18 @@ namespace PeakboardExtensionGraph
     public class RequestBuilder
     {
         private string _accessToken;
-        private readonly string _baseUrl;
+        private readonly string _defaultUrl;
 
         public RequestBuilder(string accessToken, string url)
         {
             _accessToken = accessToken;
-            _baseUrl = url;
+            _defaultUrl = url;
         }
 
         public HttpRequestMessage GetRequest(out string requestUrl,
-            string suffix = null, RequestParameters parameters = null)
+            string requestUri, RequestParameters parameters = null)
         {
-            // append url suffix e.g. https://graph.microsoft.com/v1.0/me + /messages
-            string url = _baseUrl + suffix;
+            string url = requestUri;
 
             string queryParams = "";
 
@@ -47,7 +46,7 @@ namespace PeakboardExtensionGraph
                 }
                 
                 // append skipped entries
-                if (parameters.Skip != 0)
+                if (parameters.Skip > 0)
                 {
                     if (queryParams != "?")
                     {
@@ -110,7 +109,7 @@ namespace PeakboardExtensionGraph
             //  build request
             var request = new HttpRequestMessage
             {
-                RequestUri = new Uri(_baseUrl + url),
+                RequestUri = new Uri(url),
                 Method = HttpMethod.Post,
                 Content = content
             };

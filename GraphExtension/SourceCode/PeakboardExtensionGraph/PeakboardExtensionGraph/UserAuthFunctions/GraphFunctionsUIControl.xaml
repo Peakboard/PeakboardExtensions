@@ -146,9 +146,7 @@
                                 <StackPanel>
                                     <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Url</TextBlock>
                                     <TextBlock>
-                                        Url Suffix of the api endpoint.
-                                        <LineBreak/>
-                                        Starting after 'https://graph.microsoft.com/v1.0/me'
+                                        Url of the api endpoint.
                                     </TextBlock>
                                 </StackPanel>
                             </TextBox.ToolTip>
