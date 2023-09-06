@@ -114,7 +114,7 @@ namespace GraphFunctionTestConsole
             {
                 try
                 {
-                    await _helper.GetAsync($"/{test.Item1}", test.Item2);
+                    await _helper.ExtractAsync($"/{test.Item1}", test.Item2);
                 }
                 catch (Exception ex)
                 {

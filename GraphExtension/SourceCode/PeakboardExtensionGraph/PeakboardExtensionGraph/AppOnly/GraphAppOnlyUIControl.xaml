@@ -23,6 +23,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto"/>
             <RowDefinition />
         </Grid.RowDefinitions>
         <!-- Client ID -->
@@ -85,7 +86,7 @@
                 </StackPanel>
             </ComboBox.ToolTip>
         </ComboBox>
-        <Button Grid.Column="1" Grid.Row="4" Name="RemoveEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Remove" Width="50" Margin="3" Click="RemoveEntityButton_OnClick">
+        <Button Grid.Column="1" Grid.Row="4" Name="RemoveEntityButton" IsEnabled="False" HorizontalAlignment="Right" Content="Remove" Width="50" Margin="3" Click="RemoveEndpointButton_OnClick">
             <Button.ToolTip>
                 <StackPanel>
                     <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Remove Entity</TextBlock>
@@ -98,7 +99,7 @@
             </Button.ToolTip>
         </Button>
         <!-- Add Entity -->
-        <TextBlock Grid.Column="0" Grid.Row="5" Text="Add entity" Margin="3"/>
+        <TextBlock Grid.Column="0" Grid.Row="5" Text="Add endpoint" Margin="3"/>
         <Grid Grid.Column="1" Grid.Row="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="40" />
@@ -111,21 +112,19 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <TextBlock Grid.Column="0" Grid.Row="0" Text="Name" Margin="3"/>
-            <TextBox Grid.Column="1" Grid.Row="0" Name="CustomEntityName" IsEnabled="False" VerticalContentAlignment="Center" Margin="3"/>
+            <TextBox Grid.Column="1" Grid.Row="0" Name="CustomEndpointName" IsEnabled="False" VerticalContentAlignment="Center" Margin="3"/>
             <TextBlock Grid.Column="2" Grid.Row="0" Text="Url" Margin="3"/>
-            <TextBox Grid.Column="3" Grid.Row="0" Name="CustomEntityUrl" IsEnabled="False" VerticalContentAlignment="Center" Margin="3">
+            <TextBox Grid.Column="3" Grid.Row="0" Name="CustomEndpointUrl" IsEnabled="False" VerticalContentAlignment="Center" Margin="3">
                 <TextBox.ToolTip>
                     <StackPanel>
                         <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add Entity</TextBlock>
                         <TextBlock>
-                            Url Suffix of the api endpoint starting after:
-                            <LineBreak />
-                            https://graph.microsoft.com/v1.0
+                            Url of the api endpoint
                         </TextBlock>
                     </StackPanel>
                 </TextBox.ToolTip>
             </TextBox>
-            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEntityButton_OnClick">
+            <Button Grid.Column="4" Grid.Row="0" Name="CustomEntityButton" IsEnabled="False" Content="Add" Margin="3" Click="CustomEndpointButton_OnClick">
                 <Button.ToolTip>
                     <StackPanel>
                         <TextBlock FontWeight="Bold" FontSize="14" Margin="0,0,0,5">Add entity</TextBlock>
@@ -267,7 +266,7 @@
                         Request parameters have to be added manually
                     </TextBlock>
                     <Border BorderBrush="Silver" BorderThickness="0,1,0,0" Margin="0,8" />
-                    <TextBlock FontStyle="Italic">Example input: /events?$select=start,end,subject...</TextBlock>
+                    <TextBlock FontStyle="Italic">Example input: https://graph.microsoft.com/v1.0/events?$select=start,end,subject...</TextBlock>
                 </StackPanel>
             </TextBox.ToolTip>
         </TextBox>
@@ -281,5 +280,7 @@
                 </StackPanel>
             </Button.ToolTip>
         </Button>
+        <TextBlock Grid.Column="0" Grid.Row="12" Text="Request Body" Margin="3"/>
+        <TextBox Grid.Column="1" Grid.Row="12" Name="RequestBodyTextBox" IsEnabled="False" VerticalAlignment="Top" Height="100" AcceptsReturn="True" AcceptsTab="True" FontFamily="Consolas" VerticalScrollBarVisibility="Auto" Margin="3"/>
     </Grid>
 </controls:CustomListUserControlBase>

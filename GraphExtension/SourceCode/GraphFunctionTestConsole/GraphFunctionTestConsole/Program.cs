@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,12 +18,31 @@ namespace GraphFunctionTestConsole
     {
         public static void Main(string[] args)
         {
-            var helper = new GraphHelperAppOnly("",
-                "", "");
+            var helper = new GraphHelperAppOnly("7802e46c-dca6-4b73-b27f-4671ba694beb",
+                "b4ff9807-402f-42b8-a89d-428363c55de7", "OaN8Q~9MYVD2kSrOaOx7Wh4iJ16IJSebywcRhcE0");
 
             helper.InitGraph().Wait();
 
-            var task = helper.GetAsync("/sites", new RequestParameters()
+            var client = new HttpClient();
+
+            var request = new HttpRequestMessage()
+            {
+                Method = HttpMethod.Get,
+                RequestUri =
+                    new Uri(
+                        "https://graph.microsoft.com/v1.0/reports/microsoft.graph.getEmailActivityCounts(period='D7')")
+            };
+            
+            request.Headers.Authorization = new AuthenticationHeaderValue("bearer", helper.GetAccessToken());
+            var response = client.SendAsync(request).Result;
+
+            //string result = response.Content.ReadAsStringAsync().Result;
+            
+            Console.WriteLine(response.Content.Headers.ContentType.MediaType);
+
+            //Console.WriteLine(helper.GetAccessToken());
+
+            /*var task = helper.GetAsync("/sites", new RequestParameters()
             {
                 Top = 8,
                 Select = "name,webUrl"
