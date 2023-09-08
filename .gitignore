@@ -4,7 +4,6 @@ obj/
 *.vs
 packages/
 **/_ReSharper.Caches/
-**/Binary/
 **/merker.txt
 
 # User-specific files
