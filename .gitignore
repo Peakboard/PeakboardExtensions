@@ -3,7 +3,7 @@ bin/
 obj/
 *.vs
 packages/
-**/_ReShaper.Caches/
+**/_ReSharper.Caches/
 **/Binary/
 **/merker.txt
 
