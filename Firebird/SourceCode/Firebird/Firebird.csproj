@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Firebird.jpg" />
+    <None Remove="Firebird.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Firebird.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FirebirdSql.Data.FirebirdClient" Version="9.1.1" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
