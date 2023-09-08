@@ -1,8 +1,11 @@
+# General ignore patterns
 bin/
 obj/
 *.vs
 packages/
 **/_Reshaper.Caches/
+**/Binary/
+**/merker.txt
 
 # User-specific files
 *.rsuser
@@ -10,36 +13,3 @@ packages/
 *.user
 *.userosscache
 *.sln.docstates
-Ingres/merker.txt
-Yarooms/Binaries/Extension.xml
-Yarooms/Binaries/Newtonsoft.Json.dll
-Yarooms/Binaries/Newtonsoft.Json.xml
-Yarooms/Binaries/PeakboardExtensionYarooms.dll
-Yarooms/Binaries/PeakboardExtensionYarooms.pdb
-Yarooms/merker.txt
-Eventbank/merker.txt
-MySQL/Binary/BouncyCastle.Crypto.dll
-MySQL/Binary/Extension.xml
-MySQL/Binary/Google.Protobuf.dll
-MySQL/Binary/K4os.Compression.LZ4.dll
-MySQL/Binary/K4os.Compression.LZ4.Streams.dll
-MySQL/Binary/K4os.Hash.xxHash.dll
-MySQL/Binary/MySql.Data.dll
-MySQL/Binary/netstandard.dll
-MySQL/Binary/PeakboardExtensionMySql.dll
-MySQL/Binary/Renci.SshNet.dll
-MySQL/Binary/System.Buffers.dll
-MySQL/Binary/System.Numerics.Vectors.dll
-MySQL/Binary/Ubiety.Dns.Core.dll
-MySQL/Binary/Zstandard.Net.dll
-MySQL/SourceCode/.vs
-MySQL/SourceCode/MySqlTestConsole/bin
-MySQL/SourceCode/MySqlTestConsole/obj
-MySQL/SourceCode/packages
-MySQL/SourceCode/PeakboardExtensionMySql/bin
-MySQL/SourceCode/PeakboardExtensionMySql/obj
-MySQL/merker.txt
-DB2/SourceCode/PeakboardExtensionDB2/bin
-DB2/SourceCode/PeakboardExtensionDB2/obj
-DB2/merker.txt
-MicrosoftDynamics365/SourceCode/MicrosoftDynamics365TestConsole
