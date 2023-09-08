@@ -2,6 +2,7 @@ bin/
 obj/
 *.vs
 packages/
+**/_Reshaper.Caches/
 
 # User-specific files
 *.rsuser
