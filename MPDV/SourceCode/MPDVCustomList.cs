@@ -27,7 +27,7 @@ namespace MPDV
                     new CustomListPropertyDefinition() { Name = "URL", Value = "" },
                     new CustomListPropertyDefinition() { Name = "User", Value = "" },
                     new CustomListPropertyDefinition() { Name = "Password", Value = "", Masked = true },
-                    new CustomListPropertyDefinition() { Name = "XAccessId", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "XAccessId", Value = "", Masked = true },
                     new CustomListPropertyDefinition() { Name = "Body", Value = "", MultiLine = true }
                 }
             };
