@@ -53,9 +53,7 @@
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Sick.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="Sick.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
