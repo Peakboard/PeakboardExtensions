@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
 	<Extensions>
-		<Extension ID="Peakboard.Extensions.SickExtension"
+		<Extension ID="Sick"
 				   Path="SickExtension.dll"
 				   Class="SickExtension.SickExtension" />
 	</Extensions>
