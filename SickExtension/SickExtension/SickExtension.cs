@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace SickExtension
 {
-    [ExtensionIcon("SickExtension.Sick.png")]
-    public class SickExtension : ExtensionBase
+	[ExtensionIcon("SickExtension.Sick.png")]
+	public class SickExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
         {
