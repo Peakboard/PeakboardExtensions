@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SickExtension
 {
-    [ExtensionIcon("Peakboard.Extensions.SickExtension.Sick.png")]
+    [ExtensionIcon("Sick.Sick.png")]
     public class SickExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
@@ -15,7 +15,7 @@ namespace SickExtension
             return new ExtensionDefinition
             {
                 ID = "Sick",
-                Name = "Sick",
+                Name = "SICK RFID Reader",
                 Description = "This is an Extension for accessing a Sick sensor.",
                 Version = "1.0",
                 Author = "Peakboard Team",
