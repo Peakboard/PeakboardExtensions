@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace SickExtension
 {
-    [ExtensionIcon("Sick.Sick.png")]
+    [ExtensionIcon("SickExtension.Sick.png")]
     internal class SickListBase : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
