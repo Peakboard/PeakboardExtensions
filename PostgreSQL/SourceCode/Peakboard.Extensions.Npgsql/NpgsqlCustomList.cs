@@ -146,6 +146,7 @@ namespace Peakboard.Extensions.Npgsql
             builder.Username = data.Properties["Username"];
             builder.Password = data.Properties["Password"];
             builder.Database = data.Properties["Database"];
+            builder.Pooling = false;
 
             var connection = new NpgsqlConnection(builder.ToString());
             connection.Open();
