@@ -62,56 +62,80 @@ namespace Peakboard.Extensions.Npgsql
             var columns = new CustomListColumnCollection();
             var connection = OpenConnection(data);
             var reader = ReadStatement(data, connection);
-            var schema = reader.GetSchemaTable();
 
-            foreach (DataRow column in schema.Rows)
+            try
             {
-                var name = (string) column["ColumnName"];
-                var dataType = (Type)column["DataType"];
+                var schema = reader.GetSchemaTable();
 
-                CustomListColumnTypes listColumnType;
+                foreach (DataRow column in schema.Rows)
+                {
+                    var name = (string)column["ColumnName"];
+                    var dataType = (Type)column["DataType"];
 
-                if (dataType == typeof(string))
-                    listColumnType = CustomListColumnTypes.String;
-                else if (dataType == typeof(bool))
-                    listColumnType = CustomListColumnTypes.Boolean;
-                else
-                    listColumnType = DataTypeHelper.IsNumericType(dataType) ? CustomListColumnTypes.Number : CustomListColumnTypes.String;
+                    CustomListColumnTypes listColumnType;
 
-                CustomListColumn customListColumn = new CustomListColumn(name, listColumnType);
-                columns.Add(customListColumn);
+                    if (dataType == typeof(string))
+                        listColumnType = CustomListColumnTypes.String;
+                    else if (dataType == typeof(bool))
+                        listColumnType = CustomListColumnTypes.Boolean;
+                    else
+                        listColumnType = DataTypeHelper.IsNumericType(dataType) ? CustomListColumnTypes.Number : CustomListColumnTypes.String;
+
+                    CustomListColumn customListColumn = new CustomListColumn(name, listColumnType);
+                    columns.Add(customListColumn);
+                }
+
+                connection.Close();
+                reader.Close();
+
+                return columns;
             }
+            catch (Exception e)
+            {
+                Log?.Error("Error while fetching columns from PostgreSQL Database.", e);
 
-            connection.Close();
-            reader.Close();
+                connection.Close();
+                reader.Close();
 
-            return columns;
+                return null;
+            }
         }
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             DataTable dataTable = new DataTable();
             NpgsqlConnection connection = OpenConnection(data);
-            NpgsqlDataReader dataReader = ReadStatement(data, connection);
-            dataTable.Load(dataReader);
 
-            var items = new CustomListObjectElementCollection();
-
-            foreach (DataRow sqlrow in dataTable.Rows)
+            try
             {
-                CustomListObjectElement newitem = new CustomListObjectElement();
-                foreach (DataColumn sqlcol in dataTable.Columns)
-                    newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, sqlrow[sqlcol.ColumnName]));
-                items.Add(newitem);
+                NpgsqlDataReader dataReader = ReadStatement(data, connection);
+                dataTable.Load(dataReader);
+
+                var items = new CustomListObjectElementCollection();
+
+                foreach (DataRow sqlrow in dataTable.Rows)
+                {
+                    CustomListObjectElement newitem = new CustomListObjectElement();
+                    foreach (DataColumn sqlcol in dataTable.Columns)
+                        newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, sqlrow[sqlcol.ColumnName]));
+                    items.Add(newitem);
+                }
+
+                Log?.Info(string.Format("Ingres extension fetched {0} rows.", items.Count));
+
+                connection.Close();
+                dataTable.Dispose();
+                dataReader.Close();
+                return items;
             }
+            catch
+            {
+                Log?.Error("Error while fetching items from PostgreSQL Database.");
 
-            this.Log?.Info(string.Format("Ingres extension fetched {0} rows.", items.Count));
-
-            connection.Close();
-            dataTable.Dispose();
-            dataReader.Close();
-
-            return items;
+                connection.Close();
+                dataTable.Dispose();
+                return null;
+            }
         }
 
         private NpgsqlConnection OpenConnection(CustomListData data)
@@ -122,6 +146,7 @@ namespace Peakboard.Extensions.Npgsql
             builder.Username = data.Properties["Username"];
             builder.Password = data.Properties["Password"];
             builder.Database = data.Properties["Database"];
+            builder.Pooling = false;
 
             var connection = new NpgsqlConnection(builder.ToString());
             connection.Open();
