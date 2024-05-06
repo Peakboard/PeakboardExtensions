@@ -2,7 +2,6 @@
 using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Peakboard.ExtensionKit;
-using System.Net.NetworkInformation;
 
 namespace WheelMe
 {
