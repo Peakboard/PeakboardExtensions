@@ -1,8 +1,8 @@
 ﻿using System;
-using Newtonsoft.Json.Linq;
 using System.Net.Http;
+using System.Threading.Tasks;
 using Peakboard.ExtensionKit;
-using System.Net.NetworkInformation;
+using WheelMe.DTO;
 
 namespace WheelMe
 {
@@ -10,8 +10,7 @@ namespace WheelMe
     public class WheelMeExtension : ExtensionBase
     {
         public WheelMeExtension(IExtensionHost host) : base(host) 
-        { 
-        
+        {
         }
         
         protected override ExtensionDefinition GetDefinitionOverride()
@@ -40,31 +39,43 @@ namespace WheelMe
 
         private static string MyLocalToken = string.Empty;
 
+        public static HttpClient ProduceHttpClient(CustomListData data)
+        {
+            // NOTE: Base url need to end with '/'
+            // https://www.rfc-editor.org/rfc/rfc3986
+            var baseUrl = data.Properties["BaseURL"];
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new ArgumentException("Base url cannot be empty", nameof(baseUrl));
+            }
+            
+            var client = new HttpClient()
+            {
+                BaseAddress = new Uri(baseUrl)
+            };
 
-        public static void AuthenticateClient(HttpClient client, string BaseURL, string UserName, string Password) 
+            return client;
+        }
+        
+        public static async Task AuthenticateClientAsync(HttpClient client, string UserName, string Password) 
         {
             if (!string.IsNullOrEmpty(MyLocalToken) && !client.DefaultRequestHeaders.Contains("Authorization"))
             {
+                // TODO: Check token expiration here
                 client.DefaultRequestHeaders.Add("Authorization", "Bearer " + MyLocalToken);
                 return;
             }
-            string json = $"{{ \"email\": \"{UserName}\", \"password\": \"{Password}\" }}";
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            HttpResponseMessage response = client.PostAsync(BaseURL + "api/public/authentication", content).Result;
-            var responseBody = response.Content.ReadAsStringAsync().Result;
 
-            if (response.IsSuccessStatusCode)
+            var payload = new AuthenticationRequestDto
             {
-                var rawdata = JObject.Parse(responseBody);
-                MyLocalToken = rawdata["token"]?.ToString();
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + MyLocalToken);
-            }
-            else
-            {
-                throw new Exception("Error during authentification\r\n" + responseBody.ToString() + "\r\nOriginal Request: " + json);
-            }
+                Email = UserName,
+                Password = Password
+            };
+
+            var response = await client.PostRequestAsync<AuthenticationResponseDto>("api/public/authentication", payload);
+            
+            MyLocalToken = response.Token;
+            client.DefaultRequestHeaders.Add("Authorization", "Bearer " + MyLocalToken);
         }
-
-
     }
 }
