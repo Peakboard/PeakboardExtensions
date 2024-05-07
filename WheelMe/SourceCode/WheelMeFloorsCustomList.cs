@@ -1,16 +1,12 @@
 ﻿using System;
-using System.Net.Http;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Collections.Generic;
 using Peakboard.ExtensionKit;
-using Newtonsoft.Json.Linq;
+using WheelMe.DTO;
 
 namespace WheelMe
 {
     [Serializable]
     [CustomListIcon("WheelMe.WheelMe.png")]
-    
     class WheelMeFloorsCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -21,11 +17,12 @@ namespace WheelMe
                 Name = "Wheel.Me Floors",
                 Description = "Fetches data from WheelMe API",
                 PropertyInputPossible = true,
-                PropertyInputDefaults = {
-                new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
-                new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value=""  },
-            }
+                PropertyInputDefaults =
+                {
+                    new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
+                    new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value = "" },
+                }
             };
         }
 
@@ -35,10 +32,12 @@ namespace WheelMe
             {
                 throw new InvalidOperationException("Invalid BaseURL");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["UserName"]))
             {
                 throw new InvalidOperationException("Invalid UserName");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["Password"]))
             {
                 throw new InvalidOperationException("Invalid Password");
@@ -55,31 +54,26 @@ namespace WheelMe
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            using (HttpClient client = new HttpClient())
+            return Task.Run(async () => await GetItemsAsync(data)).GetAwaiter().GetResult();
+        }
+
+        protected virtual async Task<CustomListObjectElementCollection> GetItemsAsync(CustomListData data)
+        {
+            using (var client = WheelMeExtension.ProduceHttpClient(data))
             {
-                WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
-                HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + "api/public/maps").Result;
-                var responseBody = response.Content.ReadAsStringAsync().Result;
+                await WheelMeExtension.AuthenticateClientAsync(client, data.Properties["UserName"], data.Properties["Password"]);
+                var response = await client.GetRequestAsync<MapItemDto[]>("api/public/maps");
 
-                if (response.IsSuccessStatusCode)
+                var items = new CustomListObjectElementCollection();
+                foreach (var row in response)
                 {
-
-                    JArray rawlist = JArray.Parse(responseBody);
-
-                    var items = new CustomListObjectElementCollection();
-                    foreach (var row in rawlist)
-                    {
-                        var item = new CustomListObjectElement();
-                        item.Add("ID", row["id"]?.ToString());
-                        item.Add("Name", row["name"]?.ToString());
-                        items.Add(item);
-                    }
-                    return items;
+                    var item = new CustomListObjectElement();
+                    item.Add("ID", row.Id.ToString("D"));
+                    item.Add("Name", row.Name);
+                    items.Add(item);
                 }
-                else
-                {
-                    throw new Exception("Error during call of api/public/maps\r\n" + response.StatusCode + response.ReasonPhrase + "\r\n" + responseBody.ToString());
-                }
+
+                return items;
             }
         }
     }
