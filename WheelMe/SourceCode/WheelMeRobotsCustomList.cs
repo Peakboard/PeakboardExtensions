@@ -119,7 +119,7 @@ namespace WheelMe
             var columns = new CustomListColumnCollection();
             columns.Add(new CustomListColumn("ID", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("Name", CustomListColumnTypes.String));
-            columns.Add(new CustomListColumn("PoisitionX", CustomListColumnTypes.Number));
+            columns.Add(new CustomListColumn("PositionX", CustomListColumnTypes.Number));
             columns.Add(new CustomListColumn("PositionY", CustomListColumnTypes.Number));
             columns.Add(new CustomListColumn("State", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("OperatingMode", CustomListColumnTypes.String));
@@ -139,7 +139,7 @@ namespace WheelMe
                 var item = new CustomListObjectElement();
                 item.Add("ID",row.ID);
                 item.Add("Name", row.Name);
-                item.Add("PoisitionX", row.PositionX);
+                item.Add("PositionX", row.PositionX);
                 item.Add("PositionY", row.PositionY);
                 item.Add("State", row.State);
                 item.Add("OperatingMode", row.OperatingMode);
