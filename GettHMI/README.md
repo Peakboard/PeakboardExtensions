@@ -1,1 +1,1 @@
-Peakboard Extension for Gett HMI Keys
+The Peakboard Extension for GETT HMIs enables users to integrate and control buttons on GETT Human Machine Interfaces (HMIs) seamlessly. This extension leverages Peakboard's capabilities to provide real-time interaction with GETT HMI buttons, facilitating enhanced user experience and operational efficiency.
