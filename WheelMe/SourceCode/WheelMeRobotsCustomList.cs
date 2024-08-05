@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Net.Http;
-using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Peakboard.ExtensionKit;
-using Newtonsoft.Json.Linq;
+using WheelMe.DTO;
 
 namespace WheelMe
 {
     [Serializable]
     [CustomListIcon("WheelMe.WheelMe.png")]
-    
     class WheelMeRobotsCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -19,13 +19,14 @@ namespace WheelMe
                 Name = "Wheel.Me Robots",
                 Description = "Fetches data from WheelMe API",
                 PropertyInputPossible = true,
-                PropertyInputDefaults = {
-                new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
-                new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value=""  },
-                new CustomListPropertyDefinition() { Name = "FloorID", Value="2"  },
-                new CustomListPropertyDefinition() { Name = "RobotNameFilter", Value="*"  }
-                    },
+                PropertyInputDefaults =
+                {
+                    new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
+                    new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
+                    new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value = "" },
+                    new CustomListPropertyDefinition() { Name = "FloorID", Value = "2" },
+                    new CustomListPropertyDefinition() { Name = "RobotNameFilter", Value = "*" }
+                },
                 Functions = new CustomListFunctionDefinitionCollection
                 {
                     new CustomListFunctionDefinition
@@ -57,7 +58,7 @@ namespace WheelMe
                             },
                         },
                     },
-                                        new CustomListFunctionDefinition
+                    new CustomListFunctionDefinition
                     {
                         Name = "NavigateToPositionName",
                         Description = "Navigates the robot to a certain position",
@@ -86,7 +87,7 @@ namespace WheelMe
                             },
                         },
                     }
-                }     
+                }
             };
         }
 
@@ -96,18 +97,22 @@ namespace WheelMe
             {
                 throw new InvalidOperationException("Invalid BaseURL");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["UserName"]))
             {
                 throw new InvalidOperationException("Invalid UserName");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["Password"]))
             {
                 throw new InvalidOperationException("Invalid Password");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["FloorID"]))
             {
                 throw new InvalidOperationException("Invalid FloorID");
             }
+
             if (string.IsNullOrWhiteSpace(data.Properties["RobotNameFilter"]))
             {
                 throw new InvalidOperationException("Invalid RobotNameFilter");
@@ -132,12 +137,12 @@ namespace WheelMe
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            List<Robot> robots = GetRobotList(data);
+            var robots = Task.Run(async () => await GetRobotsAsync(data)).GetAwaiter().GetResult();
             var items = new CustomListObjectElementCollection();
             foreach (var row in robots)
             {
                 var item = new CustomListObjectElement();
-                item.Add("ID",row.ID);
+                item.Add("ID", row.Id);
                 item.Add("Name", row.Name);
                 item.Add("PositionX", row.PositionX);
                 item.Add("PositionY", row.PositionY);
@@ -149,128 +154,76 @@ namespace WheelMe
                 item.Add("CurrentPositionName", row.CurrentPositionName);
                 items.Add(item);
             }
+
             return items;
         }
 
-        private List<Robot> GetRobotList(CustomListData data)
+        private async Task<RobotDto[]> GetRobotsAsync(CustomListData data)
         {
-            using (HttpClient client = new HttpClient())
+            using (var client = WheelMeExtension.ProduceHttpClient(data))
             {
-                WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
-                HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + $"api/public/maps/{data.Properties["FloorID"]}/robots").Result;
-                var responseBody = response.Content.ReadAsStringAsync().Result;
+                await WheelMeExtension.AuthenticateClientAsync(client, data.Properties["UserName"], data.Properties["Password"]);
 
-                if (response.IsSuccessStatusCode)
+                var floorId = data.Properties["FloorID"];
+                var response = await client.GetRequestAsync<RobotDto[]>($"api/public/maps/{floorId}/robots");
+                
+                var query = response.Select(r =>
                 {
-                    JArray rawRobotList = JArray.Parse(responseBody);
-                    var items = new List<Robot>();
-                    foreach (var row in rawRobotList)
-                    {
-                        var item = new Robot();
-                        item.ID = row["id"]?.ToString();
-                        item.Name = row["name"]?.ToString();
+                    r.NavigatingToPositionName = WheelMeHelper.GetPositionNameFromId(client, floorId, r.NavigatingToPositionId?.ToString("D"));
+                    r.CurrentPositionName = WheelMeHelper.GetPositionNameFromId(client, floorId, r.CurrentPositionId?.ToString("D"));
 
-                        if (item.Name.Equals(data.Properties["RobotNameFilter"]) || data.Properties["RobotNameFilter"].Equals("*"))
-                        { 
-                            item.PositionX = double.Parse(row["position"]?["x"]?.ToString());
-                            item.PositionY = double.Parse(row["position"]?["y"]?.ToString());
-                            item.State = row["state"]?.ToString();
-                            item.OperatingMode = row["operatingMode"]?.ToString();
-                            item.NavigatingToPositionId = row["navigatingToPositionId"]?.ToString();
-                            item.NavigatingToPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.NavigatingToPositionId);
-                            item.CurrentPositionId = row["currentPositionId"]?.ToString();
-                            item.CurrentPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.CurrentPositionId);
-                            items.Add(item);
-                        }
-                    }
-                    return items;
-                }
-                else
+                    return r;
+                });
+
+                if (!data.Properties["RobotNameFilter"].Equals("*"))
                 {
-                    throw new Exception("Error during call of api/public/maps\r\n" + response.StatusCode + response.ReasonPhrase + "\r\n" + responseBody.ToString());
+                    var filter = data.Properties["RobotNameFilter"];
+                    query = query.Where(r => r.Name.Equals(filter, StringComparison.OrdinalIgnoreCase));
                 }
+                
+                return query.ToArray();
             }
         }
 
-        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data,
+            CustomListExecuteParameterContext context)
         {
             var returnContext = default(CustomListExecuteReturnContext);
 
-            if (context.FunctionName.Equals("NavigateToPositionID", StringComparison.InvariantCultureIgnoreCase))
+            if (context.FunctionName.Equals("NavigateToPositionID", StringComparison.OrdinalIgnoreCase))
             {
                 string RobotID = context.Values[0].StringValue;
                 string FloorID = context.Values[1].StringValue;
                 string PositionID = context.Values[2].StringValue;
 
-                using (HttpClient client = new HttpClient())
+                try
                 {
-                    WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
-                    string json = $"{{\r\n  \"positionId\": \"{PositionID}\"\r\n}}";
-                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                    HttpResponseMessage response = client.PostAsync(data.Properties["BaseURL"] + $"api/public/maps/{FloorID}/robots/{RobotID}/navigate", content).Result;
-                    var responseBody = response.Content.ReadAsStringAsync().Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        this.Log?.Info($"Navigation request to position {PositionID} on floor {FloorID} succesfully sent");
-                    }
-                    else
-                    {
-                        this.Log?.Error($"Wheel.me API return code {response.StatusCode} - requestbody was {json} - responseBody is {responseBody}");
-                        throw new Exception("Error during authentification\r\n" + responseBody.ToString() + "\r\nOriginal Request: " + json);
-                    }
+                    Task.Run(async () => await NavigateToPositionAsync(data, FloorID, RobotID, PositionID)).GetAwaiter().GetResult();
+                    Log?.Info($"Navigation request to position {PositionID} on floor {FloorID} successfully sent");
+                }
+                catch (Exception e)
+                {
+                    Log?.Error(e.Message);
+                    throw;
                 }
             }
-            else if (context.FunctionName.Equals("NavigateToPositionName", StringComparison.InvariantCultureIgnoreCase))
+            else if (context.FunctionName.Equals("NavigateToPositionName", StringComparison.OrdinalIgnoreCase))
             {
                 string RobotID = context.Values[0].StringValue;
                 string FloorID = context.Values[1].StringValue;
                 string PositionName = context.Values[2].StringValue;
 
-                this.Log?.Info($"Trying to navigate robot {RobotID} to position {PositionName}");
-
-                using (HttpClient client = new HttpClient())
+                Log?.Info($"Trying to navigate robot {RobotID} to position {PositionName}");
+                
+                try
                 {
-                    WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
-
-                    string PositionID = null;
-                    HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + $"api/public/maps/{FloorID}/positions").Result;
-                    var responseBody = response.Content.ReadAsStringAsync().Result;
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        JArray rawlist = JArray.Parse(responseBody);
-                        var items = new CustomListObjectElementCollection();
-                        foreach (var row in rawlist)
-                        {
-                            if (row["name"]?.ToString().Equals(PositionName) == true)
-                            {
-                                PositionID = row["id"]?.ToString();
-                            }
-                        }
-                        if (PositionID == null)
-                        {
-                            throw new Exception($"Could no find position with name {PositionName}");
-                        }
-                    }
-                    else
-                    {
-                        throw new Exception("Error during call of api/public/maps\r\n" + response.StatusCode + response.ReasonPhrase + "\r\n" + responseBody.ToString());
-                    }
-
-
-                    string json = $"{{\r\n  \"positionId\": \"{PositionID}\"\r\n}}";
-                    var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-                    response = client.PostAsync(data.Properties["BaseURL"] + $"api/public/maps/{FloorID}/robots/{RobotID}/navigate", content).Result;
-                    responseBody = response.Content.ReadAsStringAsync().Result;
-                    if (response.IsSuccessStatusCode)
-                    {
-                        this.Log?.Info($"Navigation request to position {PositionID} on floor {FloorID} succesfully sent");
-                    }
-                    else
-                    {
-                        this.Log?.Error($"Wheel.me API return code {response.StatusCode} - requestbody was {json} - responseBody is {responseBody}");
-                        throw new Exception("Error during authentification\r\n" + responseBody.ToString() + "\r\nOriginal Request: " + json);
-                    }
+                    Task.Run(async () => await NavigateToPositionAsync(data, FloorID, RobotID, PositionName)).GetAwaiter().GetResult();
+                    Log?.Info($"Navigation request to position {PositionName} on floor {FloorID} successfully sent");
+                }
+                catch (Exception e)
+                {
+                    Log?.Error(e.Message);
+                    throw;
                 }
             }
             else
@@ -280,20 +233,34 @@ namespace WheelMe
 
             return returnContext;
         }
-
-
-        class Robot
+        
+        private async Task NavigateToPositionAsync(CustomListData data, string floor, string robot, string destination)
         {
-            public string ID;
-            public string Name;
-            public double PositionX;
-            public double PositionY;
-            public string State;
-            public string OperatingMode;
-            public string NavigatingToPositionId;
-            public string NavigatingToPositionName;
-            public string CurrentPositionId;
-            public string CurrentPositionName;
+            using (var client = WheelMeExtension.ProduceHttpClient(data))
+            {
+                await WheelMeExtension.AuthenticateClientAsync(client, data.Properties["UserName"], data.Properties["Password"]);
+                
+                if (long.TryParse(destination, out var id))
+                {
+                    await NavigateToPositionAsync(client, floor, robot, id);
+                }
+                else
+                {
+                    var positions = await client.GetRequestAsync<PositionDto[]>($"api/public/maps/{floor}/positions");
+                    var positionId = positions.First(p => p.Name.Equals(destination, StringComparison.OrdinalIgnoreCase)).Id;
+                    await NavigateToPositionAsync(client, floor, robot, positionId);
+                }
+            }
+        }
+
+        private async Task NavigateToPositionAsync(HttpClient client, string floor, string robot, long positionId)
+        {
+            var request = new NavigationRequestDto
+            {
+                PositionId = positionId
+            };
+
+            await client.PostRequestAsync($"api/public/maps/{floor}/robots/{robot}/navigate", request);
         }
     }
 }
