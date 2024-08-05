@@ -45,11 +45,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DTO\AuthenticationRequestDto.cs" />
+    <Compile Include="DTO\AuthenticationResponseDto.cs" />
+    <Compile Include="DTO\AutonomousState.cs" />
+    <Compile Include="DTO\MapItemDto.cs" />
+    <Compile Include="DTO\NavigationRequestDto.cs" />
+    <Compile Include="DTO\OperatingMode.cs" />
+    <Compile Include="DTO\Point2D.cs" />
+    <Compile Include="DTO\PositionDto.cs" />
+    <Compile Include="DTO\PositionState.cs" />
+    <Compile Include="DTO\RobotDto.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="WheelMeHelper.cs" />
     <Compile Include="WheelMeRobotsCustomList.cs" />
     <Compile Include="WheelMePositionsCustomList.cs" />
     <Compile Include="WheelMeFloorsCustomList.cs" />
-    <Compile Include="WheelMeDataSource.cs" />
+    <Compile Include="WheelMeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
