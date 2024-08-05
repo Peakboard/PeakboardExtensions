@@ -49,3 +49,6 @@ Full cut after a feed of 3 lines.
 	~(Style:Bold,Italic,DoubleHeight)~
 	Row 5
 	~(FullCutAfterFeed:1)~
+## Virtual printer apps for testing
+1. iOS App 'Virtual Thermal Printer' by Pascal Kimmel used as a virtual printer for the ESC/POS protocol. Not all commands are supported.
+2. Virtual ZPL Printer by Daniel Porrey used as a virtual printer for the Zebra ZPL protocol. Available on GitHub. 
