@@ -9,23 +9,30 @@ You can use the Zebra ZPL protocol to create more sophisticated labels by using 
 
 # ESC/POS format
 
-The ESC/POS custom format provides a set of easy-to-use commands that are always enclosed in "~(COMMAND)~". The following commands are currently supported:
+The ESC/POS custom format provides a set of easy-to-use commands that are always enclosed in **\~(COMMAND)\~**. The following commands are currently supported:
 
-~(CentralAlign)~
+**\~(CentralAlign)\~**\
 Centers all text following the command.
-~(LeftAlig)~
+
+**\~(LeftAlign)\~**\
 Left-aligns all text following the command.
-~(RightAlign)~
+
+**\~(RightAlign)\~**\
 Right-aligns all text following the command.
-~(Style:Bold,Italic,DoubleWidth,DoubleHeight)~
+
+**\~(Style:Bold,Italic,DoubleWidth,DoubleHeight)\~**\
 Sets the style of the following text. Not all printers understand all styles or combinations of styles.
-~(Barcode:CODE128,12345)~
+
+**\~(Barcode:CODE128,12345)\~**\
 Prints a barcode of type CODE128 with the numbers 12345. You can also use ITF as the barcode type.
-~(FullCut)~
+
+**\~(FullCut)\~**\
 Full cut after this command.
-~(FeedLines:2)~
+
+**\~(FeedLines:2)\~**\
 Feed 3 lines.
-~(FullCutAfterFeed:3)~
+
+**\~(FullCutAfterFeed:3)\~**\
 Full cut after a feed of 3 lines.
 
 ## Samples
