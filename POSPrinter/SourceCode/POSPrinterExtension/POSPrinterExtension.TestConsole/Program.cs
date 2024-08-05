@@ -32,22 +32,20 @@ namespace POSPrinter.TestConsole
                 var data = new CustomListData
                 {
                     ListName = "ESCPOS1",
-                    Properties = { { "SerialPortName", "COM4" }, { "BaudRate", "9600" } }
-                    //Properties = { { "IP", "192.168.42.154" }, { "Port", "9100" } } // iOS App Thermal Printer
+                    //Properties = { { "SerialPortName", "COM4" }, { "BaudRate", "9600" } }
+                    Properties = { { "IP", "192.168.178.48" }, { "Port", "9100" } } // iOS App 'Virtual Thermal Printer' (DE) from Pascal Kimmel
                 };
 
                 if (TryCheckData(customList, data))
                 {
                     var context = new CustomListExecuteParameterContext { FunctionName = "Print", ListName = data.ListName };
-                    var text = @"
-~(CentralAlign)~
+                    var text = @"~(CentralAlign)~
 Kopfzeile mit #[param1]#
 ~(Style:Bold)~
 Zeile 2
 Zeile 3
 ~(LeftAlign)~
 ~(Style:DoubleHeight)~
-~(Barcode:CODE128,1234567890)~
 Zeile 4
 ~(Style:Bold,Italic,DoubleHeight)~
 Zeile 5
@@ -79,7 +77,7 @@ Zeile 5
                 var data = new CustomListData
                 {
                     ListName = "ZPL1",
-                    Properties = { { "IP", "127.0.0.1" }, { "Port", "9100" } }
+                    Properties = { { "IP", "127.0.0.1" }, { "Port", "9100" } } // Virtual ZPL Printer
                 };
 
                 if (TryCheckData(customList, data))
