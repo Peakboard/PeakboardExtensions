@@ -36,8 +36,7 @@
     <StartupObject>POSPrinter.TestConsole.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=AMD64">
-      <SpecificVersion>False</SpecificVersion>
+    <Reference Include="Peakboard.ExtensionKit">
       <HintPath>..\POSPrinterExtension\bin\Debug\Peakboard.ExtensionKit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -58,7 +57,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\POSPrinterExtension\POSPrinterExtension.csproj">
-      <Project>{d1b186d8-99d9-4e1f-a38f-61330ad76c71}</Project>
+      <Project>{90c740f7-b0b8-43b8-9c9a-bfa5baecad43}</Project>
       <Name>POSPrinterExtension</Name>
     </ProjectReference>
   </ItemGroup>
