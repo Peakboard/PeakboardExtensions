@@ -22,9 +22,9 @@ namespace Woutex
                 Description = "Fetches data from Woutex API",
                 PropertyInputPossible = true,
                 PropertyInputDefaults = {
-                new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://ec2-54-175-232-22.compute-1.amazonaws.com/" },
+                new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX/" },
                 new CustomListPropertyDefinition() { Name = "UserName", Value = "wtx" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="1a7cf68fa7ecc6fef376dfa44999b89f"  }
+                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="wtx"  }
                     },
                 Functions = new CustomListFunctionDefinitionCollection
                 {
