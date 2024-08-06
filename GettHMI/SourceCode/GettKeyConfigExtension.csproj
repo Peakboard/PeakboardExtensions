@@ -54,7 +54,7 @@
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="pb_datasource_gett.png" />
+    <EmbeddedResource Include="pb_datasource_gett.png" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Peakboard.ExtensionKit">
