@@ -4,6 +4,7 @@ using GETT_CapDeviceLib;
 using GETT_CapDeviceLib.Parameter;
 using System.Threading;
 using System.Globalization;
+using System.Runtime.InteropServices;
 
 
 namespace GettKeyConfigExtension
@@ -12,6 +13,15 @@ namespace GettKeyConfigExtension
     [CustomListIcon("GettKeyConfigExtension.pb_datasource_gett.png")]
     class GettKeyConfigExtensionCustomList : CustomListBase
     {
+        const int KEYEVENTF_KEYDOWN = 0x0000;
+        const int KEYEVENTF_KEYUP = 0x0002;
+        const byte VK_LWIN = 0x5B;
+        const byte VK_D = 0x44;
+
+        // Import the necessary functions from user32.dll
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -196,6 +206,14 @@ namespace GettKeyConfigExtension
                             }
                         },
                     },
+                    new CustomListFunctionDefinition()
+                    {
+                        Name = "ShowDesktop",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                           
+                        },
+                    },
                 }
             };
         }
@@ -205,7 +223,29 @@ namespace GettKeyConfigExtension
             var ret = new CustomListExecuteReturnContext();
             GETT_CapDevice deviceHandle;
             deviceHandle = GETT_CapDevice.Instance;
-            Thread.Sleep(1500);
+
+            if (context.FunctionName.Equals("ShowDesktop", StringComparison.InvariantCultureIgnoreCase))
+            {
+                try
+                {
+                    // Simulate Win key down
+                    keybd_event(VK_LWIN, 0, KEYEVENTF_KEYDOWN, UIntPtr.Zero);
+                    // Simulate 'D' key down
+                    keybd_event(VK_D, 0, KEYEVENTF_KEYDOWN, UIntPtr.Zero);
+                    // Simulate 'D' key up
+                    keybd_event(VK_D, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                    // Simulate Win key up
+                    keybd_event(VK_LWIN, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                }
+                catch (Exception ex)
+                {
+
+                }
+            } 
+            else
+            {
+                Thread.Sleep(1500);
+            }
 
             if (context.FunctionName.Equals("SetKeyColor", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -337,6 +377,7 @@ namespace GettKeyConfigExtension
                     deviceHandle.SetOnDelay(KeyIdx, TimeSpan.Zero);//default delay = 100 ms
                 }
             }
+           
 
             deviceHandle.Dispose();
             return ret;
