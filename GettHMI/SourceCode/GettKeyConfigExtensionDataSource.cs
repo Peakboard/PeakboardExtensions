@@ -1,9 +1,8 @@
 ﻿using Peakboard.ExtensionKit;
 
-
 namespace GettKeyConfigExtension
 {
-    [ExtensionIcon("GettKeyConfigExtension.pb_datasource_gett.png")] 
+    [ExtensionIcon("GettKeyConfigExtension.pb_datasource_gett.png")]
     public class GettKeyConfigExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
@@ -13,7 +12,7 @@ namespace GettKeyConfigExtension
                 ID = "GettKeyConfigExtension",
                 Name = "Gett HMI Keys",
                 Description = "This Extension is used to configure GETT HMI Keys",
-                Version = "1.0",
+                Version = "2.0",
                 Author = "Benjamin Sturm",
                 Company = "Peakboard GmbH",
                 Copyright = "Peakboard GmbH",
@@ -22,10 +21,7 @@ namespace GettKeyConfigExtension
 
         protected override CustomListCollection GetCustomListsOverride()
         {
-            return new CustomListCollection
-            {
-                new GettKeyConfigExtensionCustomList(),
-            };
+            return new CustomListCollection { new GettKeyConfigExtensionCustomList(), };
         }
     }
 }

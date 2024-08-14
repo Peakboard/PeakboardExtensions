@@ -48,6 +48,7 @@
   <ItemGroup>
     <Compile Include="GettKeyConfigExtensionCustomList.cs" />
     <Compile Include="GettKeyConfigExtensionDataSource.cs" />
+    <Compile Include="Helper\KeyColor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
