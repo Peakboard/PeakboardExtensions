@@ -1,58 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Threading.Tasks;
-using WheelMe.DTO;
+using Newtonsoft.Json.Linq;
+using Peakboard.ExtensionKit;
 
 namespace WheelMe
-{
+{   
     class WheelMeHelper
     {
-        // TODO: Check extension lifecycle if positions will be updated
-        private static Dictionary<string, Dictionary<string, string>> myPositionMap = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+        private static Dictionary<string, string> myPositionList = new Dictionary<string, string>();
 
-        public static string GetPositionNameFromId(HttpClient client, string floorId, string ID)
+        public static string GetPositionNameFromID(HttpClient client, CustomListData data, string ID)
         {
-            if (string.IsNullOrWhiteSpace(ID))
-                return string.Empty;
+            if (string.IsNullOrEmpty(ID))
+                return "";
 
-            EnsureMappingIsFetched(client, floorId);
-            if (myPositionMap.TryGetValue(floorId, out var floorItems))
-            {
-                return floorItems.TryGetValue(ID, out var id) ? id : ID;
+            if (myPositionList.Count == 0)
+            { 
+                HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + $"api/public/maps/{data.Properties["FloorID"]}/positions").Result;
+                var responseBody = response.Content.ReadAsStringAsync().Result;
+
+                if (response.IsSuccessStatusCode)
+                {
+
+                    JArray rawPositionList = JArray.Parse(responseBody);
+
+                    foreach (var row in rawPositionList)
+                    {
+                        if (!myPositionList.ContainsKey(row["id"]?.ToString()))
+                        {
+                            myPositionList.Add(row["id"]?.ToString(), row["name"]?.ToString());
+                        }
+                    }
+                }
+                else
+                {
+                    throw new Exception("Error during call of api/public/maps\r\n" + response.StatusCode + response.ReasonPhrase + "\r\n" + responseBody.ToString());
+                }
             }
-
+            if (myPositionList.ContainsKey((string)ID))
+            {
+                return myPositionList[ID].ToString();
+            }
             return ID;
-        }
-        
-        private static void EnsureMappingIsFetched(HttpClient client, string floorId)
-        {
-            if (myPositionMap.Count == 0 || !myPositionMap.TryGetValue(floorId, out var value) || value.Count == 0)
-            {
-                Task.Run(async () => await EnsureMappingIsFetchedAsync(client, floorId)).GetAwaiter().GetResult();
-            }
-        }
-
-        private static async Task EnsureMappingIsFetchedAsync(HttpClient client, string floorId)
-        {;
-            var uri = $"api/public/maps/{floorId}/positions";
-            var result = await client.GetRequestAsync<PositionDto[]>(uri);
-
-            var floorItems = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            if (myPositionMap.TryGetValue(floorId, out var value))
-            {
-                floorItems = value;
-            }
-            else
-            {
-                myPositionMap.Add(floorId, floorItems);
-            }
-
-            foreach (var position in result)
-            {
-                var key = position.Id.ToString("D");
-                floorItems.Add(key, position.Name);
-            }
         }
     }
 }
