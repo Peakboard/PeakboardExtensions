@@ -50,9 +50,6 @@
   <ItemGroup>
     <Compile Include="HubSpotCustomList.cs" />
     <Compile Include="HubSpotDataSource.cs" />
-    <Compile Include="Models\Properties.cs" />
-    <Compile Include="Models\Result.cs" />
-    <Compile Include="Models\Email.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

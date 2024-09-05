@@ -23,7 +23,6 @@ namespace HubSpot
                 Copyright = "Your Copyright"
             };
         }
-
         protected override CustomListCollection GetCustomListsOverride()
         {
             return new CustomListCollection
