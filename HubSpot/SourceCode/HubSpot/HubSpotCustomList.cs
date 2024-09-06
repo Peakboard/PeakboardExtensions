@@ -54,26 +54,28 @@ namespace HubSpot
             {
                 var items = new CustomListObjectElementCollection();
                 var allproperties = GetPropertiesWithValues(result);
-                int rowCount = allproperties.First().Value.Count;
-
-                for (int i = 0; i < rowCount; i++)
-                {
-                    var customElement = new CustomListObjectElement();                  
-                    foreach (var key in allproperties.Keys)
+                if (allproperties != null) 
+                { 
+                    int rowCount = allproperties.First().Value.Count;
+                    for (int i = 0; i < rowCount; i++)
                     {
-                        var value = allproperties[key][i];                     
-                        if (value is JValue jValue)
+                        var customElement = new CustomListObjectElement();                  
+                        foreach (var key in allproperties.Keys)
                         {
-                            customElement.Add(key, jValue.Value);
+                            var value = allproperties[key][i];                     
+                            if (value is JValue jValue)
+                            {
+                                customElement.Add(key, jValue.Value);
+                            }
+                            else
+                            {
+                                customElement.Add(key, value);
+                            }
                         }
-                        else
-                        {
-                            customElement.Add(key, value);
-                        }
+                        items.Add(customElement);
                     }
-                    items.Add(customElement);
+                    return items;
                 }
-                return items;
             }
             return null;
         }
@@ -119,13 +121,13 @@ namespace HubSpot
                     var properties = property.Value as JObject;
                     foreach (var value in properties.Properties())
                     {
-                        var columnType = GetCustomListColumtTypes(value.Value);
+                        var columnType = GetCustomListColumnTypes(value.Value);
                         names.Add(value.Name,columnType);                    
                     }
                 }
                 else
                 {
-                    var columnType = GetCustomListColumtTypes(property.Value);
+                    var columnType = GetCustomListColumnTypes(property.Value);
                     names.Add(property.Name, columnType);
                 }
             }
@@ -144,18 +146,16 @@ namespace HubSpot
                     var result = jsonObject["results"];
                     return result;                 
                 }
-                return null;
+                throw new Exception($"HTTP Error: {responce.StatusCode} - {responce.ReasonPhrase}");
+                
             }
         }
-        private CustomListColumnTypes GetCustomListColumtTypes(JToken jToken)
+        private CustomListColumnTypes GetCustomListColumnTypes(JToken jToken)
         {
             switch (jToken.Type) 
-            {
-                case JTokenType.String:
-                    return CustomListColumnTypes.String;
+            {              
                 case JTokenType.Boolean:
-                    return CustomListColumnTypes.Boolean;
-           
+                    return CustomListColumnTypes.Boolean;           
                 case JTokenType.Float:
                     return CustomListColumnTypes.Number;
                 case JTokenType.Integer:
