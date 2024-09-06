@@ -16,10 +16,10 @@ namespace HubSpot
             {
                 ID = "HubSpot",
                 Name = "HubSpot API Extension",
-                Description = "Interface with the HubSpot API to retrieve chatbot answers",
+                Description = "Interface with the HubSpot API to get all Tickets",
                 Version = "1.0",
-                Author = "Your Name",
-                Company = "Your Company",
+                Author = "Makhsum",
+                Company = "Peakboard",
                 Copyright = "Your Copyright"
             };
         }
