@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System.Security.Policy;
 namespace HubSpot
 {
     [Serializable]
@@ -23,23 +24,22 @@ namespace HubSpot
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition() { Name = "Link", Value = "Enter  API Link here"},
                     new CustomListPropertyDefinition() { Name = "Token", Value = "Enter your API token here", Masked = true }
                 }
             };
         }
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            var resData = GetResult(data.Properties["Link"], data.Properties["Token"]).Result;
+            var resData = GetResult(data.Properties["Token"]).Result;
             if (resData != null)
             {
-                var column = new CustomListColumnCollection();
-        
+                var column = new CustomListColumnCollection();        
                 var columnNamesAndTypes = GetNamesAndTypes(resData);                
                 foreach (var item in columnNamesAndTypes)
                 {
                     column.Add(new CustomListColumn(item.Key, item.Value));
                 }
+                column.Add(new CustomListColumn("Emails",CustomListColumnTypes.String));
                 return column;   
             }
             return null;
@@ -47,9 +47,8 @@ namespace HubSpot
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             string token = data.Properties["Token"];
-            string link = data.Properties["Link"];
-            var result = GetResult(link, token).Result;
-           
+            var result = GetResult(token).Result;
+            string id = "";          
             if (result != null)
             {
                 var items = new CustomListObjectElementCollection();
@@ -61,8 +60,12 @@ namespace HubSpot
                     {
                         var customElement = new CustomListObjectElement();                  
                         foreach (var key in allproperties.Keys)
-                        {
-                            var value = allproperties[key][i];                     
+                        {                        
+                            var value = allproperties[key][i];
+                            if (key == "id")
+                            {
+                                id =value.ToString();
+                            }
                             if (value is JValue jValue)
                             {
                                 customElement.Add(key, jValue.Value);
@@ -72,8 +75,13 @@ namespace HubSpot
                                 customElement.Add(key, value);
                             }
                         }
-                        items.Add(customElement);
-                    }
+                          if (id.Length > 0)
+                            {
+                                string emails = GetEmails(token, id);
+                                customElement.Add("Emails", emails);
+                            }
+                        items.Add(customElement);                       
+                    }                    
                     return items;
                 }
             }
@@ -133,12 +141,15 @@ namespace HubSpot
             }
             return names;
         }
-        protected async Task<JToken> GetResult(string link,string token)
+        protected async Task<JToken> GetResult(string token)
         {
+            var customPropertyNames = GetCustomPropertys(token,"name");
+            string queryProperty = string.Join(",", customPropertyNames);
+            string url = $"https://api.hubapi.com/crm/v3/objects/tickets?properties={queryProperty}";
             using (HttpClient client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
-                var responce = client.GetAsync(link).Result;
+                var responce = client.GetAsync(url).Result;
                 if (responce.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     var responceBody = await responce.Content.ReadAsStringAsync();
@@ -163,6 +174,53 @@ namespace HubSpot
                 default:
                     return CustomListColumnTypes.String;            
             }
+        }
+        private List<string> GetCustomPropertys(string token,string property)
+        {
+            using (HttpClient client = new HttpClient())
+            {
+                string url = "https://api.hubapi.com/crm/v3/properties/ticket/";
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+                var responce = client.GetAsync(url).Result;
+                JObject json = JObject.Parse(responce.Content.ReadAsStringAsync().Result);
+                JArray properties = (JArray)json["results"];
+                List<string> values = new List<string>();
+                foreach (var item in properties)
+                {
+                    string name = (string)item[property];
+                    values.Add(name);
+                }
+                return values;
+            }
+        }
+        string GetEmails(string token,string id)
+        {
+            string url = $"https://api.hubapi.com/engagements/v1/engagements/associated/ticket/{id}/";
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + token);
+                var responce = client.GetAsync(url).Result;
+                var res = responce.Content.ReadAsStringAsync().Result;
+                JObject responceJson = JObject.Parse(res);
+                JArray properties = (JArray)responceJson["results"];
+                StringBuilder sb = new StringBuilder();
+                StringBuilder stringBuilder = new StringBuilder();
+                foreach (var item in properties)
+                {
+                    if (item["engagement"]["type"].ToString() == "EMAIL")
+                    {
+                        sb.Append("    Answer    " + (string)item["engagement"]["bodyPreview"]);
+                    }
+                    else if (item["engagement"]["type"].ToString() == "INCOMING_EMAIL")
+                    {
+                        sb.Append("      INCOMING_EMAIL      " + (string)item["engagement"]["bodyPreview"]);
+                    }
+                }
+                return sb.ToString();
+
+            }
+           
+           
         }
     }
 }
