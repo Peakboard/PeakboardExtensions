@@ -4,12 +4,12 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{D1B186D8-99D9-4E1F-A38F-61330AD76C71}</ProjectGuid>
+    <ProjectGuid>{32C98FF1-D3D5-41B9-B24F-D16D300C054D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Woutex</RootNamespace>
-    <AssemblyName>Woutex</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
+    <RootNamespace>HubSpot</RootNamespace>
+    <AssemblyName>HubSpot</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
@@ -31,10 +31,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Peakboard.ExtensionKit" Version="2.0.0" />
-  </ItemGroup>
-  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=AMD64">
+      <HintPath>..\packages\Peakboard.ExtensionKit.2.0.0\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,16 +48,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="WheelMeHelper.cs" />
-    <Compile Include="WoutexCustomList.cs" />
-    <Compile Include="WoutexExtension.cs" />
+    <Compile Include="HubSpotCustomList.cs" />
+    <Compile Include="HubSpotDataSource.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Woutex.png" />
-    <Content Include="Extension.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
