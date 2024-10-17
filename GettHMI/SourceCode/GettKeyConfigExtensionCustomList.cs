@@ -16,8 +16,6 @@ namespace GettKeyConfigExtension
     {
         GETT_CapDevice deviceHandle;
 
-        int run;
-
         const int TIMEOUT = 2000;
         const int KEYEVENTF_KEYDOWN = 0x0000;
         const int KEYEVENTF_KEYUP = 0x0002;
@@ -346,15 +344,19 @@ namespace GettKeyConfigExtension
                 {
                     for (int i = 0; i <= keyColors.Length; i++)
                     {
-                        deviceHandle.SetColor(
-                            keyColors[i].key,
-                            eCapDevice_KeyState.OFF,
-                            new CapDevice_RGBColor(
-                                keyColors[i].rgb[0],
-                                keyColors[i].rgb[1],
-                                keyColors[i].rgb[2]
-                            )
-                        );
+
+                        if (keyColors[i] != null)
+                        {
+                            deviceHandle.SetColor(
+                                keyColors[i].key,
+                                eCapDevice_KeyState.OFF,
+                                new CapDevice_RGBColor(
+                                    keyColors[i].rgb[0],
+                                    keyColors[i].rgb[1],
+                                    keyColors[i].rgb[2]
+                                )
+                            );
+                        }
                     }
                 }
             }
@@ -588,6 +590,8 @@ namespace GettKeyConfigExtension
 
         private byte[] CalculateRGB(String hexString)
         {
+            if (hexString.Length < 6) { return null; }
+
             if (hexString.IndexOf('#') != -1)
                 hexString = hexString.Replace("#", "");
             byte r,
@@ -602,8 +606,9 @@ namespace GettKeyConfigExtension
 
         private void connect()
         {
+            int run = 0;
             deviceHandle = GETT_CapDevice.Instance;
-            while (deviceHandle == null || !deviceHandle.IsConnected || run >= TIMEOUT)
+            while (!deviceHandle.IsConnected && run <= TIMEOUT)
             {
                 Thread.Sleep(1);
                 run++;
