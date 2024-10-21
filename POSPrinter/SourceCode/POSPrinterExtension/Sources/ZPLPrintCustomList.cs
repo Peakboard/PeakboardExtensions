@@ -49,7 +49,10 @@ namespace POSPrinter
             };
         }
 
-        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(
+            CustomListData data,
+            CustomListExecuteParameterContext context
+        )
         {
             //Log?.Verbose($"ExecuteFunctionOverride for CustomList '{data.ListName ?? "?"}' executing");
 
@@ -86,12 +89,24 @@ namespace POSPrinter
 
             try
             {
-                if (!data.Properties.TryGetValue("IP", StringComparison.OrdinalIgnoreCase, out var ip))
+                if (
+                    !data.Properties.TryGetValue(
+                        "IP",
+                        StringComparison.OrdinalIgnoreCase,
+                        out var ip
+                    )
+                )
                 {
                     throw new DataErrorException("IP value must be defined.");
                 }
 
-                if (!data.Properties.TryGetValue("Port", StringComparison.OrdinalIgnoreCase, out var portString))
+                if (
+                    !data.Properties.TryGetValue(
+                        "Port",
+                        StringComparison.OrdinalIgnoreCase,
+                        out var portString
+                    )
+                )
                 {
                     throw new DataErrorException("Port value must be defined.");
                 }
@@ -131,6 +146,6 @@ namespace POSPrinter
             }
         }
 
-        #endregion 
+        #endregion
     }
 }
