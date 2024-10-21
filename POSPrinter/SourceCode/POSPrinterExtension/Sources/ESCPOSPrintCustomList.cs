@@ -62,7 +62,10 @@ namespace POSPrinter
             };
         }
 
-        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(
+            CustomListData data,
+            CustomListExecuteParameterContext context
+        )
         {
             //Log?.Verbose($"ExecuteFunctionOverride for CustomList '{data.ListName ?? "?"}' executing");
 
@@ -165,15 +168,29 @@ Zeile 4
 
                 if (!string.IsNullOrEmpty(ip) && port > 0)
                 {
-                    var printer = new ImmediateNetworkPrinter(new ImmediateNetworkPrinterSettings() { ConnectionString = $"{ip}:{port}" });
-                    printer.WriteAsync(ByteSplicer.Combine(barrays.ToArray())).GetAwaiter().GetResult();
+                    var printer = new ImmediateNetworkPrinter(
+                        new ImmediateNetworkPrinterSettings() { ConnectionString = $"{ip}:{port}" }
+                    );
+                    printer
+                        .WriteAsync(ByteSplicer.Combine(barrays.ToArray()))
+                        .GetAwaiter()
+                        .GetResult();
                 }
                 else if (!string.IsNullOrEmpty(serialPortName) && baudRate > 0)
                 {
-                    using (var printer = new SerialPrinter(portName: serialPortName, baudRate: baudRate))
+                    using (
+                        var printer = new SerialPrinter(
+                            portName: serialPortName,
+                            baudRate: baudRate
+                        )
+                    )
                     {
-                        printer.Write(ByteSplicer.Combine(barrays.ToArray()));
-                        Task.Delay(250).Wait();
+                        byte[] printData = ByteSplicer.Combine(barrays.ToArray());
+                        double timer = ((printData.Length * 8) / 100);
+                        if (timer < 100)
+                            timer = 100;
+                        printer.Write(printData);
+                        Task.Delay((int)timer).Wait();
                     }
                 }
 
@@ -186,6 +203,6 @@ Zeile 4
             }
         }
 
-        #endregion 
+        #endregion
     }
 }
