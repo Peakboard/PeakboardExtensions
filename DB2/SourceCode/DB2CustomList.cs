@@ -22,7 +22,7 @@ namespace PeakboardExtensionDB2
                     new CustomListPropertyDefinition() { Name = "Database", Value = "sys" },
                     new CustomListPropertyDefinition() { Name = "Username", Value = "peakboard" },
                     new CustomListPropertyDefinition() { Name = "Password", Value = "", Masked = true},
-                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "select * from testtable", EvalParameters = true, MultiLine = true },
+                    new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "select * from testtable", MultiLine = true },
                 },
             };
         }
