@@ -53,6 +53,8 @@ namespace PeakboardExtensionMySql
                     listColumnType = CustomListColumnTypes.String;
                 else if (dataType == typeof(bool))
                     listColumnType = CustomListColumnTypes.Boolean;
+                else if (dataType == typeof(DateTime))
+                    listColumnType = CustomListColumnTypes.String; // Store dates as strings for consistency
                 else
                     listColumnType = DataTypeHelper.IsNumericType(dataType) ? CustomListColumnTypes.Number : CustomListColumnTypes.String;
 
@@ -75,7 +77,10 @@ namespace PeakboardExtensionMySql
             {
                 CustomListObjectElement newitem = new CustomListObjectElement();
                 foreach (DataColumn sqlcol in sqlresult.Columns)
-                    newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, sqlrow[sqlcol.ColumnName]));
+                {
+                    object value = sqlrow[sqlcol] == DBNull.Value ? DataTypeHelper.GetDefaultValue(sqlcol.DataType) : sqlrow[sqlcol];
+                    newitem.Add(sqlcol.ColumnName, DataTypeHelper.GetOrConvertNumericTypeToDouble(sqlcol.DataType, value));
+                }
                 items.Add(newitem);
             }
 
