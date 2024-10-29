@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net462</TargetFramework>
+    <AutoGenerateBindingRedirects>True</AutoGenerateBindingRedirects>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Peakboard.ExtensionKit" Version="1.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Pervasive.Data.Common">
+      <HintPath>..\..\..\..\..\Users\ThiloBrosinsky\Desktop\dropsecure_files\Pervasive.Data.Common.dll</HintPath>
+    </Reference>
+    <Reference Include="Pervasive.Data.SqlClient">
+      <HintPath>..\..\..\..\..\Users\ThiloBrosinsky\Desktop\dropsecure_files\Pervasive.Data.SqlClient.dll</HintPath>
+    </Reference>
+    <Reference Include="Pervasive.Data.SqlClient.Entity">
+      <HintPath>..\..\..\..\..\Users\ThiloBrosinsky\Desktop\dropsecure_files\Pervasive.Data.SqlClient.Entity.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
