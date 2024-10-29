@@ -138,41 +138,61 @@ namespace PeakboardExtensionHue
             Console.WriteLine(resp);
         }
 
-        public static void SetLightColor(string bridgeIp, string userName, string lightName, int color)
+        public static void SetLightColor(string bridgeIp, string userName, string lightName, int red, int green, int blue)
         {
             List<HueLight> mylights = GetLights(bridgeIp, userName);
-            string LightId = null;
-            foreach (HueLight light in mylights)
+            string lightId = mylights.Find(light => light.Name.Equals(lightName))?.Id;
+
+            if (lightId == null)
             {
-                if (light.Name.Equals(lightName))
+                throw new InvalidOperationException($"Unknown light name '{lightName}'");
+            }
+
+            // Convert RGB to Hue and Saturation
+            (int hue, int sat) = ConvertRgbToHueAndSaturation(red, green, blue);
+            string url = $"http://{bridgeIp}/api/{userName}/lights/{lightId}/state";
+            string data = $"{{\"on\":true, \"hue\":{hue}, \"sat\":{sat}}}";
+
+            using (WebClient client = new WebClient())
+            {
+                client.UploadString(url, "PUT", data);
+            }
+        }
+
+        private static (int, int) ConvertRgbToHueAndSaturation(int r, int g, int b)
+        {
+            // Check if the color is close to white
+            if (Math.Max(r, Math.Max(g, b)) - Math.Min(r, Math.Min(g, b)) < 10)
+            {
+                return (0, 0); // Near white or grey, minimal saturation, hue doesn't matter
+            }
+
+            // Regular conversion to Hue and Saturation
+            float max = Math.Max(r, Math.Max(g, b));
+            float min = Math.Min(r, Math.Min(g, b));
+            float delta = max - min;
+
+            float hue = 0;
+            float sat = delta / max * 255; // Calculate saturation
+
+            if (delta != 0)
+            {
+                if (max == r)
                 {
-                    LightId = light.Id;
+                    hue = (g - b) / delta + (g < b ? 6 : 0);
                 }
+                else if (max == g)
+                {
+                    hue = (b - r) / delta + 2;
+                }
+                else if (max == b)
+                {
+                    hue = (r - g) / delta + 4;
+                }
+                hue /= 6;
             }
 
-            if (LightId is null)
-            {
-                throw new InvalidOperationException(string.Format("Unknown light name '{0}'", lightName));
-            }
-
-            string url = string.Format("http://{0}/api/{1}/lights/{2}/state", bridgeIp, userName, LightId);
-            string data;
-            if (color > 0 && color <= 65535)
-            {
-                data = "{\"on\":true, \"hue\":" + color.ToString() + "}";
-            }
-            else
-                throw new InvalidOperationException("invalid value for Brightness");
-            WebClient client = new WebClient();
-            string resp = client.UploadString(url, "Put", data);
-
-            JObject dynobj = (JObject)JArray.Parse(resp)[0];
-            if (dynobj.ContainsKey("error"))
-            {
-                throw new InvalidOperationException("Hue Bridge returned: " + dynobj["error"]["description"]);
-            }
-
-            Console.WriteLine(resp);
+            return ((int)(hue * 65535), (int)sat);  // Scale hue and saturation to their respective ranges
         }
 
         public static void Alert(string bridgeIp, string userName, string lightName)
