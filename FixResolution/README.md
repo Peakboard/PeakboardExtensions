@@ -1,0 +1,1 @@
+This extension optimizes the Peakboard Runtime for 4K monitors by automatically scaling the display.
