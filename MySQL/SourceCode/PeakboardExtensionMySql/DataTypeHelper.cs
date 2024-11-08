@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PeakboardExtensionMySql
+namespace Peakboard.ExtensionKit
 {
     static class DataTypeHelper
     {
@@ -33,20 +33,43 @@ namespace PeakboardExtensionMySql
                     return string.Empty;
                 if (type == typeof(bool))
                     return false;
-                if (DataTypeHelper.IsNumericType(type))
+                if (IsNumericType(type))
                     return 0d;
 
                 return string.Empty;
             }
 
-            if (type == typeof(string))
-                return value is string ? value : value.ToString();
-            if (type == typeof(bool))
-                return value is bool ? value : false;
-            if (DataTypeHelper.IsNumericType(type))
-                return value is double ? value : Convert.ToDouble(value);
+            try
+            {
+                if (type == typeof(string))
+                    return value.ToString();
+                if (type == typeof(bool))
+                    return Convert.ToBoolean(value);
+                if (IsNumericType(type))
+                    return Convert.ToDouble(value);
+                if (type == typeof(DateTime))
+                    return Convert.ToDateTime(value);
 
-            return (value ?? string.Empty).ToString();
+                return value.ToString();
+            }
+            catch
+            {
+                return GetDefaultValue(type);
+            }
+        }
+
+        private static object GetDefaultValue(Type type)
+        {
+            if (type == typeof(string))
+                return string.Empty;
+            if (type == typeof(bool))
+                return false;
+            if (IsNumericType(type))
+                return 0d;
+            if (type == typeof(DateTime))
+                return DateTime.MinValue;
+
+            return string.Empty;
         }
     }
 }

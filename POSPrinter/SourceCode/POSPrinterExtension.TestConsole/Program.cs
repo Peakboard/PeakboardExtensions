@@ -10,8 +10,8 @@ namespace POSPrinter.TestConsole
         {
             try
             {
-                //PrintWithESCPOS();
-                PrintWithZPL();
+                PrintWithESCPOS();
+                //PrintWithZPL();
             }
             catch (Exception e)
             {
@@ -32,31 +32,29 @@ namespace POSPrinter.TestConsole
                 var data = new CustomListData
                 {
                     ListName = "ESCPOS1",
-                    //Properties = { { "SerialPortName", "COM4" }, { "BaudRate", "9600" } }
-                    Properties = { { "IP", "192.168.178.48" }, { "Port", "9100" } } // iOS App 'Virtual Thermal Printer' (DE) from Pascal Kimmel
+                    Properties = { { "SerialPortName", "COM4" }, { "BaudRate", "9600" } }
+                    //Properties = { { "IP", "192.168.178.48" }, { "Port", "9100" } } // iOS App 'Virtual Thermal Printer' (DE) from Pascal Kimmel
                 };
 
                 if (TryCheckData(customList, data))
                 {
-                    var context = new CustomListExecuteParameterContext { FunctionName = "Print", ListName = data.ListName };
-                    var text = @"~(CentralAlign)~
-Kopfzeile mit #[param1]#
-~(Style:Bold)~
-Zeile 2
-Zeile 3
-~(LeftAlign)~
-~(Style:DoubleHeight)~
-Zeile 4
-~(Style:Bold,Italic,DoubleHeight)~
-Zeile 5
-~(FullCutAfterFeed:1)~
+                    var context = new CustomListExecuteParameterContext
+                    {
+                        FunctionName = "Print",
+                        ListName = data.ListName
+                    };
+                    var text =
+                        @"~(SetBarWidth:Thin)~
+~(SetBarcodeHeightInDots:150)~
+~(SetBarLabelPosition:Both)~
+~(Barcode:CODE128,Hallo45689)~
+
+~(Style:None)~
+~(FullCutAfterFeed:25)~
 ";
                     context.Values.Add(CustomListExecuteFunctionValue.From(text));
 
-                    var pdic = new CustomListObjectElementCollection
-                    {
-                        { "param1", "ABC" },
-                    };
+                    var pdic = new CustomListObjectElementCollection { { "param1", "ABC" }, };
 
                     context.Values.Add(CustomListExecuteFunctionValue.From(pdic));
 
@@ -77,7 +75,7 @@ Zeile 5
                 var data = new CustomListData
                 {
                     ListName = "ZPL1",
-                    Properties = { { "IP", "127.0.0.1" }, { "Port", "9100" } } // Virtual ZPL Printer
+                    Properties = { { "IP", "192.168.42.136" }, { "Port", "9100" } } // Virtual ZPL Printer
                 };
 
                 if (TryCheckData(customList, data))
@@ -92,15 +90,22 @@ Zeile 5
                             }
                             else
                             {
-                                Console.WriteLine($"CustomList returned items (first value: {items[0]["Dummy"]}).");
+                                Console.WriteLine(
+                                    $"CustomList returned items (first value: {items[0]["Dummy"]})."
+                                );
                             }
                         }
                     }
 
-                    var context = new CustomListExecuteParameterContext { FunctionName = "Print", ListName = data.ListName };
+                    var context = new CustomListExecuteParameterContext
+                    {
+                        FunctionName = "Print",
+                        ListName = data.ListName
+                    };
 
-                    var zplData = @"^XA^MMP^PW300^LS0^LT0^FT10,60^APN,30,30^FH\^FDI LOVE PEAKBOARD^FS^XZ";
-                    
+                    var zplData =
+                        @"SM10,21 SS3 SD20 SW832 SOT CS0,0 BD18,14,798,164,O T400,62,4,2,2,0,0,R,B,'BIXOLON' T65,98,3,1,1,0,0,R,B,'BIXOLON Label' T20,276,3,1,1,1,0,N,N,'  BIXOLON' T20,306,3,1,1,1,0,N,N,'  Yeongtong Dong' T20,336,3,1,1,1,0,N,N,'  Sowon City,South Korea' T22,218,4,1,1,0,0,N,B,'SHIP TO:' BD18,410,784,415,O BD553,197,558,413,O B169,458,0,4,8,137,0,0,0,'*1234567890*' T26,421,1,1,1,0,0,N,N,'POSTAL CODE:' BD18,616,784,621,O BD20,781,786,786,O T503,798,1,1,1,0,0,N,N,'DESTINATION:' T42,841,5,1,1,0,0,N,B,'30 Kg' BD18,928,784,933,O T25,798,1,1,1,0,0,N,N,'WEIGHT:' T259,798,1,1,1,0,0,N,N,'DELIVERY NO:' T23,630,1,1,1,0,0,N,N,'AWB:' BD241,783,246,932,O BD486,784,491,933,O T274,841,5,1,1,0,0,N,B,'425518' T104,627,3,1,1,0,0,N,N,'8741493121' T565,841,5,1,1,0,0,N,B,'ICN' B1127,672,4,4,8,90,0,0,0,'8741493121' B2560,180,M,0,'999,840,06810,7317,THIS IS A TEST OF MODE 0 STRUCTURED CARRIER MESSAGE ENCODING. THIS IS AN 84 CHAR MSG' B280,960,P,30,10,0,0,0,1,3,14,0,'BIXOLON Label Printer, This is Test Printing.' P1";
+
                     context.Values.Add(CustomListExecuteFunctionValue.From(zplData));
 
                     if (TryExecuteFunction(customList, data, context, out var returnContext))
@@ -141,7 +146,11 @@ Zeile 5
             return TryHandleResultOrIgnore(result);
         }
 
-        private static bool TryGetColumns(ICustomList customList, CustomListData data, out CustomListColumnCollection columns)
+        private static bool TryGetColumns(
+            ICustomList customList,
+            CustomListData data,
+            out CustomListColumnCollection columns
+        )
         {
             var result = customList.GetColumns(data);
 
@@ -150,7 +159,11 @@ Zeile 5
             return TryHandleResultOrIgnore(result);
         }
 
-        private static bool TryGetItems(ICustomList customList, CustomListData data, out CustomListObjectElementCollection items)
+        private static bool TryGetItems(
+            ICustomList customList,
+            CustomListData data,
+            out CustomListObjectElementCollection items
+        )
         {
             var result = customList.GetItems(data);
 
@@ -159,7 +172,12 @@ Zeile 5
             return TryHandleResultOrIgnore(result);
         }
 
-        private static bool TryExecuteFunction(ICustomList customList, CustomListData data, CustomListExecuteParameterContext context, out CustomListExecuteReturnContext returnContext)
+        private static bool TryExecuteFunction(
+            ICustomList customList,
+            CustomListData data,
+            CustomListExecuteParameterContext context,
+            out CustomListExecuteReturnContext returnContext
+        )
         {
             var result = customList.ExecuteFunction(data, context);
 

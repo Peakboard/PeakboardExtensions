@@ -5,9 +5,7 @@ namespace POSPrinter
     public class POSPrinterExtension : ExtensionBase
     {
         public POSPrinterExtension(IExtensionHost host)
-          : base(host)
-        {
-        }
+            : base(host) { }
 
         protected override ExtensionDefinition GetDefinitionOverride()
         {
