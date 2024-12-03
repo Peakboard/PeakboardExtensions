@@ -10,8 +10,11 @@ using Peakboard.ExtensionKit;
 namespace POSPrinter
 {
     [Serializable]
+    [CustomListIcon("POSPrinterExtension.pb_datasource_pos_printer.png")]
     class ESCPOSPrintCustomList : CustomListBase
     {
+        
+
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition

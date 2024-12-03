@@ -6,6 +6,7 @@ using Peakboard.ExtensionKit;
 namespace POSPrinter
 {
     [Serializable]
+    [CustomListIcon("POSPrinterExtension.pb_datasource_pos_printer.png")]
     class ZPLPrintCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
