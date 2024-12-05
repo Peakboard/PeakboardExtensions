@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.IO.Ports;
 using System.Net.Sockets;
 using Peakboard.ExtensionKit;
 
@@ -19,7 +20,9 @@ namespace POSPrinter
                 PropertyInputDefaults =
                 {
                     new CustomListPropertyDefinition { Name = "IP", Value = "127.0.0.1" },
-                    new CustomListPropertyDefinition { Name = "Port", Value = "9100" }
+                    new CustomListPropertyDefinition { Name = "Port", Value = "9100" },
+                    new CustomListPropertyDefinition { Name = "SerialPortName", Value = "COM3" },
+                    new CustomListPropertyDefinition { Name = "BaudRate", Value = "9600" }
                 },
                 Functions =
                 {
@@ -90,34 +93,11 @@ namespace POSPrinter
 
             try
             {
-                if (
-                    !data.Properties.TryGetValue(
-                        "IP",
-                        StringComparison.OrdinalIgnoreCase,
-                        out var ip
-                    )
-                )
-                {
-                    throw new DataErrorException("IP value must be defined.");
-                }
+                var ip = data.Properties["IP"];
+                var port = int.TryParse(data.Properties["Port"], out var p) ? p : 9100;
+                var serialPortName = data.Properties["SerialPortName"];
+                var baudRate = int.TryParse(data.Properties["BaudRate"], out var r) ? r : 9600;
 
-                if (
-                    !data.Properties.TryGetValue(
-                        "Port",
-                        StringComparison.OrdinalIgnoreCase,
-                        out var portString
-                    )
-                )
-                {
-                    throw new DataErrorException("Port value must be defined.");
-                }
-
-                if (!int.TryParse(portString, out var port))
-                {
-                    throw new DataErrorException("Port value is not valid.");
-                }
-
-                //var zplData = "^XA^MMP^PW300^LS0^LT0^FT10,60^APN,30,30^FH\\^FDSAMPLE TEXT^FS^XZ";
                 var zplData = default(string);
 
                 if (context.Values.Count > 0)
@@ -131,14 +111,52 @@ namespace POSPrinter
                     return false;
                 }
 
-                var tcpClient = new TcpClient();
-                tcpClient.Connect(ip, port);
-                var writer = new StreamWriter(tcpClient.GetStream());
-                writer.Write(zplData);
-                writer.Flush();
-                writer.Close();
-                tcpClient.Close();
-                return true;
+                if (!string.IsNullOrEmpty(ip) && port > 0)
+                {
+                    try
+                    {
+                        var tcpClient = new TcpClient();
+                        tcpClient.Connect(ip, port);
+                        var writer = new StreamWriter(tcpClient.GetStream());
+                        writer.Write(zplData);
+                        writer.Flush();
+                        writer.Close();
+                        tcpClient.Close();
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Log?.Warning("Network not working");
+                        return false;
+                    }
+                }
+                else if (!string.IsNullOrEmpty(serialPortName) && baudRate > 0)
+                {
+                    using (SerialPort serialPort = new SerialPort(serialPortName, baudRate))
+                    {
+                        try
+                        {
+                            serialPort.Parity = Parity.None;
+                            serialPort.DataBits = 8;
+                            serialPort.StopBits = StopBits.One;
+                            serialPort.Handshake = Handshake.None;
+
+                            serialPort.ReadTimeout = -1;
+                            serialPort.WriteTimeout = -1;
+
+                            serialPort.Open();
+                            serialPort.WriteLine(zplData);
+                            serialPort.Close();
+                            return true;
+                        }
+                        catch (Exception ex)
+                        {
+                            Log?.Warning("SerialPort not working");
+                            return false;
+                        }
+                    }
+                }
+                return false;
             }
             catch (Exception e)
             {
