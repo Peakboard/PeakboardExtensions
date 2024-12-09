@@ -20,11 +20,41 @@ Left-aligns all text following the command.
 **\~(RightAlign)\~**\
 Right-aligns all text following the command.
 
-**\~(Style:Bold,Italic,DoubleWidth,DoubleHeight)\~**\
-Sets the style of the following text. Not all printers understand all styles or combinations of styles.
+**\~(Style:Bold,Italic,DoubleWidth,DoubleHeight,Underline,FontB,Condensed,Proportional)\~**\
+Sets the style of the following text. Not all printers support all styles or combinations of styles.
+
+**\~(Style:None)\~**\
+Resets the style to the printer defaults.
 
 **\~(Barcode:CODE128,12345)\~**\
 Prints a barcode of type CODE128 with the numbers 12345. You can also use ITF as the barcode type.
+
+**\~(SetBarWidth:Thin)\~**\
+Sets the barcode line width. Possible arguments: Thinnest, Thin, Thickest, Thick, Default.
+
+**\~(SetBarcodeHeightInDots:150)\~**\
+Sets the barcode height in dots, for example, 150 dots.
+
+**\~(SetBarLabelPosition)\~**\
+Enables and sets the position to print the barcode text. Possible arguments: Above, Below, Both, None.
+
+**\~(SetBarLabelFontB:true)\~**\
+Uses the second printer font.
+
+**\~(SeikoQRCode:Peakboard)\~**\
+Special command to print a QR code with the text "Peakboard" on Seiko printers.
+
+**\~(ReverseMode:true)\~**\
+Prints the text in reverse.
+
+**\~(RightCharacterSpacing:10)\~**\
+Sets the spacing between characters in dots, for example, 10 dots.
+
+**\~(UpsideDownMode:true)\~**\
+Prints the text upside down.
+
+**\~(Image:peakboard_logo.png)\~**\
+Prints an image. The image needs to be stored as a local resource and must not be wider than 300px. For best results, use black and white PNG files with a transparent background.
 
 **\~(FullCut)\~**\
 Full cut after this command.
@@ -60,7 +90,3 @@ Full cut after a feed of 3 lines.
 ![image](https://github.com/user-attachments/assets/f9391d90-4714-40ef-8211-bedf3cad6349)
 ![image](https://github.com/user-attachments/assets/dafd8455-dfc6-4e3e-a455-0135d9fc76ae)
 ![image](https://github.com/user-attachments/assets/2fda0f64-1b96-4118-a5bb-5a36395cef40)
-
-
-
-
