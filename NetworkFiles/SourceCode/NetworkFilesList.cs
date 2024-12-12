@@ -52,7 +52,7 @@ namespace PeakboardExtensionNetworkFiles
                 foreach (var file in Directory.GetFiles(nc.NetworkName, "*", checkSubfolders == "True" ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly))
                 {
                     var modified = File.GetLastWriteTime(file);
-                    items.Add(new CustomListObjectElement() {{"Path", file}, {"Name", Path.GetFileName(file)}, { "Last modified", modified.ToString("yyyyMMddHHmmss") } });
+                    items.Add(new CustomListObjectElement() {{"Path", file}, {"Name", Path.GetFileName(file)}, { "LastModified", modified.ToString("yyyyMMddHHmmss") } });
                 }
             }
 
