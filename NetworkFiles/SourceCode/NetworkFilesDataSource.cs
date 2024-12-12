@@ -5,7 +5,7 @@ using PeakboardExtensionNetworkFiles;
 namespace PeakboardExtensionNetworkFiles
 {
     [ExtensionIcon("PeakboardExtensionNetworkFiles.File.png")]
-    public class CatFactsExtension : ExtensionBase
+    public class NetworkFiles : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
         {
