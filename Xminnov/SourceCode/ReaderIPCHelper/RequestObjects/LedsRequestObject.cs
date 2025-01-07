@@ -1,8 +1,5 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ReaderIPCHelper.RequestObjects
 {
@@ -20,5 +17,6 @@ namespace ReaderIPCHelper.RequestObjects
         public bool[] AntList { get; set; }
         public string Ip { get; set; }
         public bool CloseRf { get; set; }
+        public List<string> Epcs { get; set; }
     }
 }

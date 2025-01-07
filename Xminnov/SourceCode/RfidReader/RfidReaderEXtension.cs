@@ -1,10 +1,5 @@
 ﻿using Peakboard.ExtensionKit;
 using RfidReader.CustomLists;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RfidReader
 {
@@ -12,11 +7,9 @@ namespace RfidReader
     {
         public RfidReaderEXtension():base()
         {
-            
         }
         public RfidReaderEXtension(IExtensionHost host):base(host)
         {
-            
         }
 
         protected override ExtensionDefinition GetDefinitionOverride()

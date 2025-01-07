@@ -1,8 +1,6 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace RfidReader.RequestObjects
 {
@@ -20,5 +18,6 @@ namespace RfidReader.RequestObjects
         public bool[] AntList { get; set; }
         public string Ip { get; set; }
         public bool CloseRf { get; set; }
+        public List<string> Epcs { get; set; }
     }
 }
