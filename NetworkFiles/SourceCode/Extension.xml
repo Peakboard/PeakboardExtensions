@@ -3,6 +3,6 @@
   <Extensions>
     <Extension ID="NetworkFiles"
                Path="PeakboardExtensionNetworkFiles.dll"
-               Class="PeakboardExtensionNetworkFiles.CatFactsExtension" />
+               Class="PeakboardExtensionNetworkFiles.NetworkFiles" />
   </Extensions>
 </ExtensionCatalog>
