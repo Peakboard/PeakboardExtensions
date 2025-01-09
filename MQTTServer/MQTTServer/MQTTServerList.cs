@@ -8,7 +8,7 @@ using System.Diagnostics;
 namespace MQTTServer
 {
     [Serializable]
-    [CustomListIcon("MQTTServer.beer.png")]
+    [CustomListIcon("MQTTServer.mqtt.png")]
     internal class MQTTServerList : CustomListBase
     {
         private MqttServer mqttServer;
@@ -73,7 +73,7 @@ namespace MQTTServer
                 { "State", "Running" }
             };
 
-            Log?.Verbose("Started");
+            Log?.Verbose("MQTT Server Started");
 
             Data?.Push(listName).Update(0, item);
         }
@@ -82,7 +82,15 @@ namespace MQTTServer
         {
             base.SetupOverride(data);
 
-            Log?.Info("Init");
+            listName = data?.ListName;
+
+            var item = new CustomListObjectElement
+            {
+                { "State", "Init" }
+            };
+
+            Data?.Push(listName).Update(0, item);
+            Log?.Info("MQTT Server initialisation");
         }
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
@@ -101,38 +109,36 @@ namespace MQTTServer
 
         private void Start(CustomListData data)
         {
-            listName = data?.ListName;
-
             if (!data.Properties.TryGetValue("Port", StringComparison.OrdinalIgnoreCase, out var port)
                 || !int.TryParse(port, out var portInt))
             {
                 throw new InvalidOperationException("The port is not defined as a number");
             }
 
-
             var mqttServerOptions = new MqttServerOptionsBuilder()
                 .WithDefaultEndpoint()
                 .WithDefaultEndpointPort(portInt)
                 .Build();
-
-            var mqttFactory = new MqttFactory();
-            mqttServer = mqttFactory.CreateMqttServer(mqttServerOptions);
-            mqttServer.StartAsync();
-
-            mqttServer.StartedAsync += MqttServer_StartedAsync;
-            mqttServer.StoppedAsync += MqttServer_StoppedAsync;
 
             var item = new CustomListObjectElement
             {
                 { "State", "Starting" }
             };
 
-            Data?.Push(listName).Add(item);
+            Data?.Push(listName).Update(0, item);
+
+            var mqttFactory = new MqttFactory();
+            mqttServer = mqttFactory.CreateMqttServer(mqttServerOptions);
+
+            mqttServer.StartedAsync += MqttServer_StartedAsync;
+            mqttServer.StoppedAsync += MqttServer_StoppedAsync;
+
+            mqttServer.StartAsync().Wait(2000);
         }
 
         private void Stop()
         {
-            mqttServer.StopAsync();
+            mqttServer.StopAsync().Wait(2000);
             mqttServer.StartedAsync -= MqttServer_StartedAsync;
             mqttServer.StoppedAsync -= MqttServer_StoppedAsync;
             mqttServer?.Dispose();
@@ -143,58 +149,6 @@ namespace MQTTServer
             };
 
             Data?.Push(listName).Update(0, item);
-        }
-
-        private void OpenPort(int port)
-        {
-            string command = "netsh";
-            string arguments = "advfirewall firewall add rule name=\"MyTCP1234\" "
-                             + "dir=in action=allow protocol=TCP localport=" + port;
-
-            // Process-Start-Info konfigurieren
-            ProcessStartInfo psi = new ProcessStartInfo
-            {
-                FileName = command,
-                Arguments = arguments,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                Verb = "runas"   // sorgt dafür, dass mit Admin-Rechten ausgeführt wird (UAC-Prompt)
-            };
-
-            try
-            {
-                using (Process process = new Process())
-                {
-                    process.StartInfo = psi;
-                    process.Start();
-
-                    // Optional: Konsolenausgabe lesen
-                    string output = process.StandardOutput.ReadToEnd();
-                    string error = process.StandardError.ReadToEnd();
-
-                    process.WaitForExit();
-
-                    Console.WriteLine("Output:\n" + output);
-                    Console.WriteLine("Error:\n" + error);
-
-                    if (process.ExitCode == 0)
-                    {
-                        Console.WriteLine("Firewall-Regel wurde erfolgreich hinzugefügt.");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Firewall-Regel konnte nicht hinzugefügt werden. Exit Code: {process.ExitCode}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Fehler beim Ausführen des netsh-Befehls: " + ex.Message);
-            }
-
-            Console.ReadLine();
         }
     }
 }
