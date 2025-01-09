@@ -51,7 +51,13 @@ namespace MQTTServer
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            return new CustomListObjectElementCollection();
+            return new CustomListObjectElementCollection()
+            {
+                new CustomListObjectElement
+                {
+                    { "State", "Init" }
+                }
+            };
         }
 
         private async Task MqttServer_StoppedAsync(EventArgs arg)
@@ -83,13 +89,6 @@ namespace MQTTServer
             base.SetupOverride(data);
 
             listName = data?.ListName;
-
-            var item = new CustomListObjectElement
-            {
-                { "State", "Init" }
-            };
-
-            Data?.Push(listName).Update(0, item);
             Log?.Info("MQTT Server initialisation");
         }
 
