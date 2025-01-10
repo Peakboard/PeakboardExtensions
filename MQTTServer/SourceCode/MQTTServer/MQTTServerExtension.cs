@@ -4,6 +4,10 @@ namespace MQTTServer
 {
     public class MQTTServerExtension : ExtensionBase
     {
+        public MQTTServerExtension() : base() { }
+        
+        public MQTTServerExtension(IExtensionHost host) : base(host) { }
+
         protected override ExtensionDefinition GetDefinitionOverride()
         {
             return new ExtensionDefinition

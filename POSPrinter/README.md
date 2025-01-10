@@ -65,6 +65,9 @@ Feed 3 lines.
 **\~(FullCutAfterFeed:3)\~**\
 Full cut after a feed of 3 lines.
 
+**\~(PureESCPOS: \x1b\x61\x01\x1b\x21\x10Peakboard Caramel Macchiato\x0A\x1b\x21\x00Size: Grande\x0ACustomizations: Extra Shot, Soy Milk\x0A)\~**\
+Use pure ESC/POS. This can be used as the only source or inside our Peakboard Markup to extend the capabilities.
+
 ## Samples
 
 	~(CentralAlign)~
