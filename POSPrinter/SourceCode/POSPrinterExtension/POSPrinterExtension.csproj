@@ -116,6 +116,7 @@
   <ItemGroup>
     <Compile Include="DTO\RuntimeConfig.cs" />
     <Compile Include="Helper\ESCPOSHelper.cs" />
+    <Compile Include="Helper\PureESCPosBuilder.cs" />
     <Compile Include="Helper\SeikoQRCode.cs" />
     <Compile Include="Helper\ImageToEscPos.cs" />
     <Compile Include="POSPrinterExtension.cs" />

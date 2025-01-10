@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using ESCPOS_NET.Emitters;
 using POSPrinter.Helper;
@@ -395,6 +396,32 @@ namespace POSPrinter
 
                                     byte[] qrcode = seikoQRCode.QRCode(qrdata);
                                     byteArrays.Add(qrcode);
+                                }
+                                else
+                                {
+                                    // TODO: May log problem?
+                                }
+                            }
+                        }
+                        else if (ctext.StartsWith("pureescpos"))
+                        {
+                            var parts = command
+                                .ToString()
+                                .Split(new[] { ':' }, 2, StringSplitOptions.None) // Split in maximal zwei Teile
+                                .Where(part => !string.IsNullOrWhiteSpace(part)) // Filtere leere Einträge
+                                .ToArray();
+
+
+
+                            if (parts.Length >= 2)
+                            {
+
+                                
+                                if (!string.IsNullOrEmpty(parts[1]))
+                                {
+                                    PureESCPosBuilder pureESCPosBuilder = new PureESCPosBuilder();
+                                    byte[] pureESC = pureESCPosBuilder.BuildEscPosArray(parts[1]);
+                                    byteArrays.Add(pureESC);
                                 }
                                 else
                                 {
