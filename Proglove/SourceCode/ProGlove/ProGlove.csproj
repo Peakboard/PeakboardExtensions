@@ -1,0 +1,82 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{DE690C32-F7E9-468F-9511-A63526D6D26B}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ProGlove</RootNamespace>
+    <AssemblyName>ProGlove</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Models\Address.cs" />
+    <Compile Include="Models\AuthenticationEndpoint.cs" />
+    <Compile Include="Models\AuthenticationResponse.cs" />
+    <Compile Include="Models\AuthenticationResult.cs" />
+    <Compile Include="Models\ChallengeParameters.cs" />
+    <Compile Include="Models\Config.cs" />
+    <Compile Include="Models\Endpoint.cs" />
+    <Compile Include="Models\Endpoints.cs" />
+    <Compile Include="Models\Event.cs" />
+    <Compile Include="Models\Events.cs" />
+    <Compile Include="Models\Filter.cs" />
+    <Compile Include="Models\FilterOfEndpoint.cs" />
+    <Compile Include="Models\Flags.cs" />
+    <Compile Include="Models\GatewaysOrganisation.cs" />
+    <Compile Include="Models\GeoData.cs" />
+    <Compile Include="Models\Links.cs" />
+    <Compile Include="Models\LinksOfEndpoints.cs" />
+    <Compile Include="Models\Metadata.cs" />
+    <Compile Include="Models\MetadataOfEndpoint.cs" />
+    <Compile Include="Models\Node.cs" />
+    <Compile Include="Models\Organisation.cs" />
+    <Compile Include="Models\Policy.cs" />
+    <Compile Include="Models\Report.cs" />
+    <Compile Include="Models\Reports.cs" />
+    <Compile Include="Models\Sort.cs" />
+    <Compile Include="Models\Thumbnail.cs" />
+    <Compile Include="Models\Update.cs" />
+    <Compile Include="Models\UserPoolClient.cs" />
+    <Compile Include="ProGloveClient.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
