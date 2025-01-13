@@ -1,14 +1,11 @@
 ﻿using Peakboard.ExtensionKit;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using ProGloveExtension.CustomLists;
 namespace ProGloveExtension
 {
     public class ProGloveExtension : ExtensionBase
     {
+        public ProGloveExtension() : base() { }
+        public ProGloveExtension(IExtensionHost host) : base(host) { }
         protected override ExtensionDefinition GetDefinitionOverride()
         {
             return new ExtensionDefinition
@@ -20,14 +17,15 @@ namespace ProGloveExtension
                 Author = "Makhsum",
                 Company = "Peakboard",
                 Copyright = "Your Copyright"
-            };
+            };  
         }
         protected override CustomListCollection GetCustomListsOverride()
         {
             return new CustomListCollection
             {
-              //  new ProGloveExtensionEventsList(),
-                new ProGloveExtensionGatewaysList()
+                new ProGloveExtensionEventsList(),
+                new ProGloveExtensionGatewaysList(),
+                new ProGloveExtensionReportsList()
             };
         }
     }

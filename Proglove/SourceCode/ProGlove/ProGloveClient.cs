@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json;
 using ProGlove.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +10,6 @@ namespace ProGlove
     {
         private readonly string basedUrl;
         private readonly string clientId;
-
         public ProGloveClient(string basedUrl, string clientId)
         {
             this.basedUrl = basedUrl;
