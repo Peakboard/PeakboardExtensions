@@ -17,10 +17,10 @@ namespace ProGloveExtension.CustomLists
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition(){Name = "ClientId",Value = "7j8j5sl0"},
-                    new CustomListPropertyDefinition(){Name = "BasedUrl",Value="https://d6xsb3jcd6.execute-api.us-east-1.amazonaws.com/latest"},
-                    new CustomListPropertyDefinition(){Name = "Username",Value = "makhsum.yusupov@peakboard.com"},
-                    new CustomListPropertyDefinition(){Name = "Password",Value = "M1020304050k."}
+                    new CustomListPropertyDefinition(){Name = "ClientId"},
+                    new CustomListPropertyDefinition(){Name = "BasedUrl"},
+                    new CustomListPropertyDefinition(){Name = "Username"},
+                    new CustomListPropertyDefinition(){Name = "Password"}
                 }
             };
         }
@@ -72,7 +72,6 @@ namespace ProGloveExtension.CustomLists
                 return new CustomListObjectElementCollection();
             }
             var items = new CustomListObjectElementCollection();
-           
             CustomListObjectElement objectElement = null;
             foreach (var item in events.Items)
             {
@@ -105,6 +104,5 @@ namespace ProGloveExtension.CustomLists
             }
             return items;
         }
-
     }
 }
