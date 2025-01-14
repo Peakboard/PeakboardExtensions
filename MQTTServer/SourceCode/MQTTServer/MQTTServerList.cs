@@ -55,7 +55,7 @@ namespace MQTTServer
             {
                 new CustomListObjectElement
                 {
-                    { "State", "Init" }
+                    { "State", "Run function 'start' to start the MQTT-Server." }
                 }
             };
         }
@@ -67,7 +67,7 @@ namespace MQTTServer
                 { "State", "Stopped" }
             };
 
-            Log?.Verbose("Stopped");
+            Log?.Verbose("MQTT Server stopped");
 
             Data?.Push(listName).Update(0, item);
         }
@@ -79,7 +79,7 @@ namespace MQTTServer
                 { "State", "Running" }
             };
 
-            Log?.Verbose("MQTT Server Started");
+            Log?.Verbose("MQTT Server started");
 
             Data?.Push(listName).Update(0, item);
         }
