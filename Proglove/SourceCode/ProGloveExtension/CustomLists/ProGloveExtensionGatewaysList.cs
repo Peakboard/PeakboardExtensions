@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 namespace ProGloveExtension.CustomLists
 {
     [Serializable]
+    [CustomListIcon("pb_datasource_proglove.png")]
     public class ProGloveExtensionGatewaysList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -25,7 +26,7 @@ namespace ProGloveExtension.CustomLists
                     new CustomListPropertyDefinition(){Name = "ClientId"},
                     new CustomListPropertyDefinition(){Name = "BasedUrl"},
                     new CustomListPropertyDefinition(){Name = "Username"},
-                    new CustomListPropertyDefinition(){Name = "Password"}
+                    new CustomListPropertyDefinition(){Name = "Password",Masked = true}
                 }
             };
         }

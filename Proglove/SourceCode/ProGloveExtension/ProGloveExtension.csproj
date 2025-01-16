@@ -58,6 +58,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="pb_datasource_proglove.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </EmbeddedResource>
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
