@@ -5,6 +5,7 @@ using System;
 namespace ProGloveExtension.CustomLists
 {
     [Serializable]
+    [CustomListIcon("pb_datasource_proglove.png")]
     public class ProGloveExtensionEventsList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -20,7 +21,7 @@ namespace ProGloveExtension.CustomLists
                     new CustomListPropertyDefinition(){Name = "ClientId"},
                     new CustomListPropertyDefinition(){Name = "BasedUrl"},
                     new CustomListPropertyDefinition(){Name = "Username"},
-                    new CustomListPropertyDefinition(){Name = "Password"}
+                    new CustomListPropertyDefinition(){Name = "Password",Masked = true}
                 }
             };
         }

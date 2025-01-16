@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 namespace ProGloveExtension.CustomLists
 {
     [Serializable]
+    [CustomListIcon("pb_datasource_proglove.png")]
     public class ProGloveExtensionReportsList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()
@@ -27,7 +28,7 @@ namespace ProGloveExtension.CustomLists
                     new CustomListPropertyDefinition(){Name = "ClientId"},
                     new CustomListPropertyDefinition(){Name = "BasedUrl"},
                     new CustomListPropertyDefinition(){Name = "Username"},
-                    new CustomListPropertyDefinition(){Name = "Password"}
+                    new CustomListPropertyDefinition(){Name = "Password",Masked = true}
                 }
             };
         }
@@ -70,6 +71,8 @@ namespace ProGloveExtension.CustomLists
             string token = ath.AuthenticationResult.IdToken;
             var gateways =  proGloveClient.GetGatewaysOrganisationAsync(token).Result;
             List<string> organisationIds = new List<string>();
+            List<string> links = new List<string>();
+            List<Reports> reports = new List<Reports>();
             if (gateways != null)
             {
                 foreach (var item in gateways.Items)
@@ -78,12 +81,18 @@ namespace ProGloveExtension.CustomLists
                     {
                         if (!string.IsNullOrEmpty(item.Node.Id))
                         {
-                            organisationIds.Add(item.Node.Id);
+                            var existId = organisationIds.Contains(item.Node.Id);
+                            if (!existId)
+                            {
+                                organisationIds.Add(item.Node.Id);
+                            }
+                            
                         }
                     }
                 }
             }
             Log.Info($"ids count = {organisationIds.Count}");
+            
             foreach (var item in organisationIds)
             {
                 var photoReports = proGloveClient.GetReportsAsync(token, item).Result;
@@ -137,6 +146,7 @@ namespace ProGloveExtension.CustomLists
                     }
                 }
             }
+            
             return customList;
         }
     }
