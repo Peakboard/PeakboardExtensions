@@ -132,7 +132,7 @@ namespace POSPrinter
 
                 for (var i = 0; i < temp.Length - 2; i++)
                 {
-                    if (temp[i] == '\n')
+                    if (temp[i] == '\n' && !active)
                     {
                         byteArrays.Add(emitter.PrintLine(line.ToString()));
                         line.Length = 0;
@@ -405,6 +405,7 @@ namespace POSPrinter
                         }
                         else if (ctext.StartsWith("pureescpos"))
                         {
+                            
                             var parts = command
                                 .ToString()
                                 .Split(new[] { ':' }, 2, StringSplitOptions.None) // Split in maximal zwei Teile
@@ -422,6 +423,40 @@ namespace POSPrinter
                                     PureESCPosBuilder pureESCPosBuilder = new PureESCPosBuilder();
                                     byte[] pureESC = pureESCPosBuilder.BuildEscPosArray(parts[1]);
                                     byteArrays.Add(pureESC);
+                                }
+                                else
+                                {
+                                    // TODO: May log problem?
+                                }
+                            }
+                        }
+                        else if (ctext.StartsWith("postable"))
+                        {
+
+                            var parts = command
+                                .ToString()
+                                .Split(new[] { ':' }, 3, StringSplitOptions.None) // Split in maximal zwei Teile
+                                .Where(part => !string.IsNullOrWhiteSpace(part)) // Filtere leere Einträge
+                                .ToArray();
+
+
+
+                            if (parts.Length >= 3)
+                            {
+
+
+                                if (!string.IsNullOrEmpty(parts[1]) && !string.IsNullOrEmpty(parts[2]))
+                                {
+                                    int[] intArray = parts[1]
+                                        .Split(',')
+                                        .Select(value => int.TryParse(value, out var number) ? number : 0)
+                                        .ToArray();
+
+                                    TableBuilder tableBuilder = new TableBuilder();
+
+                                    byte[] table = tableBuilder.GenerateEscPosFromHtml(parts[2], intArray);
+
+                                    byteArrays.Add(table);
                                 }
                                 else
                                 {
