@@ -68,8 +68,13 @@ Full cut after a feed of 3 lines.
 **\~(PureESCPOS: \x1b\x61\x01\x1b\x21\x10Peakboard Caramel Macchiato\x0A\x1b\x21\x00Size: Grande\x0ACustomizations: Extra Shot, Soy Milk\x0A)\~**\
 Use pure ESC/POS. This can be used as the only source or inside our Peakboard Markup to extend the capabilities.
 
-## Samples
+**\~(PosTable:ColumnWidth1,ColumnWidth2,ColumnWidth3:Content)\~**\
+The PosTable command allows you to create a table with flexible column widths. The table content is defined using an HTML-like syntax.
+**ColumnWidth:** Specify the width of each column in characters.\
+**Content:** Define the table rows and cells using <tr>, <th> (for headers), and <td> (for data).\
+For a detailed implementation example, refer to the Table Sample section below.
 
+## Easy Sample
 	~(CentralAlign)~
 	Heading with #[param1]#
 	~(Style:Bold)~
@@ -82,6 +87,27 @@ Use pure ESC/POS. This can be used as the only source or inside our Peakboard Ma
 	~(Style:Bold,Italic,DoubleHeight)~
 	Row 5
 	~(FullCutAfterFeed:1)~
+
+## Table Sample
+	local table = [[
+    <tr>
+        <th>Item</th>
+        <th>Price</th>
+        <th>Quantity</th>
+    </tr>
+    <tr>
+        <td>Apple</td>
+        <td>1.20 EUR</td>
+        <td>10</td>
+    </tr>
+    <tr>
+        <td>Banana</td>
+        <td>0.99 EUR</td>
+        <td>5</td>
+    </tr>
+	]]
+
+	'~(PosTable:20,14,14:' .. table .. ')~'
  
 ## Virtual printer apps for testing
 1. iOS App 'Virtual Thermal Printer' by Pascal Kimmel used as a virtual printer for the ESC/POS protocol. Not all commands are supported.
