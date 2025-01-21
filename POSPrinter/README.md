@@ -71,7 +71,7 @@ Use pure ESC/POS. This can be used as the only source or inside our Peakboard Ma
 **\~(PosTable:ColumnWidth1,ColumnWidth2,ColumnWidth3:Content)\~**\
 The PosTable command allows you to create a table with flexible column widths. The table content is defined using an HTML-like syntax.
 **ColumnWidth:** Specify the width of each column in characters.\
-**Content:** Define the table rows and cells using <tr>, <th> (for headers), and <td> (for data).\
+**Content:** Define the table rows and cells using \<tr\>, \<th\> for headers, and \<td\> (for data).\
 For a detailed implementation example, refer to the Table Sample section below.
 
 ## Easy Sample
