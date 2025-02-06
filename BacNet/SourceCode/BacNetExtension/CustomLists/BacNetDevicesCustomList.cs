@@ -19,7 +19,7 @@ namespace BacNetExtension.CustomLists
             return new CustomListDefinition
             {
                 ID = "BacNetDeviceCustomList",
-                Name = "BacNetList",
+                Name = "DevicesCustomList",
                 Description = "Add BacNet Data",
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
@@ -36,11 +36,11 @@ namespace BacNetExtension.CustomLists
             Start(ipAddress, tcpPort);
             return new CustomListColumnCollection()
             {
-                new CustomListColumn("Adresse",CustomListColumnTypes.String),
-                new CustomListColumn("Geräte-ID",CustomListColumnTypes.Number),
-                new CustomListColumn("Max APDU",CustomListColumnTypes.Number),
-                new CustomListColumn("Segmentierung",CustomListColumnTypes.String),
-                new CustomListColumn("Vendor-ID",CustomListColumnTypes.String),
+                new CustomListColumn("Address",CustomListColumnTypes.String),
+                new CustomListColumn("DeviceID",CustomListColumnTypes.Number),
+                new CustomListColumn("MaxAdpu",CustomListColumnTypes.Number),
+                new CustomListColumn("Segmentation",CustomListColumnTypes.String),
+                new CustomListColumn("VendorID",CustomListColumnTypes.String),
             };
         }
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
@@ -49,18 +49,18 @@ namespace BacNetExtension.CustomLists
             int tcpPort = int.Parse(data.Properties["Port"]);
             var objectElementCollection = new CustomListObjectElementCollection();
             Log.Info($"Devics count = {devices.Count}");
-            if (devices.Count <= 9)
+            if (devices.Count <= 0)
             {
                 Start(ipAddress, tcpPort);
             }
             foreach (var item in devices)
             {
                 var itemElement = new CustomListObjectElement();
-                itemElement.Add("Adresse", item.Address.ToString());
-                itemElement.Add("Geräte-ID", item.DeviceId);
-                itemElement.Add("Max APDU", item.MaxAdpu);
-                itemElement.Add("Segmentierung", item.Segmentation.ToString());
-                itemElement.Add("Vendor-ID", item.VendorId.ToString());
+                itemElement.Add("Address", item.Address.ToString());
+                itemElement.Add("DeviceID", item.DeviceId);
+                itemElement.Add("MaxAdpu", item.MaxAdpu);
+                itemElement.Add("Segmentation", item.Segmentation.ToString());
+                itemElement.Add("VendorID", item.VendorId.ToString());
                 objectElementCollection.Add(itemElement);
             }
             return objectElementCollection;
@@ -80,7 +80,6 @@ namespace BacNetExtension.CustomLists
             }
             throw new Exception("incorrect iP address");
         }
-
         private void OnIamReceived(BacnetClient sender, BacnetAddress adr, uint deviceId, uint maxAPDU, BacnetSegmentations segmentation, ushort vendorId)
         {
             Device device = new Device();
@@ -94,7 +93,6 @@ namespace BacNetExtension.CustomLists
                 devices.Add(device);
             }
         }
-
         public string GetLocalIPAddress()
         {
             string localIPAddress = "";
