@@ -1,6 +1,7 @@
 ﻿using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
 using System.Net;
@@ -12,6 +13,10 @@ namespace BacNetExtension.CustomLists
 {
     public class BacNetObjectsCustomList : CustomListBase
     {
+        Dictionary<string, BacnetObjectTypes> bacnetObjectMap = Enum.GetValues(typeof(BacnetObjectTypes))
+            .Cast<BacnetObjectTypes>()
+            .Where(e => e.ToString().StartsWith("OBJECT_"))
+            .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
         BacnetClient client = null;
         IList<BacnetValue> objects = new List<BacnetValue>();
         protected override CustomListDefinition GetDefinitionOverride()
@@ -19,7 +24,7 @@ namespace BacNetExtension.CustomLists
             return new CustomListDefinition
             {
                 ID = "BacNetObjectCustomList",
-                Name = "BacNetObjectCustomList",
+                Name = "ObjectsCustomList",
                 Description = "Add BacNet Data",
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
@@ -31,7 +36,6 @@ namespace BacNetExtension.CustomLists
                 },
             };
         }
-
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
             string ipAddress = data.Properties["Ip"].ToString();
@@ -42,33 +46,77 @@ namespace BacNetExtension.CustomLists
             client = new BacnetClient(transport);
             client.Start();
             GetAvailableObjects(adddress, deviceId);
-            var columnColl = new CustomListColumnCollection() {
+            var columnColl = new CustomListColumnCollection()
+            {
 
-                new CustomListColumn("Objects",CustomListColumnTypes.String)
             };
-            return columnColl;
-        }
-
-       
-
-        protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
-        {
-            string ipAddress = data.Properties["Ip"].ToString();
-            int tcpPort = int.Parse(data.Properties["Port"]);
-            BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-            uint deviceId = uint.Parse(data.Properties["DeviceId"]);
-            var transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
-            client = new BacnetClient(transport);
-            client.Start();
-            GetAvailableObjects(adddress, deviceId);
-            var objectElementCollection = new CustomListObjectElementCollection();
+            List<string> added = new List<string>();
             foreach (var item in objects)
             {
-                var itemElement = new CustomListObjectElement();
-                itemElement.Add("Objects", item.Value.ToString());
-                objectElementCollection.Add(itemElement);
+                string columnName = item.Value.ToString().Split(':')[0];
+                if (!added.Contains(columnName))
+                {
+                    var name = bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == columnName).Key;
+                    if (name != null)
+                    {
+                        var column = new CustomListColumn(name, CustomListColumnTypes.Number);
+                        columnColl.Add(column);
+                        added.Add(columnName);
+                    }
+                    else
+                    {
+                        var column = new CustomListColumn(columnName, CustomListColumnTypes.Number);
+                        columnColl.Add(column);
+                        added.Add(columnName);
+                    }
+                }
             }
-            return objectElementCollection;
+            return columnColl;
+        }
+        protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
+        {
+            try
+            {
+                string ipAddress = data.Properties["Ip"].ToString();
+                int tcpPort = int.Parse(data.Properties["Port"]);
+                BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+                uint deviceId = uint.Parse(data.Properties["DeviceId"]);
+                var transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
+                client = new BacnetClient(transport);
+                client.Start();
+                GetAvailableObjects(adddress, deviceId);
+                var objectElementCollection = new CustomListObjectElementCollection();
+                var itemElement = new CustomListObjectElement();
+                var added = new List<string>();
+                foreach (var item in objects)
+                {
+                    string column = item.Value.ToString().Split(':')[0];
+                    var name = bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == column).Key;
+                    string value = item.Value.ToString().Split(':')[1];
+                    if (!added.Contains(column))
+                    {
+                        if (name != null)
+                        {
+                            itemElement.Add(name, value);
+                            added.Add(column);
+                        }
+                        else
+                        {
+                            itemElement.Add(column, value);
+                            added.Add(column);
+                        }
+                    }
+                }
+                objectElementCollection.Add(itemElement);
+                return objectElementCollection;
+            }
+            catch (Exception ex)
+            {
+
+                Log.Error($"{ex.Message}");
+                return new CustomListObjectElementCollection();
+            }
+           
         }
         private void GetAvailableObjects(BacnetAddress address, uint deviceId)
         {
@@ -78,13 +126,7 @@ namespace BacNetExtension.CustomLists
             {
                 if (client.ReadPropertyRequest(address, objectId, propertyId, out objects))
                 {
-                    //foreach (var value in values)
-                    //{
-                    //    if (objects.FirstOrDefault(o=>o==value.Value)== null)
-                    //    {
-                    //        objects.Add(value.Value.ToString());
-                    //    }
-                    //}
+                    Log.Info($"Obejcts count = {objects.Count}");
                 }
                 else
                 {
