@@ -1,5 +1,6 @@
 ﻿using BacNetExtension.CustomLists;
 using Peakboard.ExtensionKit;
+using System.Globalization;
 
 namespace BacNetExtension
 {
@@ -7,11 +8,13 @@ namespace BacNetExtension
     {
         public BacNetExtensionDataSource(): base()
         {
-            
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         }
         public BacNetExtensionDataSource(IExtensionHost extensionHost): base(extensionHost)
         {
-            
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         }
 
         protected override ExtensionDefinition GetDefinitionOverride() => new ExtensionDefinition
@@ -26,6 +29,8 @@ namespace BacNetExtension
         };
         protected override CustomListCollection GetCustomListsOverride()
         {
+            CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+            CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
             return new CustomListCollection
             {
                 new BacNetDevicesCustomList(),

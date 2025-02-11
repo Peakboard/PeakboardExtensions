@@ -19,7 +19,7 @@ namespace BacNetExtension.CustomLists
             return new CustomListDefinition
             {
                 ID = "BacNetDeviceCustomList",
-                Name = "DevicesCustomList",
+                Name = "Devices",
                 Description = "Add BacNet Data",
                 PropertyInputPossible = true,
                 PropertyInputDefaults =

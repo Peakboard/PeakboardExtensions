@@ -6,8 +6,6 @@ using System.IO.BACnet;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BacNetExtension.CustomLists
 {
@@ -24,7 +22,7 @@ namespace BacNetExtension.CustomLists
             return new CustomListDefinition
             {
                 ID = "BacNetObjectCustomList",
-                Name = "ObjectsCustomList",
+                Name = "Objects",
                 Description = "Add BacNet Data",
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
@@ -112,11 +110,9 @@ namespace BacNetExtension.CustomLists
             }
             catch (Exception ex)
             {
-
                 Log.Error($"{ex.Message}");
                 return new CustomListObjectElementCollection();
             }
-           
         }
         private void GetAvailableObjects(BacnetAddress address, uint deviceId)
         {
