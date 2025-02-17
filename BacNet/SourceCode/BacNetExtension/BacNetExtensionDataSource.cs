@@ -11,6 +11,7 @@ namespace BacNetExtension
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
             CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         }
+
         public BacNetExtensionDataSource(IExtensionHost extensionHost): base(extensionHost)
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
@@ -27,6 +28,7 @@ namespace BacNetExtension
             Company = "Peakboard",
             Copyright = "Your Copyright" 
         };
+
         protected override CustomListCollection GetCustomListsOverride()
         {
             CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
