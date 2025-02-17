@@ -13,7 +13,7 @@ namespace BacNetExtension.CustomLists
     public class BacNetDevicesCustomList : CustomListBase
     {
         BacnetClient client = null;
-        List<Device> devices = new List<Device>();
+        List<Device> devices = null;
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -43,30 +43,33 @@ namespace BacNetExtension.CustomLists
                 new CustomListColumn("VendorID",CustomListColumnTypes.String),
             };
         }
+
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             string ipAddress = data.Properties["Ip"].ToString();
             int tcpPort = int.Parse(data.Properties["Port"]);
             var objectElementCollection = new CustomListObjectElementCollection();
-            Log.Info($"Devics count = {devices.Count}");
-            if (devices.Count <= 0)
-            {
-                Start(ipAddress, tcpPort);
-            }
+            Start(ipAddress, tcpPort);
+            List<uint> added = new List<uint>();
             foreach (var item in devices)
             {
-                var itemElement = new CustomListObjectElement();
-                itemElement.Add("Address", item.Address.ToString());
-                itemElement.Add("DeviceID", item.DeviceId);
-                itemElement.Add("MaxAdpu", item.MaxAdpu);
-                itemElement.Add("Segmentation", item.Segmentation.ToString());
-                itemElement.Add("VendorID", item.VendorId.ToString());
-                objectElementCollection.Add(itemElement);
+                if (!added.Contains(item.DeviceId))
+                {
+                    var itemElement = new CustomListObjectElement();
+                    itemElement.Add("Address", item.Address.ToString());
+                    itemElement.Add("DeviceID", item.DeviceId);
+                    itemElement.Add("MaxAdpu", item.MaxAdpu);
+                    itemElement.Add("Segmentation", item.Segmentation.ToString());
+                    itemElement.Add("VendorID", item.VendorId.ToString());
+                    objectElementCollection.Add(itemElement);
+                }
             }
+
             return objectElementCollection;
         }
         private void Start(string ip,int port)
         {
+            devices = new List<Device>();
             if (!string.IsNullOrEmpty(ip))
             {
                 var transport = new BacnetIpUdpProtocolTransport(port, false, false, 1472, ip);
