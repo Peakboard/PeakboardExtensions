@@ -4,7 +4,6 @@ using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionCatFacts
 {
-    [ExtensionIcon("PeakboardExtensionCatFacts.cat2.png")]
     public class CatFactsExtension : ExtensionBase
     {
         protected override ExtensionDefinition GetDefinitionOverride()
