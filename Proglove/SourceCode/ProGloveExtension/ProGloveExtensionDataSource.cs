@@ -2,6 +2,7 @@
 using ProGloveExtension.CustomLists;
 namespace ProGloveExtension
 {
+    [ExtensionIcon("ProGloveExtension.pb_datasource_proglove.png")]
     public class ProGloveExtension : ExtensionBase
     {
         public ProGloveExtension() : base() { }
