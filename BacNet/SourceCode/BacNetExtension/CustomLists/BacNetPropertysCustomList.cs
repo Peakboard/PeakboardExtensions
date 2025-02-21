@@ -69,6 +69,7 @@ namespace BacNetExtension.CustomLists
                 },
             };
         }
+        
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
             try
@@ -108,6 +109,7 @@ namespace BacNetExtension.CustomLists
                 throw new Exception(ex.Message);
             }
         }
+        
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             try
@@ -162,6 +164,7 @@ namespace BacNetExtension.CustomLists
                 throw new Exception($"Error in GetItemsOverride: {ex.Message}");
             }
         }
+        
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
             int tcpPort = int.Parse(data.Properties["Port"]);
@@ -190,7 +193,7 @@ namespace BacNetExtension.CustomLists
                     }
                 };
         }
-
+        
         private Dictionary<string, string> GetSupportedPropertiesWithValues(BacnetAddress address, string objectName, string instance)
         {
             var properties = new Dictionary<string, string>();
@@ -224,6 +227,7 @@ namespace BacNetExtension.CustomLists
             }
             return properties;
         }
+        
         public Dictionary<BacnetPropertyIds, CustomListColumnTypes> GetPropetiesWithTypes(BacnetAddress address, string objectName, string instance)
         {
             var properties = new Dictionary<BacnetPropertyIds, CustomListColumnTypes>();
@@ -278,6 +282,7 @@ namespace BacNetExtension.CustomLists
             }
             return properties;
         }
+        
         private string GetPropertyValueAsString(BacnetPropertyValue property)
         {
             if (property.value == null || property.value.Count == 0)
@@ -298,6 +303,7 @@ namespace BacNetExtension.CustomLists
             }
             return null;
         }
+        
         private CustomListColumnTypes GetColumnType(string tagName)
         {
             if (tagName.Contains("BOOLEAN"))
@@ -308,6 +314,7 @@ namespace BacNetExtension.CustomLists
 
             return CustomListColumnTypes.String;
         }
+        
         public void WriteProperty(BacnetAddress address, string objectName, string instanceId, string propertyName, string value)
         {
             try
@@ -460,9 +467,8 @@ namespace BacNetExtension.CustomLists
                 default:
                     throw new Exception($"Unsupported BACnet type: {expectedType}");
             }
-
+            
             throw new Exception($"Invalid value for type {expectedType}: {userInput}");
         }
-
     }
 }
