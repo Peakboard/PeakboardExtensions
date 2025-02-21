@@ -1,13 +1,9 @@
-﻿using Newtonsoft.Json.Linq;
-using Peakboard.ExtensionKit;
+﻿using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
 
 namespace BacNetExtension.CustomLists
 {

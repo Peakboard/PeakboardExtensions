@@ -38,7 +38,7 @@ namespace BacNetExtension
             {
                 new BacNetDevicesCustomList(),
                 new BacNetObjectsCustomList(),
-                new BacNetPropertysCustomList()
+                new BacNetPropertiesCustomList()
             };
         }
     }
