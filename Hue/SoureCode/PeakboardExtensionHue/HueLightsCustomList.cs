@@ -209,9 +209,11 @@ namespace PeakboardExtensionHue
             else if (context.FunctionName.Equals("setlightcolor", StringComparison.InvariantCultureIgnoreCase))
             {
                 string lightname = context.Values[0].StringValue;
-                int color = Convert.ToInt32(context.Values[1].GetValue());
-                this.Log?.Info(string.Format("Lightname: {0} -> setlightcolor -> {1}", lightname, color));
-                HueHelper.SetLightColor(bridgeIP, userName, lightname, color);
+                int red = Convert.ToInt32(context.Values[1].GetValue());
+                int green = Convert.ToInt32(context.Values[1].GetValue());
+                int blue = Convert.ToInt32(context.Values[1].GetValue());
+                this.Log?.Info(string.Format("Lightname: {0} -> setlightcolor -> {1}", lightname, red, green, blue));
+                HueHelper.SetLightColor(bridgeIP, userName, lightname, red, green, blue);
             }
             else if (context.FunctionName.Equals("alert", StringComparison.InvariantCultureIgnoreCase))
             {
