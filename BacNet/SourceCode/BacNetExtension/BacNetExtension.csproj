@@ -65,7 +65,7 @@
     <Compile Include="CustomLists\BacNetDevicesCustomList.cs" />
     <Compile Include="BacNetExtensionDataSource.cs" />
     <Compile Include="CustomLists\BacNetObjectsCustomList.cs" />
-    <Compile Include="CustomLists\BacNetPropertysCustomList.cs" />
+    <Compile Include="CustomLists\BacNetPropertiesCustomList.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -73,13 +73,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="pb_datasource_bacnet.png" />
+    <EmbeddedResource Include="pb_datasource_bacnet.png" />
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Helpers\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
