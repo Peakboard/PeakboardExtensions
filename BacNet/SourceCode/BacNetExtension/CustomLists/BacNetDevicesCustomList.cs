@@ -10,11 +10,13 @@ using System.Threading;
 
 namespace BacNetExtension.CustomLists
 {
+    [Serializable]
+    [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetDevicesCustomList : CustomListBase
     {
         private BacnetClient _client;
         private List<Device> _devices;
-
+        private readonly ManualResetEventSlim _waitHandle = new ManualResetEventSlim(false);
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -25,18 +27,13 @@ namespace BacNetExtension.CustomLists
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition { Name = "Ip", Value = GetLocalIpAddress() },
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" }
-                },
+                }
             };
         }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            string ipAddress = data.Properties["Ip"].ToString();
-            int tcpPort = int.Parse(data.Properties["Port"]);
-            StartConnection(ipAddress, tcpPort);
-
             return new CustomListColumnCollection()
             {
                 new CustomListColumn("Address", CustomListColumnTypes.String),
@@ -49,40 +46,35 @@ namespace BacNetExtension.CustomLists
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            string ipAddress = data.Properties["Ip"].ToString();
-            int tcpPort = int.Parse(data.Properties["Port"]);
+            var tcpPort = int.Parse(data.Properties["Port"]);
             var objectElementCollection = new CustomListObjectElementCollection();
-            StartConnection(ipAddress, tcpPort);
+            StartConnection(tcpPort);
 
             foreach (var device in _devices)
             {
-                var itemElement = new CustomListObjectElement();
-                itemElement.Add("Address", device.Address.ToString());
-                itemElement.Add("DeviceID", device.DeviceId);
-                itemElement.Add("MaxAdpu", device.MaxAdpu);
-                itemElement.Add("Segmentation", device.Segmentation.ToString());
-                itemElement.Add("VendorID", device.VendorId.ToString());
+                var itemElement = new CustomListObjectElement()
+                {
+                    { "Address", device.Address.ToString() },
+                    { "DeviceID", device.DeviceId },
+                    { "MaxAdpu", device.MaxAdpu },
+                    { "Segmentation", device.Segmentation.ToString() },
+                    { "VendorID", device.VendorId.ToString() }
+                };
                 objectElementCollection.Add(itemElement);
             }
 
             return objectElementCollection;
         }
 
-        private void StartConnection(string ip, int port)
+        private void StartConnection(int port)
         {
             _devices = new List<Device>();
-            if (!string.IsNullOrEmpty(ip))
-            {
-                var transport = new BacnetIpUdpProtocolTransport(port, false, false, 1472, ip);
-                _client = new BacnetClient(transport);
-                _client.Start();
-                Thread.Sleep(1000);
-                _client.OnIam += OnIamReceived;
-                _client.WhoIs();
-                Thread.Sleep(1000);
-                return;
-            }
-            throw new Exception("Incorrect IP address");
+            var transport = new BacnetIpUdpProtocolTransport(port);
+            _client = new BacnetClient(transport);
+            _client.Start();
+            _client.OnIam += OnIamReceived;
+            _client.WhoIs();
+            _waitHandle.Wait(3000);
         }
 
         private void OnIamReceived(BacnetClient sender, BacnetAddress adr, uint deviceId, uint maxApdu, BacnetSegmentations segmentation, ushort vendorId)
@@ -99,13 +91,9 @@ namespace BacNetExtension.CustomLists
             if (_devices.FirstOrDefault(d => d.DeviceId == device.DeviceId) == null)
             {
                 _devices.Add(device);
+                _waitHandle.Set();
             }
-        }
-
-        public static string GetLocalIpAddress()
-        {
-            return Dns.GetHostEntry(Dns.GetHostName()).AddressList
-                .FirstOrDefault(ip => ip.AddressFamily == AddressFamily.InterNetwork)?.ToString() ?? string.Empty;
+            
         }
     }
 }

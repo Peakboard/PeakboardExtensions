@@ -5,7 +5,7 @@ using System;
 namespace ProGloveExtension.CustomLists
 {
     [Serializable]
-    [CustomListIcon("pb_datasource_proglove.png")]
+    [CustomListIcon("ProGloveExtension.pb_datasource_proglove.png")]
     public class ProGloveExtensionEventsList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()

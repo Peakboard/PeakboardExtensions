@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace ProGloveExtension.CustomLists
 {
     [Serializable]
-    [CustomListIcon("pb_datasource_proglove.png")]
+    [CustomListIcon("ProGloveExtension.pb_datasource_proglove.png")]
     public class ProGloveExtensionReportsList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()

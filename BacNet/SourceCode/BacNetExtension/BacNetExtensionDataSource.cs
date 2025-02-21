@@ -4,6 +4,7 @@ using System.Globalization;
 
 namespace BacNetExtension
 {
+    [ExtensionIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetExtensionDataSource : ExtensionBase
     {
         public BacNetExtensionDataSource(): base()

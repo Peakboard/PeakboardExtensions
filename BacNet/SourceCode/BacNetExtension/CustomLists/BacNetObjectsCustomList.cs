@@ -2,6 +2,7 @@
 using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
@@ -10,6 +11,8 @@ using System.Net.Sockets;
 
 namespace BacNetExtension.CustomLists
 {
+    [Serializable]
+    [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetObjectsCustomList : CustomListBase
     {
         private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectMap = Enum.GetValues(typeof(BacnetObjectTypes))
@@ -30,55 +33,65 @@ namespace BacNetExtension.CustomLists
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition { Name = "Ip", Value = BacNetDevicesCustomList.GetLocalIpAddress() },
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" },
-                    new CustomListPropertyDefinition { Name = "Address", Value = "192.168.20.54:47808" },
-                    new CustomListPropertyDefinition { Name = "DeviceId", Value = "799877" }
+                    new CustomListPropertyDefinition { Name = "Address", Value = "" },
+                    new CustomListPropertyDefinition { Name = "DeviceId", Value = "" }
                 },
             };
         }
 
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            var addedColumns = new HashSet<string>();
-            string ipAddress = data.Properties["Ip"].ToString();
-            int tcpPort = int.Parse(data.Properties["Port"]);
-            var address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-            uint deviceId = uint.Parse(data.Properties["DeviceId"]);
-
-            BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
-            _client = new BacnetClient(transport);
-            _client.Start();
-            RetrieveAvailableObjects(address, deviceId);
-
-            CustomListColumnCollection columnCollection = new CustomListColumnCollection();
-
-            foreach (var item in _objects)
+            try
             {
-                string value = item.Value.ToString();
-                string columnName = value.Split(':')[0];
+                HashSet<string> addedColumns = new HashSet<string>();
+                int tcpPort = int.Parse(data.Properties["Port"]);
+                BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+                uint deviceId = uint.Parse(data.Properties["DeviceId"]);
 
-                if (!addedColumns.Contains(columnName))
+                BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
+                _client = new BacnetClient(transport);
+                _client.Start();
+                RetrieveAvailableObjects(address, deviceId);
+
+                CustomListColumnCollection columnCollection = new CustomListColumnCollection();
+
+                foreach (var item in _objects)
                 {
-                    var name = _bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == columnName).Key ?? columnName;
-                    columnCollection.Add(new CustomListColumn(name, CustomListColumnTypes.String));
-                    addedColumns.Add(columnName);
+                    string value = item.Value.ToString();
+                    string columnName = value.Split(':')[0];
+
+                    if (!addedColumns.Contains(columnName))
+                    {
+                        var name = _bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == columnName).Key ?? columnName;
+                        columnCollection.Add(new CustomListColumn(name, CustomListColumnTypes.String));
+                        addedColumns.Add(columnName);
+                    }
                 }
+                _client.Dispose();
+                return columnCollection;
             }
-            _client.Dispose();
-            return columnCollection;
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("System.NullReferenceException"))
+                {
+                    throw new ArgumentException("Invalid address or port.");
+                }
+
+                throw new Exception(ex.ToString());
+            }
+           
         }
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             try
             {
-                string ipAddress = data.Properties["Ip"].ToString();
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 var address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 uint deviceId = uint.Parse(data.Properties["DeviceId"]);
 
-                var transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
+                var transport = new BacnetIpUdpProtocolTransport(tcpPort);
                 _client = new BacnetClient(transport);
                 _client.Start();
                 RetrieveAvailableObjects(address, deviceId);
@@ -119,13 +132,13 @@ namespace BacNetExtension.CustomLists
                         {
                             string column = nameWithValue[0];
                             string instance = nameWithValue[1];
-                            Log.Info($" Name = {column}, instance = {instance}");
                             string name = _bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == column).Key ?? column;
                             itemElement.Add(name, instance);
                         }
                         else
                         {
-                            itemElement.Add(value, "null");
+                            string name = _bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == value).Key ?? value;
+                            itemElement.Add(name, "null");
                         }
                     }
                     objectElementCollection.Add(itemElement);

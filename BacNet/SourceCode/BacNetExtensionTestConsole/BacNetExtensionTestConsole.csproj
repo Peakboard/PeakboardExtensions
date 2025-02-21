@@ -1,19 +1,20 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2A1DD245-23AD-4F39-8C3F-4CA8DF50F3C5}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ProGloveExtension</RootNamespace>
-    <AssemblyName>ProGloveExtension</AssemblyName>
+    <ProjectGuid>{5C286E89-4144-4527-90BC-7238B9A2EE96}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>BacNetExtensionTestConsole</RootNamespace>
+    <AssemblyName>BacNetExtensionTestConsole</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -23,6 +24,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -31,12 +33,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.13.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=AMD64">
-      <HintPath>..\packages\Peakboard.ExtensionKit.3.2.0\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
-      <Private>False</Private>
+    <Reference Include="Peakboard.ExtensionKit">
+      <HintPath>..\..\..\..\..\..\Projects\Peakboard\Peakboard\PeakBoard\Peakboard.ExtensionKit\bin\x64\Debug\Peakboard.ExtensionKit.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -48,25 +46,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CustomLists\ProGloveExtensionEventsList.cs" />
-    <Compile Include="CustomLists\ProGloveExtensionGatewaysList.cs" />
-    <Compile Include="ProGloveExtensionDataSource.cs" />
-    <Compile Include="CustomLists\ProGloveExtensionReportsList.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
+    <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="pb_datasource_proglove.png" />
-    <Content Include="Extension.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ProGlove\ProGlove.csproj">
-      <Project>{de690c32-f7e9-468f-9511-a63526d6d26b}</Project>
-      <Name>ProGlove</Name>
+    <ProjectReference Include="..\BacNetExtension\BacNetExtension.csproj">
+      <Project>{8455a86c-e801-421b-a036-b64a93165b14}</Project>
+      <Name>BacNetExtension</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

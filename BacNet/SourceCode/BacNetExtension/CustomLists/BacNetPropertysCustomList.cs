@@ -13,6 +13,8 @@ using System.Text;
 
 namespace BacNetExtension.CustomLists
 {
+    [Serializable]
+    [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetPropertysCustomList : CustomListBase
     {
         private readonly Dictionary<string, BacnetPropertyIds> _bacnetPropertiesMap = Enum.GetValues(typeof(BacnetPropertyIds))
@@ -60,11 +62,10 @@ namespace BacNetExtension.CustomLists
                 },
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition { Name = "Ip", Value = BacNetDevicesCustomList.GetLocalIpAddress() },
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" },
-                    new CustomListPropertyDefinition { Name = "Address", Value = "192.168.20.54:47808" },
-                    new CustomListPropertyDefinition { Name = "ObjectName", Value = "Object_Device" },
-                    new CustomListPropertyDefinition { Name = "ObjectInstance", Value = "799877" }
+                    new CustomListPropertyDefinition { Name = "Address", Value = "" },
+                    new CustomListPropertyDefinition { Name = "ObjectName", Value = "" },
+                    new CustomListPropertyDefinition { Name = "ObjectInstance", Value = "" }
                 },
             };
         }
@@ -72,13 +73,12 @@ namespace BacNetExtension.CustomLists
         {
             try
             {
-                string ipAddress = data.Properties["Ip"].ToString();
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 string objectName = data.Properties["ObjectName"];
                 string objectInstance = data.Properties["ObjectInstance"];
 
-                BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
+                BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
                 _client = new BacnetClient(transport);
                 _client.Start();
 
@@ -112,13 +112,12 @@ namespace BacNetExtension.CustomLists
         {
             try
             {
-                string ipAddress = data.Properties["Ip"].ToString();
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 string objectName = data.Properties["ObjectName"];
                 string objectInstance = data.Properties["ObjectInstance"];
 
-                BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
+                BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
                 _client = new BacnetClient(transport);
                 _client.Start();
 
@@ -165,12 +164,11 @@ namespace BacNetExtension.CustomLists
         }
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
-            string ipAddress = data.Properties["Ip"].ToString();
             int tcpPort = int.Parse(data.Properties["Port"]);
             BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
             string objectName = data.Properties["ObjectName"];
             string objectInstance = data.Properties["ObjectInstance"];
-            var transport = new BacnetIpUdpProtocolTransport(tcpPort, false, false, 1472, ipAddress);
+            var transport = new BacnetIpUdpProtocolTransport(tcpPort);
             _client = new BacnetClient(transport);
             _client.Start();
             string functionName = context.FunctionName;
