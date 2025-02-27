@@ -14,7 +14,7 @@ namespace BacNetExtension.CustomLists
     {
         private BacnetClient _client;
         private List<Device> _devices;
-        private readonly ManualResetEventSlim _waitHandle = new ManualResetEventSlim(false);
+        private ManualResetEventSlim _waitHandle;
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -66,6 +66,7 @@ namespace BacNetExtension.CustomLists
 
         private void StartConnection(int port)
         {
+            _waitHandle = new ManualResetEventSlim(false);
             _devices = new List<Device>();
             var transport = new BacnetIpUdpProtocolTransport(port);
             _client = new BacnetClient(transport);
