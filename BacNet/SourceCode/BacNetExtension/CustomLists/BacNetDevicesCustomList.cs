@@ -16,7 +16,7 @@ namespace BacNetExtension.CustomLists
         private BacnetClient _client;
         private List<Device> _devices;
         private DateTime _lastEventTime;
-        private const int TimeoutMilliseconds = 2000;
+        private const int _timeoutMilliseconds = 2000;
 
         protected override CustomListDefinition GetDefinitionOverride()
         {
@@ -116,10 +116,12 @@ namespace BacNetExtension.CustomLists
             _lastEventTime = DateTime.Now;
             Log.Info("Waiting for devices...");
 
-            while ((DateTime.Now - _lastEventTime).TotalMilliseconds < TimeoutMilliseconds)
+            while ((DateTime.Now - _lastEventTime).TotalMilliseconds < _timeoutMilliseconds)
             {
                 await Task.Delay(100);
             }
+
+            _client.Dispose();
         }
 
         private void OnIamReceived(BacnetClient sender, BacnetAddress adr, uint deviceId, uint maxApdu, BacnetSegmentations segmentation, ushort vendorId)

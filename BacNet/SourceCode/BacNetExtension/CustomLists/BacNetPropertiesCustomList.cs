@@ -23,7 +23,6 @@ namespace BacNetExtension.CustomLists
             .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
 
         private BacnetClient _client;
-        private Dictionary<string, string> _oldValues;
 
         protected override CustomListDefinition GetDefinitionOverride()
         {
@@ -92,6 +91,7 @@ namespace BacNetExtension.CustomLists
                     customListCollection.Add(new CustomListColumn("Error see Log", CustomListColumnTypes.String));
                 }
 
+                _client.Dispose();
                 return customListCollection;
             }
             catch (Exception ex)
@@ -103,12 +103,13 @@ namespace BacNetExtension.CustomLists
                 throw new Exception(ex.Message);
             }
         }
+
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             try
             {
                 int tcpPort = int.Parse(data.Properties["Port"]);
-                BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+                BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 string objectName = data.Properties["ObjectName"];
                 string objectInstance = data.Properties["ObjectInstance"];
 
@@ -116,40 +117,15 @@ namespace BacNetExtension.CustomLists
                 _client = new BacnetClient(transport);
                 _client.Start();
 
-                _oldValues = GetSupportedPropertiesWithValues(adddress, objectName, objectInstance);
                 CustomListObjectElementCollection customListObjectColl = new CustomListObjectElementCollection();
-                CustomListObjectElement itemElement = new CustomListObjectElement();
-                List<string> added = new List<string>();
 
-                foreach (var value in _oldValues)
+                foreach (var instance in objectInstance.Split(';'))
                 {
-                    if (!added.Contains(value.Key))
-                    {
-                        string oldKey = value.Key;
-                        string newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == oldKey).Key;
-
-                        if (newKey != null)
-                        {
-                            var splitted = value.Value.Split(':');
-                            if (splitted.Length > 1)
-                            {
-                                itemElement.Add(newKey, splitted[1]);
-                                added.Add(value.Key);
-                            }
-                            else
-                            {
-                                itemElement.Add(newKey, value.Value);
-                                added.Add(value.Key);
-                            }
-                        }
-                        else
-                        {
-                            itemElement.Add(value.Key, value.Value);
-                            added.Add(value.Key);
-                        }
-                    }
+                    CustomListObjectElement item = GetSingleItem(address, objectName, instance);
+                    customListObjectColl.Add(item);
                 }
-                customListObjectColl.Add(itemElement);
+
+                _client.Dispose();
                 return customListObjectColl;
             }
             catch (Exception ex)
@@ -157,6 +133,46 @@ namespace BacNetExtension.CustomLists
                 throw new Exception($"Error in GetItemsOverride: {ex.Message}");
             }
         }
+
+        private CustomListObjectElement GetSingleItem(BacnetAddress address, string objectName, string instance)
+        {
+            var properties = GetSupportedPropertiesWithValues(address, objectName, instance);
+            CustomListObjectElement item = new CustomListObjectElement();
+            List<string> added = new List<string>();
+
+            foreach (var property in properties)
+            {
+                if (!added.Contains(property.Key))
+                {
+                    string oldKey = property.Key;
+                    string newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == oldKey).Key;
+
+                    if (newKey != null)
+                    {
+                        var splitted = property.Value.Split(':');
+                        if (splitted.Length > 1)
+                        {
+                            item.Add(newKey, splitted[1]);
+                            added.Add(property.Key);
+                        }
+                        else
+                        {
+                            item.Add(newKey, property.Value);
+                            added.Add(property.Key);
+                        }
+                    }
+                    else
+                    {
+                        item.Add(property.Key, property.Value);
+                        added.Add(property.Key);
+                    }
+                }
+            }
+
+            return item;
+        }
+
+
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
             int tcpPort = int.Parse(data.Properties["Port"]);
@@ -166,6 +182,7 @@ namespace BacNetExtension.CustomLists
             var transport = new BacnetIpUdpProtocolTransport(tcpPort);
             _client = new BacnetClient(transport);
             _client.Start();
+
             string functionName = context.FunctionName;
             switch (functionName)
             {
@@ -177,6 +194,9 @@ namespace BacNetExtension.CustomLists
                 default:
                     break;
             }
+
+            _client.Dispose();
+
             return new CustomListExecuteReturnContext
                 {
                     new CustomListObjectElement
@@ -200,6 +220,7 @@ namespace BacNetExtension.CustomLists
                 {
                     new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
+
                 if (_client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
                 {
                     foreach (var result in results)
@@ -219,23 +240,26 @@ namespace BacNetExtension.CustomLists
             }
             return properties;
         }
+
         public Dictionary<BacnetPropertyIds, CustomListColumnTypes> GetPropetiesWithTypes(BacnetAddress address, string objectName, string instance)
         {
             var properties = new Dictionary<BacnetPropertyIds, CustomListColumnTypes>();
 
             if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
             {
-                Log.Error($"Error: Object '{objectName}' not found in BACnet map.");
-                return properties;
+                throw new ArgumentException($"Error: Object '{objectName}' not found in BACnet map.");
             }
 
-            if (!uint.TryParse(instance, out uint objectInstance))
+            foreach(var singleInstance in instance.Split(';'))
             {
-                Log.Error($"Error: '{instance}' is not a valid number.");
-                return properties;
+                if (!uint.TryParse(singleInstance, out uint objectInstance))
+                {
+                    throw new ArgumentException($"Error: '{instance}' is not a valid number.");
+                }
             }
 
-            var objectId = new BacnetObjectId(type, objectInstance);
+            var objectId = new BacnetObjectId(type, uint.Parse(instance.Split(';').First()));
+
             try
             {
                 BacnetPropertyReference[] propertyReferences =
@@ -273,6 +297,7 @@ namespace BacNetExtension.CustomLists
             }
             return properties;
         }
+
         private string GetPropertyValueAsString(BacnetPropertyValue property)
         {
             if (property.value == null || property.value.Count == 0)
@@ -293,6 +318,7 @@ namespace BacNetExtension.CustomLists
             }
             return null;
         }
+
         private CustomListColumnTypes GetColumnType(string tagName)
         {
             if (tagName.Contains("BOOLEAN"))
@@ -303,6 +329,7 @@ namespace BacNetExtension.CustomLists
 
             return CustomListColumnTypes.String;
         }
+
         public void WriteProperty(BacnetAddress address, string objectName, string instanceId, string propertyName, string value)
         {
             try
@@ -324,6 +351,7 @@ namespace BacNetExtension.CustomLists
                     Log.Error($"Error: Property {propertyName} not found.");
                     return;
                 }
+
                 var (tag, isArray) = IsPropertyValueArray(address, objectName, instanceId, propertyName);
                 var objectId = new BacnetObjectId(bacnetObject, instance);
                 BacnetValue[] valueList;
@@ -345,6 +373,7 @@ namespace BacNetExtension.CustomLists
                     object convertedValue = ConvertUserInput(value, tag);
                     valueList = new BacnetValue[] { new BacnetValue(tag, convertedValue) };
                 }
+
                 bool result = _client.WritePropertyRequest(address, objectId, propertyId, valueList);
 
                 if (result)
@@ -357,6 +386,7 @@ namespace BacNetExtension.CustomLists
                 Log.Error($"Error writing to BACnet: {ex.Message}");
             }
         }
+
         private (BacnetApplicationTags Tag, bool IsArray) IsPropertyValueArray(BacnetAddress address, string objectName,
             string instance, string propertyName)
         {
