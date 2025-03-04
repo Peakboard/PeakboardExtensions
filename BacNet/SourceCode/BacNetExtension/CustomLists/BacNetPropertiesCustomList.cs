@@ -119,10 +119,27 @@ namespace BacNetExtension.CustomLists
 
                 CustomListObjectElementCollection customListObjectColl = new CustomListObjectElementCollection();
 
-                foreach (var instance in objectInstance.Split(';'))
+                if (objectInstance.Contains('-'))
                 {
-                    CustomListObjectElement item = GetSingleItem(address, objectName, instance);
-                    customListObjectColl.Add(item);
+                    int[] instances = objectInstance
+                        .Split('-')
+                        .Select(int.Parse)
+                        .ToArray();
+                    int[] instancesArray = Enumerable.Range(instances[0], instances[1] - instances[0] + 1).ToArray();
+
+                    foreach (var instance in instancesArray)
+                    {
+                        CustomListObjectElement item = GetSingleItem(address, objectName, instance.ToString());
+                        customListObjectColl.Add(item);
+                    }
+                }
+                else
+                {
+                    foreach (var instance in objectInstance.Split(';'))
+                    {
+                        CustomListObjectElement item = GetSingleItem(address, objectName, instance);
+                        customListObjectColl.Add(item);
+                    }
                 }
 
                 _client.Dispose();
@@ -250,16 +267,33 @@ namespace BacNetExtension.CustomLists
                 throw new ArgumentException($"Error: Object '{objectName}' not found in BACnet map.");
             }
 
-            foreach(var singleInstance in instance.Split(';'))
+            var objectId = default(BacnetObjectId);
+
+            if (instance.Contains('-'))
             {
-                if (!uint.TryParse(singleInstance, out uint objectInstance))
+                foreach (var singleInstance in instance.Split('-'))
                 {
-                    throw new ArgumentException($"Error: '{instance}' is not a valid number.");
+                    if (!uint.TryParse(singleInstance, out uint objectInstance))
+                    {
+                        throw new ArgumentException($"Error: '{instance}' is not a valid number.");
+                    }
                 }
+
+                objectId = new BacnetObjectId(type, uint.Parse(instance.Split('-').First()));
             }
+            else
+            {
+                foreach (var singleInstance in instance.Split(';'))
+                {
+                    if (!uint.TryParse(singleInstance, out uint objectInstance))
+                    {
+                        throw new ArgumentException($"Error: '{instance}' is not a valid number.");
+                    }
+                }
 
-            var objectId = new BacnetObjectId(type, uint.Parse(instance.Split(';').First()));
-
+                objectId = new BacnetObjectId(type, uint.Parse(instance.Split(';').First()));
+            }
+            
             try
             {
                 BacnetPropertyReference[] propertyReferences =
