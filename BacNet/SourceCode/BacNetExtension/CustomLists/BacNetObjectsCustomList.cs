@@ -16,7 +16,6 @@ namespace BacNetExtension.CustomLists
             .Where(e => e.ToString().StartsWith("OBJECT_"))
             .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
 
-        private BacnetClient _client;
         private IList<BacnetValue> _objects = new List<BacnetValue>();
 
         protected override CustomListDefinition GetDefinitionOverride()
@@ -46,9 +45,9 @@ namespace BacNetExtension.CustomLists
                 uint deviceId = uint.Parse(data.Properties["DeviceId"]);
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
-                _client = new BacnetClient(transport);
-                _client.Start();
-                RetrieveAvailableObjects(address, deviceId);
+                BacnetClient client = new BacnetClient(transport);
+                client.Start();
+                RetrieveAvailableObjects(client,address, deviceId);
 
                 CustomListColumnCollection columnCollection = new CustomListColumnCollection();
 
@@ -64,7 +63,7 @@ namespace BacNetExtension.CustomLists
                         addedColumns.Add(columnName);
                     }
                 }
-                _client.Dispose();
+                client.Dispose();
                 return columnCollection;
             }
             catch (Exception ex)
@@ -88,9 +87,9 @@ namespace BacNetExtension.CustomLists
                 uint deviceId = uint.Parse(data.Properties["DeviceId"]);
 
                 var transport = new BacnetIpUdpProtocolTransport(tcpPort);
-                _client = new BacnetClient(transport);
-                _client.Start();
-                RetrieveAvailableObjects(address, deviceId);
+                BacnetClient client = new BacnetClient(transport);
+                client.Start();
+                RetrieveAvailableObjects(client, address, deviceId);
 
                 var objectElementCollection = new CustomListObjectElementCollection();
                 var uniqueColumnNames = _objects.Select(obj => obj.Value.ToString().Split(':')[0]).Distinct().ToList();
@@ -139,25 +138,24 @@ namespace BacNetExtension.CustomLists
                     }
                     objectElementCollection.Add(itemElement);
                 }
-                _client.Dispose();
+                client.Dispose();
                 return objectElementCollection;
             }
             catch (Exception ex)
             {
                 Log.Error(ex.ToString());
-                _client.Dispose();
                 return new CustomListObjectElementCollection();
             }
         }
 
-        private void RetrieveAvailableObjects(BacnetAddress address, uint deviceId)
+        private void RetrieveAvailableObjects(BacnetClient client, BacnetAddress address, uint deviceId)
         {
             var objectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, deviceId);
             var propertyId = BacnetPropertyIds.PROP_OBJECT_LIST;
 
             try
             {
-                if (_client.ReadPropertyRequest(address, objectId, propertyId, out _objects))
+                if (client.ReadPropertyRequest(address, objectId, propertyId, out _objects))
                 {
                     Log.Info($"Objects count = {_objects.Count}");
                 }

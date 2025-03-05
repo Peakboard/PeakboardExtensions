@@ -13,7 +13,6 @@ namespace BacNetExtension.CustomLists
     [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetDevicesCustomList : CustomListBase
     {
-        private BacnetClient _client;
         private List<Device> _devices;
         private DateTime _lastEventTime;
         private const int _timeoutMilliseconds = 2000;
@@ -108,10 +107,10 @@ namespace BacNetExtension.CustomLists
         {
             _devices = new List<Device>();
             var transport = new BacnetIpUdpProtocolTransport(port);
-            _client = new BacnetClient(transport);
-            _client.Start();
-            _client.OnIam += OnIamReceived;
-            _client.WhoIs();
+            BacnetClient client = new BacnetClient(transport);
+            client.Start();
+            client.OnIam += OnIamReceived;
+            client.WhoIs();
 
             _lastEventTime = DateTime.Now;
             Log.Info("Waiting for devices...");
@@ -121,7 +120,7 @@ namespace BacNetExtension.CustomLists
                 await Task.Delay(100);
             }
 
-            _client.Dispose();
+            client.Dispose();
         }
 
         private void OnIamReceived(BacnetClient sender, BacnetAddress adr, uint deviceId, uint maxApdu, BacnetSegmentations segmentation, ushort vendorId)
