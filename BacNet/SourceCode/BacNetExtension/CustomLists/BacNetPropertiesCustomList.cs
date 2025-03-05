@@ -22,8 +22,6 @@ namespace BacNetExtension.CustomLists
             .Where(e => e.ToString().StartsWith("OBJECT_"))
             .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
 
-        private BacnetClient _client;
-
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -63,6 +61,7 @@ namespace BacNetExtension.CustomLists
                 },
             };
         }
+
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
             try
@@ -73,10 +72,11 @@ namespace BacNetExtension.CustomLists
                 string objectInstance = data.Properties["ObjectInstance"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
-                _client = new BacnetClient(transport);
-                _client.Start();
 
-                Dictionary<BacnetPropertyIds,CustomListColumnTypes> values = GetPropetiesWithTypes(adddress, objectName, objectInstance);
+                BacnetClient client = new BacnetClient(transport);
+                client.Start();
+
+                Dictionary<BacnetPropertyIds,CustomListColumnTypes> values = GetPropetiesWithTypes(client, adddress, objectName, objectInstance);
                 CustomListColumnCollection customListCollection = new CustomListColumnCollection();
 
                 foreach (var value in values)
@@ -88,10 +88,10 @@ namespace BacNetExtension.CustomLists
 
                 if (values == null || values.Count <= 0)
                 {
-                    customListCollection.Add(new CustomListColumn("Error see Log", CustomListColumnTypes.String));
+                    throw new Exception("No values found");
                 }
 
-                _client.Dispose();
+                client.Dispose();
                 return customListCollection;
             }
             catch (Exception ex)
@@ -114,8 +114,9 @@ namespace BacNetExtension.CustomLists
                 string objectInstance = data.Properties["ObjectInstance"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
-                _client = new BacnetClient(transport);
-                _client.Start();
+
+                BacnetClient client = new BacnetClient(transport);
+                client.Start();
 
                 CustomListObjectElementCollection customListObjectColl = new CustomListObjectElementCollection();
 
@@ -129,7 +130,7 @@ namespace BacNetExtension.CustomLists
 
                     foreach (var instance in instancesArray)
                     {
-                        CustomListObjectElement item = GetSingleItem(address, objectName, instance.ToString());
+                        CustomListObjectElement item = GetSingleItem(client, address, objectName, instance.ToString());
                         customListObjectColl.Add(item);
                     }
                 }
@@ -137,12 +138,12 @@ namespace BacNetExtension.CustomLists
                 {
                     foreach (var instance in objectInstance.Split(';'))
                     {
-                        CustomListObjectElement item = GetSingleItem(address, objectName, instance);
+                        CustomListObjectElement item = GetSingleItem(client, address, objectName, instance);
                         customListObjectColl.Add(item);
                     }
                 }
 
-                _client.Dispose();
+                client.Dispose();
                 return customListObjectColl;
             }
             catch (Exception ex)
@@ -151,9 +152,9 @@ namespace BacNetExtension.CustomLists
             }
         }
 
-        private CustomListObjectElement GetSingleItem(BacnetAddress address, string objectName, string instance)
+        private CustomListObjectElement GetSingleItem(BacnetClient client, BacnetAddress address, string objectName, string instance)
         {
-            var properties = GetSupportedPropertiesWithValues(address, objectName, instance);
+            var properties = GetSupportedPropertiesWithValues(client, address, objectName, instance);
             CustomListObjectElement item = new CustomListObjectElement();
             List<string> added = new List<string>();
 
@@ -197,8 +198,9 @@ namespace BacNetExtension.CustomLists
             string objectName = data.Properties["ObjectName"];
             string objectInstance = data.Properties["ObjectInstance"];
             var transport = new BacnetIpUdpProtocolTransport(tcpPort);
-            _client = new BacnetClient(transport);
-            _client.Start();
+
+            BacnetClient client = new BacnetClient(transport);
+            client.Start();
 
             string functionName = context.FunctionName;
             switch (functionName)
@@ -206,13 +208,13 @@ namespace BacNetExtension.CustomLists
                 case "WriteData":
                     string propertyName = context.Values[0].StringValue;
                     string value = context.Values[1].StringValue;
-                    WriteProperty(adddress, objectName, objectInstance, propertyName, value);
+                    WriteProperty(client, adddress, objectName, objectInstance, propertyName, value);
                     break;
                 default:
                     break;
             }
 
-            _client.Dispose();
+            client.Dispose();
 
             return new CustomListExecuteReturnContext
                 {
@@ -223,7 +225,7 @@ namespace BacNetExtension.CustomLists
                 };
         }
 
-        private Dictionary<string, string> GetSupportedPropertiesWithValues(BacnetAddress address, string objectName, string instance)
+        private Dictionary<string, string> GetSupportedPropertiesWithValues(BacnetClient client, BacnetAddress address, string objectName, string instance)
         {
             var properties = new Dictionary<string, string>();
             if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
@@ -238,7 +240,7 @@ namespace BacNetExtension.CustomLists
                     new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
 
-                if (_client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
+                if (client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
                 {
                     foreach (var result in results)
                     {
@@ -258,7 +260,7 @@ namespace BacNetExtension.CustomLists
             return properties;
         }
 
-        public Dictionary<BacnetPropertyIds, CustomListColumnTypes> GetPropetiesWithTypes(BacnetAddress address, string objectName, string instance)
+        public Dictionary<BacnetPropertyIds, CustomListColumnTypes> GetPropetiesWithTypes(BacnetClient client, BacnetAddress address, string objectName, string instance)
         {
             var properties = new Dictionary<BacnetPropertyIds, CustomListColumnTypes>();
 
@@ -302,7 +304,7 @@ namespace BacNetExtension.CustomLists
                         System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
 
-                if (!_client.ReadPropertyMultipleRequest(address, objectId, propertyReferences, out var readResults))
+                if (!client.ReadPropertyMultipleRequest(address, objectId, propertyReferences, out var readResults))
                 {
                     Log.Error("Error: Failed to retrieve properties from the BACnet device.");
                     return properties;
@@ -364,7 +366,7 @@ namespace BacNetExtension.CustomLists
             return CustomListColumnTypes.String;
         }
 
-        public void WriteProperty(BacnetAddress address, string objectName, string instanceId, string propertyName, string value)
+        public void WriteProperty(BacnetClient client, BacnetAddress address, string objectName, string instanceId, string propertyName, string value)
         {
             try
             {
@@ -386,7 +388,7 @@ namespace BacNetExtension.CustomLists
                     return;
                 }
 
-                var (tag, isArray) = IsPropertyValueArray(address, objectName, instanceId, propertyName);
+                var (tag, isArray) = IsPropertyValueArray(client, address, objectName, instanceId, propertyName);
                 var objectId = new BacnetObjectId(bacnetObject, instance);
                 BacnetValue[] valueList;
 
@@ -408,7 +410,7 @@ namespace BacNetExtension.CustomLists
                     valueList = new BacnetValue[] { new BacnetValue(tag, convertedValue) };
                 }
 
-                bool result = _client.WritePropertyRequest(address, objectId, propertyId, valueList);
+                bool result = client.WritePropertyRequest(address, objectId, propertyId, valueList);
 
                 if (result)
                     Log.Info($"Property {propertyName} successfully written.");
@@ -421,7 +423,7 @@ namespace BacNetExtension.CustomLists
             }
         }
 
-        private (BacnetApplicationTags Tag, bool IsArray) IsPropertyValueArray(BacnetAddress address, string objectName,
+        private (BacnetApplicationTags Tag, bool IsArray) IsPropertyValueArray(BacnetClient client, BacnetAddress address, string objectName,
             string instance, string propertyName)
         {
             if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
@@ -450,7 +452,7 @@ namespace BacNetExtension.CustomLists
                     new BacnetPropertyReference((uint)bacProp, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
 
-                if (_client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
+                if (client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
                 {
                     foreach (var result in results)
                     {
