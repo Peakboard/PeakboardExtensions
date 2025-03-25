@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Timers;
 
 namespace BacNetExtension.CustomLists
 {
@@ -22,6 +24,11 @@ namespace BacNetExtension.CustomLists
             .Where(e => e.ToString().StartsWith("OBJECT_"))
             .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
 
+        private string _listName;
+        private uint _subscriptionIdCounter;
+        private const uint _subsriptionDuraion = 120;
+        private CustomListObjectElementCollection _oldValues;
+        private Dictionary<uint,Timer> _covTimers = new Dictionary<uint, Timer>();
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -57,7 +64,9 @@ namespace BacNetExtension.CustomLists
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" },
                     new CustomListPropertyDefinition { Name = "Address", Value = "" },
                     new CustomListPropertyDefinition { Name = "ObjectName", Value = "" },
-                    new CustomListPropertyDefinition { Name = "ObjectInstance", Value = "" }
+                    new CustomListPropertyDefinition { Name = "ObjectInstance", Value = "" },
+                    new CustomListPropertyDefinition { Name = "SubscribeCOV", Value = "True" }
+
                 },
             };
         }
@@ -128,11 +137,12 @@ namespace BacNetExtension.CustomLists
                         .ToArray();
                     int[] instancesArray = Enumerable.Range(instances[0], instances[1] - instances[0] + 1).ToArray();
 
-                    foreach (var instance in instancesArray)
-                    {
-                        CustomListObjectElement item = GetSingleItem(client, address, objectName, instance.ToString());
-                        customListObjectColl.Add(item);
-                    }
+                    // foreach (var instance in instancesArray)
+                    // {
+                    //     CustomListObjectElement item = GetSingleItem(client, address, objectName, instance.ToString());
+                    //     customListObjectColl.Add(item);
+                    // }
+                    customListObjectColl = GetMultipleItems(client, address, objectName, instancesArray);
                 }
                 else
                 {
@@ -144,6 +154,7 @@ namespace BacNetExtension.CustomLists
                 }
 
                 client.Dispose();
+                _oldValues = customListObjectColl;
                 return customListObjectColl;
             }
             catch (Exception ex)
@@ -152,6 +163,195 @@ namespace BacNetExtension.CustomLists
             }
         }
 
+        protected override void SetupOverride(CustomListData data)
+        {
+            try
+            {
+                BacnetClient _client;
+                _listName = data.ListName;
+                Log.Info(_listName);
+                if (bool.TryParse(data.Properties["SubscribeCOV"], out bool subscribeCov))
+                {
+                    if (subscribeCov)
+                    {
+                        if (int.TryParse(data.Properties["Port"], out int tcpPort))
+                        {
+                            BacnetAddress address =
+                                new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+                            BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
+                            _client = new BacnetClient(transport);
+                            _client.Start();
+                            _client.OnCOVNotification += HandleCovNotification;
+
+                            string objectName = data.Properties["ObjectName"];
+                            string objectInstance = data.Properties["ObjectInstance"];
+                            int[] instancesArray;
+                            if (objectInstance.Contains('-'))
+                            {
+                                int[] instances = objectInstance
+                                    .Split('-')
+                                    .Select(int.Parse)
+                                    .ToArray();
+                                instancesArray = Enumerable.Range(instances[0], instances[1] - instances[0] + 1).ToArray();
+                            }
+                            else
+                            {
+                                instancesArray = objectInstance.Split(';').Select(int.Parse).ToArray();
+                            }
+
+                            bool getObjectName = _bacnetObjectsMap.TryGetValue(objectName, out var type);
+                            if (!getObjectName) Log.Error("Invalid object name");
+                            else
+                            {
+                                foreach (var instance in instancesArray)
+                                {
+                                    var obj = new BacnetObjectId(type, (uint)instance);
+                                    _subscriptionIdCounter++;
+                                    bool subscribed = _client.SubscribeCOVRequest(address, obj, _subscriptionIdCounter, false, true, _subsriptionDuraion);
+                                    if (subscribed)
+                                    {
+                                        Log.Info("Subscription to the object " + obj + " has been established.");
+                                        Timer timer = new Timer(_subsriptionDuraion * 1000);
+                                        timer.Elapsed += (sender, e) =>
+                                        {
+                                            ReSubscribe(address, objectName, instance, _subsriptionDuraion, _client);
+                                        };
+                                        timer.AutoReset = true;
+                                        timer.Start();
+                                        _covTimers.Add(_subscriptionIdCounter,timer);
+                                    }
+                                    else
+                                       Log.Info("Failed to subscribe to the object " + obj);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            throw new FormatException("The value for 'Port' is not a valid integer.");
+                        }
+                    }
+                }
+                else
+                {
+                    throw new FormatException("The value for 'SubscribeCOV' is not a valid boolean.");
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.ToString());
+            }
+        }
+
+        private void HandleCovNotification(BacnetClient sender, BacnetAddress address, byte invokeId, uint subscriberProcessIdentifier, BacnetObjectId initiatingDeviceIdentifier, BacnetObjectId monitoredObjectIdentifier, uint timeRemaining, bool needConfirm, ICollection<BacnetPropertyValue> values, BacnetMaxSegments maxSegments)
+        {
+            try
+            {
+                if (values == null || values.Count == 0)
+                {
+                    Log.Error("values collection is null or empty.");
+                    return;
+                }
+
+                foreach (var bacnetPropertyValue in values)
+                {
+                    if (values.Count == 1)
+                    {
+                        if (monitoredObjectIdentifier == null)
+                        {
+                            Log.Info("monitoredObjectIdentifier is null.");
+                            continue;
+                        }
+
+                        string[] updatedObject = monitoredObjectIdentifier.ToString().Split(':');
+                        if (updatedObject.Length < 2 || string.IsNullOrEmpty(updatedObject[1]))
+                        {
+                            Log.Info("Invalid updatedObject identifier.");
+                            continue;
+                        }
+
+                        string objectName = "Objectidentifier";
+
+                        if (_bacnetPropertiesMap == null)
+                        {
+                            Log.Info("_bacnetPropertiesMap is null.");
+                            continue;
+                        }
+
+                        var kvp = _bacnetPropertiesMap
+                            .FirstOrDefault(x => x.Value.ToString() == bacnetPropertyValue.ToString());
+
+                        if (kvp.Equals(default(KeyValuePair<string, BacnetValue>)))
+                        {
+                            Log.Info($"Property name not found for bacnetPropertyValue: {bacnetPropertyValue}");
+                            continue;
+                        }
+
+                        string propertyName = kvp.Key;
+
+                        if (_oldValues == null)
+                        {
+                            Log.Info("_oldValues is null.");
+                            continue;
+                        }
+
+                        var item = _oldValues.FirstOrDefault(x =>
+                            x.ContainsKey(objectName) && x[objectName].ToString() == updatedObject[1]);
+
+                        if (item == null)
+                        {
+                            Log.Info($"Item not found for object identifier: {updatedObject[1]}");
+                            continue;
+                        }
+
+                        int indexOfItem = _oldValues.IndexOf(item);
+                        if (indexOfItem == -1)
+                        {
+                            Log.Info($"Item not found in _oldValues for object identifier: {updatedObject[1]}");
+                            continue;
+                        }
+
+                        if (!item.ContainsKey(propertyName))
+                        {
+                            Log.Info($"Property '{propertyName}' not found in item dictionary.");
+                            continue;
+                        }
+
+                        if (bacnetPropertyValue.value == null || bacnetPropertyValue.value.Count == 0)
+                        {
+                            Log.Info($"BacnetPropertyValue.value is null or empty for property {propertyName}");
+                            continue;
+                        }
+
+                        item[propertyName] = bacnetPropertyValue.value[0].Value;
+                        Data?.Push(_listName).Update(indexOfItem, item);
+                    }
+                }
+
+                if (needConfirm)
+                {
+                    sender.SimpleAckResponse(address, BacnetConfirmedServices.SERVICE_CONFIRMED_COV_NOTIFICATION,
+                        invokeId);
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.ToString());
+                throw;
+            }
+        }
+
+        private void ReSubscribe(BacnetAddress address, string objectName, int instance, uint duration, BacnetClient client)
+        {
+            if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
+                Log.Error("Invalid object name");
+            var obj = new BacnetObjectId(type, (uint)instance);
+            _subscriptionIdCounter++;
+            bool subscribed = client.SubscribeCOVRequest(address, obj, _subscriptionIdCounter, false, true, _subsriptionDuraion);
+            if (subscribed)
+                Log.Info("Re-subscription to the object " + obj + " was successful.");
+            else
+                Log.Info("Re-subscription to the object " + obj + " failed.");
+        }
         private CustomListObjectElement GetSingleItem(BacnetClient client, BacnetAddress address, string objectName, string instance)
         {
             var properties = GetSupportedPropertiesWithValues(client, address, objectName, instance);
@@ -190,6 +390,72 @@ namespace BacNetExtension.CustomLists
             return item;
         }
 
+        public CustomListObjectElementCollection GetMultipleItems(BacnetClient client, BacnetAddress address,
+            string objectName, int[] instances)
+        {
+            try
+            {
+                if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
+                    throw new KeyNotFoundException($"BACnet object '{objectName}' not found.");
+                var requstAccess = new List<BacnetReadAccessSpecification>();
+                var requestedPropertys = new BacnetPropertyReference[]
+                {
+                new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL,System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
+                };
+                foreach (var instance in instances)
+                {
+                    var objectId = new BacnetObjectId(type, (uint)instance);
+                    requstAccess.Add(new BacnetReadAccessSpecification(objectId, requestedPropertys));
+                }
+                List<string> added = new List<string>();
+                var item = new CustomListObjectElement();
+                var res = new CustomListObjectElementCollection();
+                if (client.ReadPropertyMultipleRequest(address, requstAccess.ToArray(), out var values))
+                {
+                    foreach (var bacnetReadAccessResult in values)
+                    {
+                        item = new CustomListObjectElement();
+                        added = new List<string>();
+                        foreach (var bacnetPropertyValue in bacnetReadAccessResult.values)
+                        {
+                            string name = ((BacnetPropertyIds)bacnetPropertyValue.property.propertyIdentifier).ToString();
+                            string value = GetPropertyValueAsString(bacnetPropertyValue);
+                            if (!added.Contains(name))
+                            {
+                                string newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == name).Key;
+                                if (newKey != null)
+                                {
+                                    var splitted = value.Split(':');
+                                    if (splitted.Length > 1)
+                                    {
+                                        item.Add(newKey, splitted[1]);
+                                        added.Add(name);
+                                    }
+                                    else
+                                    {
+                                        item.Add(newKey, value);
+                                        added.Add(name);
+                                    }
+                                }
+                                else
+                                {
+                                    item.Add(name, value);
+                                    added.Add(name);
+                                }
+                            }
+                        }
+                        res.Add(item);
+                    }
+                }
+                return res;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e.ToString());
+                throw;
+            }
+           
+        }
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
@@ -239,7 +505,7 @@ namespace BacNetExtension.CustomLists
                 {
                     new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
-
+                
                 if (client.ReadPropertyMultipleRequest(address, objectId, request, out var results))
                 {
                     foreach (var result in results)
