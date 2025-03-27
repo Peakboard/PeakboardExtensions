@@ -55,55 +55,74 @@ namespace ProGloveExtension.CustomLists
                 new CustomListColumn("sort", CustomListColumnTypes.String)
             };
             return columnsColl;
-        }   
+        }
+
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            ProGloveClient proGloveClient = new ProGloveClient(data.Properties["BasedUrl"], data.Properties["ClientId"]);
-            var ath =  proGloveClient.GetAuthenticationResponseAsync(data.Properties["Username"], data.Properties["Password"]).Result;
-            if (ath== null)
+            try
             {
-                Log.Error("Incorrect authorization data");
-                return new CustomListObjectElementCollection();
+                using (ProGloveClient proGloveClient =
+                       new ProGloveClient(data.Properties["BasedUrl"], data.Properties["ClientId"]))
+                {
+                    var ath = proGloveClient
+                        .GetAuthenticationResponseAsync(data.Properties["Username"], data.Properties["Password"])
+                        .Result;
+                    if (ath == null)
+                    {
+                        Log.Error("Incorrect authorization data");
+                        return new CustomListObjectElementCollection();
+                    }
+
+                    string token = ath.AuthenticationResult.IdToken;
+                    var events = proGloveClient.GetEventsAsync(ath.AuthenticationResult.IdToken).Result;
+                    if (events == null)
+                    {
+                        Log.Error("Incorrect authorization data");
+                        return new CustomListObjectElementCollection();
+                    }
+
+                    var items = new CustomListObjectElementCollection();
+                    CustomListObjectElement objectElement = null;
+                    foreach (var item in events.Items)
+                    {
+                        objectElement = new CustomListObjectElement();
+                        objectElement.Add("id", $"{item.Id}");
+                        objectElement.Add("type", $"{item.Type}");
+                        objectElement.Add("created", item.Created);
+                        objectElement.Add("device_battery", item.DeviceBattery);
+                        objectElement.Add("gateway_thing_name", $"{item.GatewayThingName}");
+                        objectElement.Add("gateway_name", $"{item.GatewayName}");
+                        objectElement.Add("gateway_firmware", $"{item.GatewayFirmware}");
+                        objectElement.Add("gateway_os_version", $"{item.GatewayOsVersion}");
+                        objectElement.Add("path", $"{item.Path}");
+                        objectElement.Add("organisation_names",
+                            $"{JsonConvert.SerializeObject(item.OrganisationNames)}");
+                        objectElement.Add("gateway_wifi_ssid", $"{item.GatewayWifiSsid}");
+                        objectElement.Add("gateway_wifi_bssid", $"{item.GatewayWifiBssid}");
+                        objectElement.Add("gateway_wifi_signal_strength", item.GatewayWifiSignalStrength);
+                        objectElement.Add("gateway_wifi_local_ipv4_address", $"{item.GatewayWifiLocalIpv4Address}");
+                        objectElement.Add("gateway_wifi_ap_ipv4_address", $"{item.GatewayWifiApIpv4Address}");
+                        objectElement.Add("gateway_wifi_local_ipv6_addresses",
+                            $"{JsonConvert.SerializeObject(item.GatewayWifiLocalIpv6Addresses)}");
+                        objectElement.Add("gateway_serial", $"{item.GatewaySerial}");
+                        objectElement.Add("next", events.Links.Next);
+                        objectElement.Add("previous", events.Links.Previous);
+                        objectElement.Add("description", events.Metadata.Description);
+                        objectElement.Add("size", events.Metadata.Size);
+                        objectElement.Add("filters", JsonConvert.SerializeObject(events.Metadata.Filters));
+                        objectElement.Add("search", JsonConvert.SerializeObject(events.Metadata.Search));
+                        objectElement.Add("sort", JsonConvert.SerializeObject(events.Metadata.Sort));
+                        items.Add(objectElement);
+                    }
+
+                    return items;
+                }
             }
-            string token = ath.AuthenticationResult.IdToken;
-            var events = proGloveClient.GetEventsAsync(ath.AuthenticationResult.IdToken).Result;
-            if (events == null)
+            catch (Exception e)
             {
-                Log.Error("Incorrect authorization data");
-                return new CustomListObjectElementCollection();
+                Log.Error(e.ToString());
+                throw;
             }
-            var items = new CustomListObjectElementCollection();
-            CustomListObjectElement objectElement = null;
-            foreach (var item in events.Items)
-            {
-                objectElement = new CustomListObjectElement();
-                objectElement.Add("id", $"{item.Id}");
-                objectElement.Add("type", $"{item.Type}");
-                objectElement.Add("created", $"{item.Created}");
-                objectElement.Add("device_battery", $"{item.DeviceBattery}");
-                objectElement.Add("gateway_thing_name", $"{item.GatewayThingName}");
-                objectElement.Add("gateway_name", $"{item.GatewayName}");
-                objectElement.Add("gateway_firmware", $"{item.GatewayFirmware}");
-                objectElement.Add("gateway_os_version", $"{item.GatewayOsVersion}");
-                objectElement.Add("path", $"{item.Path}");
-                objectElement.Add("organisation_names", $"{JsonConvert.SerializeObject(item.OrganisationNames)}");
-                objectElement.Add("gateway_wifi_ssid", $"{item.GatewayWifiSsid}");
-                objectElement.Add("gateway_wifi_bssid", $"{item.GatewayWifiBssid}");
-                objectElement.Add("gateway_wifi_signal_strength", $"{item.GatewayWifiSignalStrength}");
-                objectElement.Add("gateway_wifi_local_ipv4_address", $"{item.GatewayWifiLocalIpv4Address}");
-                objectElement.Add("gateway_wifi_ap_ipv4_address", $"{item.GatewayWifiApIpv4Address}");
-                objectElement.Add("gateway_wifi_local_ipv6_addresses", $"{JsonConvert.SerializeObject(item.GatewayWifiLocalIpv6Addresses)}");
-                objectElement.Add("gateway_serial", $"{item.GatewaySerial}");
-                objectElement.Add("next", events.Links.Next);
-                objectElement.Add("previous", events.Links.Previous);
-                objectElement.Add("description", events.Metadata.Description);
-                objectElement.Add("size", events.Metadata.Size);
-                objectElement.Add("filters", JsonConvert.SerializeObject(events.Metadata.Filters));
-                objectElement.Add("search", JsonConvert.SerializeObject(events.Metadata.Search));
-                objectElement.Add("sort", JsonConvert.SerializeObject(events.Metadata.Sort));
-                items.Add(objectElement);
-            }
-            return items;
         }
     }
 }
