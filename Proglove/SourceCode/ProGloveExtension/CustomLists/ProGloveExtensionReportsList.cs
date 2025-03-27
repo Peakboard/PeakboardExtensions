@@ -21,9 +21,9 @@ namespace ProGloveExtension.CustomLists
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
-                    new CustomListPropertyDefinition(){Name = "ClientId"},
+                    new CustomListPropertyDefinition(){Name = "CustomerID"},
                     new CustomListPropertyDefinition(){Name = "BasedUrl"},
-                    new CustomListPropertyDefinition(){Name = "Username"},
+                    new CustomListPropertyDefinition(){Name = "Email"},
                     new CustomListPropertyDefinition(){Name = "Password",Masked = true}
                 }
             };
@@ -58,13 +58,13 @@ namespace ProGloveExtension.CustomLists
             try
             {
                 using (ProGloveClient proGloveClient =
-                       new ProGloveClient(data.Properties["BasedUrl"], data.Properties["ClientId"]))
+                       new ProGloveClient(data.Properties["BasedUrl"], data.Properties["CustomerID"]))
                 {
                     var customList = new CustomListObjectElementCollection();
                     CustomListObjectElement objectElement = null;
 
                     var ath = proGloveClient
-                        .GetAuthenticationResponseAsync(data.Properties["Username"], data.Properties["Password"])
+                        .GetAuthenticationResponseAsync(data.Properties["Email"], data.Properties["Password"])
                         .Result;
                     if (ath == null)
                     {
