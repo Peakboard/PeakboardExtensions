@@ -14,10 +14,10 @@ namespace ProGlove.Models
         public string District { get; set; }
 
         [JsonProperty("latitude")]
-        public string Latitude { get; set; }
+        public double? Latitude { get; set; }
 
         [JsonProperty("longitude")]
-        public string Longitude { get; set; }
+        public double? Longitude { get; set; }
 
         [JsonProperty("postal_code")]
         public string PostalCode { get; set; }
