@@ -4,10 +4,6 @@ using ProGlove;
 using ProGlove.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Timers;
-using System.Threading.Tasks;
 
 namespace ProGloveExtension.CustomLists
 {
@@ -61,17 +57,21 @@ namespace ProGloveExtension.CustomLists
         {
             try
             {
-                using (ProGloveClient proGloveClient = new ProGloveClient(data.Properties["BasedUrl"], data.Properties["ClientId"]))
+                using (ProGloveClient proGloveClient =
+                       new ProGloveClient(data.Properties["BasedUrl"], data.Properties["ClientId"]))
                 {
                     var customList = new CustomListObjectElementCollection();
                     CustomListObjectElement objectElement = null;
-                
-                    var ath = proGloveClient.GetAuthenticationResponseAsync(data.Properties["Username"], data.Properties["Password"]).Result;
+
+                    var ath = proGloveClient
+                        .GetAuthenticationResponseAsync(data.Properties["Username"], data.Properties["Password"])
+                        .Result;
                     if (ath == null)
                     {
                         Log.Error("Incorrect authorization data");
                         return new CustomListObjectElementCollection();
                     }
+
                     string token = ath.AuthenticationResult.IdToken;
                     var gateways = proGloveClient.GetGatewaysOrganisationAsync(token).Result;
                     List<string> organisationIds = new List<string>();
@@ -95,6 +95,7 @@ namespace ProGloveExtension.CustomLists
                             }
                         }
                     }
+
                     Log.Info($"ids count = {organisationIds.Count}");
                     List<string> addedReportId = new List<string>();
                     foreach (var item in organisationIds)
@@ -108,7 +109,7 @@ namespace ProGloveExtension.CustomLists
                             {
                                 if (!addedReportId.Contains(report.Id))
                                 {
-                                
+
                                     objectElement = new CustomListObjectElement();
                                     objectElement.Add("Id", $"{report.Id ?? "null"}");
                                     objectElement.Add("Title", $"{report.Title ?? "null"}");
@@ -121,22 +122,31 @@ namespace ProGloveExtension.CustomLists
                                     if (report.Thumbnail != null)
                                     {
                                         objectElement.Add("ThumbnailUrl", $"{report.Thumbnail.Url ?? "null"}");
-                                        objectElement.Add("ThumbnailAttachmentSortKey", report.Thumbnail?.AttachmentSortKey);
+                                        objectElement.Add("ThumbnailAttachmentSortKey",
+                                            report.Thumbnail?.AttachmentSortKey);
                                     }
                                     else
                                     {
                                         objectElement.Add("ThumbnailUrl", "null");
                                         objectElement.Add("ThumbnailAttachmentSortKey", "null");
                                     }
+
                                     objectElement.Add("Next", $"{photoReports.Links?.Next ?? "null"}");
                                     objectElement.Add("Previous", $"{photoReports.Links?.Previous ?? "null"}");
                                     if (photoReports.Metadata != null)
                                     {
-                                        objectElement.Add("Description", $"{photoReports.Metadata.Description ?? "null"}");
+                                        objectElement.Add("Description",
+                                            $"{photoReports.Metadata.Description ?? "null"}");
                                         objectElement.Add("Size", photoReports.Metadata.Size);
-                                        objectElement.Add("Filters", JsonConvert.SerializeObject(photoReports.Metadata.Filters ?? new List<Filter>()));
-                                        objectElement.Add("Search", JsonConvert.SerializeObject(photoReports.Metadata.Search ?? new List<object>()));
-                                        objectElement.Add("Sort", JsonConvert.SerializeObject(photoReports.Metadata.Sort ?? new List<Sort>()));
+                                        objectElement.Add("Filters",
+                                            JsonConvert.SerializeObject(photoReports.Metadata.Filters ??
+                                                                        new List<Filter>()));
+                                        objectElement.Add("Search",
+                                            JsonConvert.SerializeObject(photoReports.Metadata.Search ??
+                                                                        new List<object>()));
+                                        objectElement.Add("Sort",
+                                            JsonConvert.SerializeObject(photoReports.Metadata.Sort ??
+                                                                        new List<Sort>()));
                                     }
                                     else
                                     {
@@ -146,11 +156,12 @@ namespace ProGloveExtension.CustomLists
                                         objectElement.Add("Search", "null");
                                         objectElement.Add("Sort", "null");
                                     }
+
                                     customList.Add(objectElement);
                                     addedReportId.Add(report.Id);
                                     Log.Info($"CustomList count = {customList.Count}");
                                 }
-                            
+
                             }
                         }
                     }
@@ -158,12 +169,12 @@ namespace ProGloveExtension.CustomLists
                     return customList;
                 }
             }
+           
             catch (Exception e)
             {
                 Log.Error(e.ToString());
                 throw;
             }
-           
         }
     }
 }

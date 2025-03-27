@@ -70,7 +70,7 @@ namespace ProGlove
 
             if (!response.IsSuccessStatusCode)
             {
-                throw new UnauthorizedAccessException($"Authentication failed. Status code: {response.StatusCode}");
+                throw new UnauthorizedAccessException($"Authentication failed: INVALID USERNAME OR PASSWORD!. Status code: {response.StatusCode}");
             }
 
             var responseBody = await response.Content.ReadAsStringAsync();
