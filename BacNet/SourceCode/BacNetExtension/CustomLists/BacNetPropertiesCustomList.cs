@@ -52,6 +52,12 @@ namespace BacNetExtension.CustomLists
                             },
                             new CustomListFunctionInputParameterDefinition()
                             {
+                                Name = "InstanceOffObject",
+                                Description = "Enter BACnet property (e.g., Present Value): ",
+                                Type = CustomListFunctionParameterTypes.String,
+                            },
+                            new CustomListFunctionInputParameterDefinition()
+                            {
                                 Name = "Value",
                                 Description = "Enter value:",
                                 Type = CustomListFunctionParameterTypes.String,
@@ -137,11 +143,6 @@ namespace BacNetExtension.CustomLists
                         .ToArray();
                     int[] instancesArray = Enumerable.Range(instances[0], instances[1] - instances[0] + 1).ToArray();
 
-                    // foreach (var instance in instancesArray)
-                    // {
-                    //     CustomListObjectElement item = GetSingleItem(client, address, objectName, instance.ToString());
-                    //     customListObjectColl.Add(item);
-                    // }
                     customListObjectColl = GetMultipleItems(client, address, objectName, instancesArray);
                 }
                 else
@@ -211,7 +212,7 @@ namespace BacNetExtension.CustomLists
                                     if (subscribed)
                                     {
                                         Log.Info("Subscription to the object " + obj + " has been established.");
-                                        Timer timer = new Timer(_subsriptionDuraion * 1000);
+                                        Timer timer = new Timer((_subsriptionDuraion/2) * 1000);
                                         timer.Elapsed += (sender, e) =>
                                         {
                                             ReSubscribe(address, objectName, instance, _subsriptionDuraion, _client);
@@ -400,13 +401,15 @@ namespace BacNetExtension.CustomLists
                 var requstAccess = new List<BacnetReadAccessSpecification>();
                 var requestedPropertys = new BacnetPropertyReference[]
                 {
-                new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL,System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
+                    new BacnetPropertyReference((uint)BacnetPropertyIds.PROP_ALL,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
                 foreach (var instance in instances)
                 {
                     var objectId = new BacnetObjectId(type, (uint)instance);
                     requstAccess.Add(new BacnetReadAccessSpecification(objectId, requestedPropertys));
                 }
+
                 List<string> added = new List<string>();
                 var item = new CustomListObjectElement();
                 var res = new CustomListObjectElementCollection();
@@ -418,11 +421,13 @@ namespace BacNetExtension.CustomLists
                         added = new List<string>();
                         foreach (var bacnetPropertyValue in bacnetReadAccessResult.values)
                         {
-                            string name = ((BacnetPropertyIds)bacnetPropertyValue.property.propertyIdentifier).ToString();
+                            string name =
+                                ((BacnetPropertyIds)bacnetPropertyValue.property.propertyIdentifier).ToString();
                             string value = GetPropertyValueAsString(bacnetPropertyValue);
                             if (!added.Contains(name))
                             {
-                                string newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == name).Key;
+                                string newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == name)
+                                    .Key;
                                 if (newKey != null)
                                 {
                                     var splitted = value.Split(':');
@@ -444,9 +449,11 @@ namespace BacNetExtension.CustomLists
                                 }
                             }
                         }
+
                         res.Add(item);
                     }
                 }
+
                 return res;
             }
             catch (Exception e)
@@ -454,7 +461,6 @@ namespace BacNetExtension.CustomLists
                 Log.Error(e.ToString());
                 throw;
             }
-           
         }
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
@@ -473,8 +479,9 @@ namespace BacNetExtension.CustomLists
             {
                 case "WriteData":
                     string propertyName = context.Values[0].StringValue;
-                    string value = context.Values[1].StringValue;
-                    WriteProperty(client, adddress, objectName, objectInstance, propertyName, value);
+                    string instance = context.Values[1].StringValue;
+                    string value = context.Values[2].StringValue;
+                    WriteProperty(client, adddress, objectName, instance, propertyName, value);
                     break;
                 default:
                     break;
