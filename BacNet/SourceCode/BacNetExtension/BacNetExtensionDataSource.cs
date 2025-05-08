@@ -24,7 +24,7 @@ namespace BacNetExtension
             ID = "BacNetExtension", 
             Name = "BacNet",
             Description = "Description",
-            Version = "1.0",
+            Version = "1.1",
             Author = "Makhsum",
             Company = "Peakboard",
             Copyright = "Your Copyright" 
