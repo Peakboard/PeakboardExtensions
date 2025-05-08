@@ -69,8 +69,8 @@ namespace BacNetExtension.CustomLists
                 {
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" },
                     new CustomListPropertyDefinition { Name = "Address", Value = "" },
-                    new CustomListPropertyDefinition { Name = "ObjectName", Value = "" },
-                    new CustomListPropertyDefinition { Name = "ObjectInstance", Value = "" },
+                    new CustomListPropertyDefinition { Name = "Type", Value = "" },
+                    new CustomListPropertyDefinition { Name = "Instancenumber", Value = "" },
                     new CustomListPropertyDefinition { Name = "SubscribeCOV", Value = "True" }
 
                 },
@@ -83,8 +83,8 @@ namespace BacNetExtension.CustomLists
             {
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-                string objectName = data.Properties["ObjectName"];
-                string objectInstance = data.Properties["ObjectInstance"];
+                string objectName = data.Properties["Type"];
+                string objectInstance = data.Properties["Instancenumber"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
 
@@ -125,8 +125,8 @@ namespace BacNetExtension.CustomLists
             {
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-                string objectName = data.Properties["ObjectName"];
-                string objectInstance = data.Properties["ObjectInstance"];
+                string objectName = data.Properties["Type"];
+                string objectInstance = data.Properties["Instancenumber"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
 
