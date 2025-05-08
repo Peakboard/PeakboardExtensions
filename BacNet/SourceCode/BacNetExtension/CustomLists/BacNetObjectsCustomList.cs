@@ -59,9 +59,9 @@ namespace BacNetExtension.CustomLists
         {
             try
             {
-                int tcpPort = int.Parse("47808");
-                var address = new BacnetAddress(BacnetAddressTypes.IP, "192.168.193.92:52193");
-                uint deviceId = uint.Parse("1228812");
+                int tcpPort = int.Parse(data.Properties["Port"]);
+                BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+                uint deviceId = uint.Parse(data.Properties["DeviceId"]);
 
                 var transport = new BacnetIpUdpProtocolTransport(tcpPort);
                 BacnetClient client = new BacnetClient(transport);
