@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Timers;
 
 namespace BacNetExtension.CustomLists
@@ -72,7 +71,6 @@ namespace BacNetExtension.CustomLists
                     new CustomListPropertyDefinition { Name = "Type", Value = "" },
                     new CustomListPropertyDefinition { Name = "Instancenumber", Value = "" },
                     new CustomListPropertyDefinition { Name = "SubscribeCOV", Value = "True" }
-
                 },
             };
         }
@@ -449,7 +447,6 @@ namespace BacNetExtension.CustomLists
                                 }
                             }
                         }
-
                         res.Add(item);
                     }
                 }
@@ -482,8 +479,6 @@ namespace BacNetExtension.CustomLists
                     string instance = context.Values[1].StringValue;
                     string value = context.Values[2].StringValue;
                     WriteProperty(client, adddress, objectName, instance, propertyName, value);
-                    break;
-                default:
                     break;
             }
 

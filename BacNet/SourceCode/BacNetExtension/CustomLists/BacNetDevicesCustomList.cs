@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.IO.BACnet;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace BacNetExtension.CustomLists
@@ -48,55 +47,47 @@ namespace BacNetExtension.CustomLists
         {
             var task = Task.Run(async () =>
             {
-                try
+                if (int.TryParse(data.Properties["Port"], out int tcpPort))
                 {
-                    if (int.TryParse(data.Properties["Port"], out int tcpPort))
+                    var objectElementCollection = new CustomListObjectElementCollection();
+
+                    try
                     {
-                        var objectElementCollection = new CustomListObjectElementCollection();
-
-                        try
-                        {
-                            await StartConnection(tcpPort);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error($"Error while starting connection: {ex}");
-                            return objectElementCollection;
-                        }
-
-                        if (_devices != null && _devices.Count > 0)
-                        {
-                            foreach (var device in _devices)
-                            {
-                                Log.Info($"Device found: Address={device.Address}, DeviceID={device.DeviceId}, VendorID={device.VendorId}");
-                                var itemElement = new CustomListObjectElement()
-                                {
-                                    { "Address", device.Address.ToString() },
-                                    { "DeviceID", device.DeviceId },
-                                    { "MaxAdpu", device.MaxAdpu },
-                                    { "Segmentation", device.Segmentation.ToString() },
-                                    { "VendorID", device.VendorId.ToString() }
-                                };
-                                objectElementCollection.Add(itemElement);
-                            }
-                        }
-                        else
-                        {
-                            Log.Info("No devices found.");
-                        }
-
+                        await StartConnection(tcpPort);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error($"Error while starting connection: {ex}");
                         return objectElementCollection;
+                    }
+
+                    if (_devices != null && _devices.Count > 0)
+                    {
+                        foreach (var device in _devices)
+                        {
+                            Log.Info(
+                                $"Device found: Address={device.Address}, DeviceID={device.DeviceId}, VendorID={device.VendorId}");
+                            var itemElement = new CustomListObjectElement()
+                            {
+                                {"Address", device.Address.ToString()},
+                                {"DeviceID", device.DeviceId},
+                                {"MaxAdpu", device.MaxAdpu},
+                                {"Segmentation", device.Segmentation.ToString()},
+                                {"VendorID", device.VendorId.ToString()}
+                            };
+                            objectElementCollection.Add(itemElement);
+                        }
                     }
                     else
                     {
-                        throw new ArgumentException(
-                            "Invalid port number. Please ensure that the port is a valid integer.");
+                        Log.Info("No devices found.");
                     }
+
+                    return objectElementCollection;
                 }
-                catch (Exception e)
-                {
-                    throw;
-                }
+
+                throw new ArgumentException(
+                    "Invalid port number. Please ensure that the port is a valid integer.");
             });
 
             task.Wait();
