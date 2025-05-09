@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
+using BacNetExtension.Helpers;
 using Newtonsoft.Json;
 
 namespace BacNetExtension.CustomLists
@@ -12,18 +13,17 @@ namespace BacNetExtension.CustomLists
     [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetObjectsCustomList : CustomListBase
     {
-        private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectMap = Enum.GetValues(typeof(BacnetObjectTypes))
+        private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectNameToTypeMap = Enum.GetValues(typeof(BacnetObjectTypes))
             .Cast<BacnetObjectTypes>()
             .Where(e => e.ToString().StartsWith("OBJECT_"))
-            .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
-
-        private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectsMap = Enum.GetValues(typeof(BacnetObjectTypes))
-            .Cast<BacnetObjectTypes>()
-            .Where(e => e.ToString().StartsWith("OBJECT_"))
-            .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
+            .ToDictionary(
+                e => StringHelper.ToPascalCase(e.ToString().Replace("OBJECT_", "")),
+                e => e
+            );
+        
 
         private IList<BacnetValue> _objects = new List<BacnetValue>();
-        private string[] _propertyNames = { "ObjectName", "PresentValue", "Unit", "StatusFlags", "Description", "Type","Instancenumber","Props" };
+        private string[] _propertyNames = { "ObjectName", "PresentValue", "Unit", "StatusFlags", "Description", "Type","InstanceNumber","Props" };
 
         protected override CustomListDefinition GetDefinitionOverride()
         {
@@ -54,8 +54,10 @@ namespace BacNetExtension.CustomLists
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            try
-            {
+            // try
+
+         
+            // {
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 uint deviceId = uint.Parse(data.Properties["DeviceId"]);
@@ -66,73 +68,84 @@ namespace BacNetExtension.CustomLists
                 RetrieveAvailableObjects(client, address, deviceId);
 
                 var objectElementCollection = new CustomListObjectElementCollection();
-    
+
                 foreach (var item in _objects)
                 {
-                    var itemElement = new CustomListObjectElement();
-                    string[] nameWithInstance = item.ToString().Split(':');
-                    if (nameWithInstance.Length > 1)
+                    try
                     {
-                        string objectName = nameWithInstance[0];
-                        string objectInstance = nameWithInstance[1];
-                        string mappedName = _bacnetObjectMap.FirstOrDefault(b => b.Value.ToString() == objectName).Key ?? objectName;
-                       
-                        for (int i = 0; i < _propertyNames.Length; i++)
+                        var itemElement = new CustomListObjectElement();
+                        string[] nameWithInstance = item.ToString().Split(':');
+                        if (nameWithInstance.Length > 1)
                         {
-                            //Type
-                            if (i==5)
-                            {
-                                itemElement.Add(_propertyNames[i], mappedName);
-                                continue;
-                            }
-                            
-                            //Instance number
-                            if (i==6)
-                            {
-                                itemElement.Add(_propertyNames[i], objectInstance);
-                                continue;
-                            }
-                            
-                            string rawValue = GetPropertyValue(client, address, mappedName, objectInstance, _propertyNames[i]);
-                            string value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY")?"":rawValue;
-                            
-                            //if _propertyNames[i] == "Unit"
-                            if (i==2)
-                            {
-                                switch (rawValue)
-                                {
-                                    case "62":
-                                        value = "\u00b0C";
-                                        break;
-                                    case "90":
-                                        value = "\u00b0";
-                                        break;
-                                    case "66":
-                                        value = "\u00b0F·d";
-                                        break;
-                                    case "65":
-                                        value = "\u00b0C·d";
-                                        break;
-                                    case "91":
-                                        value = "\u00b0C/h";
-                                        break;
-                                }
-                            }
-                           
-                            itemElement.Add(_propertyNames[i], value);
-                        }
-                        
-                    }
-                    objectElementCollection.Add(itemElement);
+                            string objectName = nameWithInstance[0];
+                            string objectInstance = nameWithInstance[1];
+                            string mappedName =
+                                _bacnetObjectNameToTypeMap.FirstOrDefault(b => b.Value.ToString() == objectName).Key ??
+                                objectName;
 
+                            for (int i = 0; i < _propertyNames.Length; i++)
+                            {
+                                //Type
+                                if (i == 5)
+                                {
+                                    itemElement.Add(_propertyNames[i], mappedName);
+                                    continue;
+                                }
+
+                                //Instance number
+                                if (i == 6)
+                                {
+                                    itemElement.Add(_propertyNames[i], objectInstance);
+                                    continue;
+                                }
+
+                                string rawValue = GetPropertyValue(client, address, mappedName, objectInstance,
+                                    _propertyNames[i]);
+                                string value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY")
+                                    ? ""
+                                    : rawValue;
+
+                                //if _propertyNames[i] == "Unit"
+                                if (i == 2)
+                                {
+                                    switch (rawValue)
+                                    {
+                                        case "62":
+                                            value = "\u00b0C";
+                                            break;
+                                        case "90":
+                                            value = "\u00b0";
+                                            break;
+                                        case "66":
+                                            value = "\u00b0F·d";
+                                            break;
+                                        case "65":
+                                            value = "\u00b0C·d";
+                                            break;
+                                        case "91":
+                                            value = "\u00b0C/h";
+                                            break;
+                                    }
+                                }
+
+                                itemElement.Add(_propertyNames[i], value);
+                            }
+                        }
+
+                        objectElementCollection.Add(itemElement);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e.ToString());
+                    }
                 }
                 client.Dispose();
                 return objectElementCollection;
-            }
-            catch (Exception ex)
-            {
-               throw new Exception($"Error retrieving BACnet objects: {ex.Message}", ex);
-            }
+            
+            // catch (Exception ex)
+            // {
+            //    throw new Exception($"Error retrieving BACnet objects: {ex.Message}", ex);
+            // }
         }
 
         private void RetrieveAvailableObjects(BacnetClient client, BacnetAddress address, uint deviceId)
@@ -158,7 +171,7 @@ namespace BacNetExtension.CustomLists
         private string GetPropertyValue(BacnetClient client, BacnetAddress address, string objectName, string instance,
             string propertyName)
         {
-            if (!_bacnetObjectsMap.TryGetValue(objectName, out var type))
+            if (!_bacnetObjectNameToTypeMap.TryGetValue(objectName, out var type))
                 throw new ArgumentException($"Invalid object name: {objectName}");
             if (!uint.TryParse(instance, out uint objectInstance))
                 throw new ArgumentException($"Invalid object instance: {instance}");

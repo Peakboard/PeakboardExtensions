@@ -66,6 +66,7 @@
     <Compile Include="BacNetExtensionDataSource.cs" />
     <Compile Include="CustomLists\BacNetObjectsCustomList.cs" />
     <Compile Include="CustomLists\BacNetPropertiesCustomList.cs" />
+    <Compile Include="Helpers\StringHelper.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -78,6 +79,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

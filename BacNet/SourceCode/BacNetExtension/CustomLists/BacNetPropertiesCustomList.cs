@@ -6,6 +6,7 @@ using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
 using System.Timers;
+using BacNetExtension.Helpers;
 
 namespace BacNetExtension.CustomLists
 {
@@ -16,12 +17,20 @@ namespace BacNetExtension.CustomLists
         private readonly Dictionary<string, BacnetPropertyIds> _bacnetPropertiesMap = Enum.GetValues(typeof(BacnetPropertyIds))
             .Cast<BacnetPropertyIds>()
             .Where(e => e.ToString().StartsWith("PROP_"))
-            .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("PROP_", "").Replace("_", "").ToLower()), e => e);
+            .ToDictionary(
+                e => StringHelper.ToPascalCase(e.ToString().Replace("PROP_", "")),
+                e => e,
+                StringComparer.OrdinalIgnoreCase // Ignore case when comparing keys
+            );
 
         private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectsMap = Enum.GetValues(typeof(BacnetObjectTypes))
             .Cast<BacnetObjectTypes>()
             .Where(e => e.ToString().StartsWith("OBJECT_"))
-            .ToDictionary(e => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(e.ToString().Replace("OBJECT_", "").Replace("_", "").ToLower()), e => e);
+            .ToDictionary(
+                e => StringHelper.ToPascalCase(e.ToString().Replace("OBJECT_", "")),
+                e => e,
+                StringComparer.OrdinalIgnoreCase // Ignore case when comparing keys
+            );
 
         private string _listName;
         private uint _subscriptionIdCounter;
@@ -69,7 +78,7 @@ namespace BacNetExtension.CustomLists
                     new CustomListPropertyDefinition { Name = "Port", Value = "47808" },
                     new CustomListPropertyDefinition { Name = "Address", Value = "" },
                     new CustomListPropertyDefinition { Name = "Type", Value = "" },
-                    new CustomListPropertyDefinition { Name = "Instancenumber", Value = "" },
+                    new CustomListPropertyDefinition { Name = "InstanceNumber", Value = "" },
                     new CustomListPropertyDefinition { Name = "SubscribeCOV", Value = "True" }
                 },
             };
@@ -82,7 +91,7 @@ namespace BacNetExtension.CustomLists
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 string objectName = data.Properties["Type"];
-                string objectInstance = data.Properties["Instancenumber"];
+                string objectInstance = data.Properties["InstanceNumber"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
 
@@ -124,7 +133,7 @@ namespace BacNetExtension.CustomLists
                 int tcpPort = int.Parse(data.Properties["Port"]);
                 BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 string objectName = data.Properties["Type"];
-                string objectInstance = data.Properties["Instancenumber"];
+                string objectInstance = data.Properties["InstanceNumber"];
 
                 BacnetIpUdpProtocolTransport transport = new BacnetIpUdpProtocolTransport(tcpPort);
 
@@ -182,8 +191,8 @@ namespace BacNetExtension.CustomLists
                             _client.Start();
                             _client.OnCOVNotification += HandleCovNotification;
 
-                            string objectName = data.Properties["ObjectName"];
-                            string objectInstance = data.Properties["ObjectInstance"];
+                            string objectName = data.Properties["Type"];
+                            string objectInstance = data.Properties["InstanceNumber"];
                             int[] instancesArray;
                             if (objectInstance.Contains('-'))
                             {
@@ -464,8 +473,8 @@ namespace BacNetExtension.CustomLists
         {
             int tcpPort = int.Parse(data.Properties["Port"]);
             BacnetAddress adddress = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-            string objectName = data.Properties["ObjectName"];
-            string objectInstance = data.Properties["ObjectInstance"];
+            string objectName = data.Properties["Type"];
+            string objectInstance = data.Properties["InstanceNumber"];
             var transport = new BacnetIpUdpProtocolTransport(tcpPort);
 
             BacnetClient client = new BacnetClient(transport);
