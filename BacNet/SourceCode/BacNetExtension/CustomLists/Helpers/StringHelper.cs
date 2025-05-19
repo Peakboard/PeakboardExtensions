@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace BacNetExtension.Helpers
+namespace BacNetExtension.CustomLists.Helpers
 {
     public static class StringHelper
     {
-        public static string ToPascalCase(string input)
+        public static string ToPascalCase(this string input)
         {
             if (string.IsNullOrEmpty(input))
                 return input;

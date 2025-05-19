@@ -12,6 +12,7 @@
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -48,6 +49,7 @@
     </Reference>
     <Reference Include="Peakboard.ExtensionKit, Version=1.0.0.0, Culture=neutral, PublicKeyToken=4593b27661b5fb0b, processorArchitecture=AMD64">
       <HintPath>..\packages\Peakboard.ExtensionKit.3.2.0\lib\net462\Peakboard.ExtensionKit.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="SharpPcap, Version=4.2.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\SharpPcap.4.2.0\lib\net\SharpPcap.dll</HintPath>
@@ -66,7 +68,13 @@
     <Compile Include="BacNetExtensionDataSource.cs" />
     <Compile Include="CustomLists\BacNetObjectsCustomList.cs" />
     <Compile Include="CustomLists\BacNetPropertiesCustomList.cs" />
-    <Compile Include="Helpers\StringHelper.cs" />
+    <Compile Include="CustomLists\Constans\ExtensionConstans.cs" />
+    <Compile Include="CustomLists\Helpers\BacNetHelper.cs" />
+    <Compile Include="CustomLists\Helpers\BacNetLoggingHelper.cs" />
+    <Compile Include="CustomLists\Helpers\StringHelper.cs" />
+    <Compile Include="CustomLists\Services\BacNetPropertyReader.cs" />
+    <Compile Include="CustomLists\Services\BacNetPropertyWriter.cs" />
+    <Compile Include="CustomLists\Services\BacNetSubscriptionManager.cs" />
     <Compile Include="Models\Device.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -75,6 +83,8 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="pb_datasource_bacnet.png" />
+    <Content Include="ReadSinglePropDescr.xml" />
+    <Content Include="ReadSinglePropDescrDefault.xml" />
     <Content Include="Extension.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
