@@ -1,6 +1,5 @@
 ﻿using System.IO.BACnet;
 
-
 namespace BacNetExtension.Models
 {
     public class Device

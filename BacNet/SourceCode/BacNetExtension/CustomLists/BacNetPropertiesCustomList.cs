@@ -23,6 +23,7 @@ namespace BacNetExtension.CustomLists
         private BacNetPropertyWriter _propertyWriter;
         private BacNetSubscriptionManager _subscriptionManager;
         private readonly Action<string,string> _logger;
+        
         public BacNetPropertiesCustomList()
         {
             _bacnetPropertiesMap = Enum.GetValues(typeof(BacnetPropertyIds))
@@ -334,9 +335,7 @@ namespace BacNetExtension.CustomLists
                 Data?.Push(_listName).Update(index, item);
             }
         }
-
-       
-
+        
         private string[] GetInstancesFromRange(string range)
         {
             var instances = range.Split('-')
@@ -346,7 +345,7 @@ namespace BacNetExtension.CustomLists
                 .Select(i => i.ToString())
                 .ToArray();
         }
-
+        
         private CustomListObjectElement CreateItemElement(Dictionary<string, string> properties)
         {
             var item = new CustomListObjectElement();
@@ -365,6 +364,7 @@ namespace BacNetExtension.CustomLists
             }
             return item;
         }
+        
         private void Logger(string logType, string message)
         {
             switch (logType)
