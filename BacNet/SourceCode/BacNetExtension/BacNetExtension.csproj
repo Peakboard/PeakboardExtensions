@@ -68,7 +68,7 @@
     <Compile Include="BacNetExtensionDataSource.cs" />
     <Compile Include="CustomLists\BacNetObjectsCustomList.cs" />
     <Compile Include="CustomLists\BacNetPropertiesCustomList.cs" />
-    <Compile Include="CustomLists\Constans\ExtensionConstans.cs" />
+    <Compile Include="CustomLists\Сonstants\ExtensionConstans.cs" />
     <Compile Include="CustomLists\Helpers\BacNetHelper.cs" />
     <Compile Include="CustomLists\Helpers\BacNetLoggingHelper.cs" />
     <Compile Include="CustomLists\Helpers\StringHelper.cs" />

@@ -1,12 +1,9 @@
 ﻿using Peakboard.ExtensionKit;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO.BACnet;
 using System.Linq;
 using Newtonsoft.Json;
-using System.IO;
-using System.Xml.Serialization;
 using BacNetExtension.CustomLists.Helpers;
 
 namespace BacNetExtension.CustomLists
@@ -249,7 +246,6 @@ namespace BacNetExtension.CustomLists
                             : "Unknown status";
                 }
             }
-            
             
             if (values.Length == 1)
                 return values[0].Value?.ToString();
