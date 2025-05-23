@@ -191,10 +191,10 @@ namespace WheelMe
                             item.NavigatingToPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.NavigatingToPositionId);
                             item.CurrentPositionId = row["currentPositionId"]?.ToString();
                             item.CurrentPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.CurrentPositionId);
-                            item.ChargeStateTL = double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeSTate"]?.ToString());
-                            item.ChargeStateTR = double.Parse(row["robotState"]?["batteryInfo"]?["trChargeSTate"]?.ToString());
-                            item.ChargeStateBL = double.Parse(row["robotState"]?["batteryInfo"]?["blChargeSTate"]?.ToString());
-                            item.ChargeStateBR = double.Parse(row["robotState"]?["batteryInfo"]?["brChargeSTate"]?.ToString());
+                            item.ChargeStateTL = double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeSTate"]?.ToString() ?? "0");
+                            item.ChargeStateTR = double.Parse(row["robotState"]?["batteryInfo"]?["trChargeSTate"]?.ToString() ?? "0");
+                            item.ChargeStateBL = double.Parse(row["robotState"]?["batteryInfo"]?["blChargeSTate"]?.ToString() ?? "0");
+                            item.ChargeStateBR = double.Parse(row["robotState"]?["batteryInfo"]?["brChargeSTate"]?.ToString() ?? "0");
                             items.Add(item);
                         }
                     }
