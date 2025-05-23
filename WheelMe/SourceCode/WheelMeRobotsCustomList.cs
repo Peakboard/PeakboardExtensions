@@ -160,8 +160,8 @@ namespace WheelMe
                 item.Add("ChargeStateTR", row.ChargeStateTR);
                 item.Add("ChargeStateBL", row.ChargeStateBL);
                 item.Add("ChargeStateBR", row.ChargeStateBR);
-                item.Add("ChargeStateBR", row.IsRobotCharging);
-                item.Add("ChargeStateBR", row.StuckReason);
+                item.Add("IsRobotCharging", row.IsRobotCharging);
+                item.Add("StuckReason", row.StuckReason);
                 items.Add(item);
             }
             return items;
