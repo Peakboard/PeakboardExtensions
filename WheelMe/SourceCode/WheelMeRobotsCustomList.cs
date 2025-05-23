@@ -130,6 +130,10 @@ namespace WheelMe
             columns.Add(new CustomListColumn("NavigatingToPositionName", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("CurrentPositionId", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("CurrentPositionName", CustomListColumnTypes.String));
+            columns.Add(new CustomListColumn("ChargeStateTL", CustomListColumnTypes.Number));
+            columns.Add(new CustomListColumn("ChargeStateTR", CustomListColumnTypes.Number));
+            columns.Add(new CustomListColumn("ChargeStateBL", CustomListColumnTypes.Number));
+            columns.Add(new CustomListColumn("ChargeStateBR", CustomListColumnTypes.Number));
             return columns;
         }
 
@@ -150,6 +154,10 @@ namespace WheelMe
                 item.Add("NavigatingToPositionName", row.NavigatingToPositionName);
                 item.Add("CurrentPositionId", row.CurrentPositionId);
                 item.Add("CurrentPositionName", row.CurrentPositionName);
+                item.Add("ChargeStateTL", row.ChargeStateTL);
+                item.Add("ChargeStateTR", row.ChargeStateTR);
+                item.Add("ChargeStateBL", row.ChargeStateBL);
+                item.Add("ChargeStateBR", row.ChargeStateBR);
                 items.Add(item);
             }
             return items;
@@ -183,6 +191,10 @@ namespace WheelMe
                             item.NavigatingToPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.NavigatingToPositionId);
                             item.CurrentPositionId = row["currentPositionId"]?.ToString();
                             item.CurrentPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.CurrentPositionId);
+                            item.ChargeStateTL = double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeSTate"]?.ToString());
+                            item.ChargeStateTR = double.Parse(row["robotState"]?["batteryInfo"]?["trChargeSTate"]?.ToString());
+                            item.ChargeStateBL = double.Parse(row["robotState"]?["batteryInfo"]?["blChargeSTate"]?.ToString());
+                            item.ChargeStateBR = double.Parse(row["robotState"]?["batteryInfo"]?["brChargeSTate"]?.ToString());
                             items.Add(item);
                         }
                     }
@@ -297,6 +309,10 @@ namespace WheelMe
             public string NavigatingToPositionName;
             public string CurrentPositionId;
             public string CurrentPositionName;
+            public double ChargeStateTL;
+            public double ChargeStateTR;
+            public double ChargeStateBL;
+            public double ChargeStateBR;
         }
     }
 }
