@@ -197,7 +197,7 @@ namespace WheelMe
                             item.CurrentPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.CurrentPositionId);
                             item.IsRobotCharging = row["robotState"]?["isRobotCharging"]?.ToString() ?? "N/A";
                             item.StuckReason = row["robotState"]?["stuckReason"]?.ToString() ?? "N/A";
-                            if (row["robotState"]?["batteryInfo"] is JToken)
+                            if (row["robotState"]?["batteryInfo"] != null && (bool)row["robotState"]?["batteryInfo"]?.HasValues)
                             {
                                 item.ChargeStateTL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeState"]?.ToString() ?? "0") / 255 * 100);
                                 item.ChargeStateTR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["trChargeState"]?.ToString() ?? "0") / 255 * 100);
@@ -210,7 +210,7 @@ namespace WheelMe
                                 item.ChargeStateTR = 0;
                                 item.ChargeStateBL = 0;
                                 item.ChargeStateBR = 0;
-                            }
+                            } 
                             items.Add(item);
                         }
                     }
