@@ -24,10 +24,10 @@ namespace BacNetExtension
             ID = "BacNetExtension", 
             Name = "BacNet",
             Description = "Description",
-            Version = "1.0",
-            Author = "Makhsum",
+            Version = "1.0.0.0",
+            Author = "Makhsum Yusupov",
             Company = "Peakboard",
-            Copyright = "Your Copyright" 
+            Copyright = "Peakboard Copyright" 
         };
 
         protected override CustomListCollection GetCustomListsOverride()
