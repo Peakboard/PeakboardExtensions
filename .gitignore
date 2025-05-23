@@ -5,6 +5,8 @@ obj/
 packages/
 **/_ReSharper.Caches/
 **/merker.txt
+.idea/
+.vs/
 
 # User-specific files
 *.rsuser
