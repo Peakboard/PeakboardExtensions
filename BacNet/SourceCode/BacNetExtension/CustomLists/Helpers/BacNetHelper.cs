@@ -141,6 +141,7 @@ namespace BacNetExtension.CustomLists.Helpers
             client.Start();
             return client;
         }
+        
         public static void ValidateAddress(BacnetAddress address)
         {
             if (address == null)
