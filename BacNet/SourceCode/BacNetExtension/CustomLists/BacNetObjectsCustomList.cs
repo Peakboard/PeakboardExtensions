@@ -58,17 +58,14 @@ namespace BacNetExtension.CustomLists
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            int tcpPort = int.Parse(data.Properties["Port"]);
+            BacnetClient client = BacNetHelper.CreateBacNetClient(data);
             BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
+            
             uint deviceId = uint.Parse(data.Properties["DeviceId"]);
-
-            var transport = new BacnetIpUdpProtocolTransport(tcpPort);
-            BacnetClient client = new BacnetClient(transport);
-            client.Start();
             RetrieveAvailableObjects(client, address, deviceId);
 
             var objectElementCollection = new CustomListObjectElementCollection();
-
+            
             foreach (var item in _objects)
             {
                 try
@@ -85,6 +82,7 @@ namespace BacNetExtension.CustomLists
 
                         for (int i = 0; i < _propertyNames.Length; i++)
                         {
+                           
                             //Type
                             if (i == 5)
                             {
@@ -194,7 +192,6 @@ namespace BacNetExtension.CustomLists
             }
             catch (Exception)
             {
-
                 try
                 {
                     //fetch properties with single calls

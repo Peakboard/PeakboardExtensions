@@ -44,8 +44,6 @@ namespace BacNetExtension.CustomLists
                     StringComparer.OrdinalIgnoreCase
                 );
             _logger = Logger;
-
-            
         }
 
         protected override CustomListDefinition GetDefinitionOverride()
@@ -111,9 +109,9 @@ namespace BacNetExtension.CustomLists
 
                 foreach (var property in properties)
                 {
-                    var oldPropertyName = property.Key.ToString();
-                    var columnName = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == oldPropertyName).Key;
-                    columns.Add(new CustomListColumn(columnName ?? oldPropertyName, property.Value));
+                    var notMappedPropertyName = property.Key.ToString();
+                    var mappedPropertyName = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == notMappedPropertyName).Key;
+                    columns.Add(new CustomListColumn(mappedPropertyName ?? notMappedPropertyName, property.Value));
                 }
 
                 if (!columns.Any())

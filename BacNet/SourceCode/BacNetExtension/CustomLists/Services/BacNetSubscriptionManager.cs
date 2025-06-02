@@ -110,6 +110,7 @@ namespace BacNetExtension.CustomLists.Services
                 timer.Dispose();
             }
             _covTimers.Clear();
+            _client.Dispose();
         }
     }
 } 
