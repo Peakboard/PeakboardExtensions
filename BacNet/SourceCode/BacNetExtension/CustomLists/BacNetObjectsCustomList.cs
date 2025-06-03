@@ -64,7 +64,7 @@ namespace BacNetExtension.CustomLists
             BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
 
             uint deviceId = uint.Parse(data.Properties["DeviceId"]);
-            RetrieveAvailableObjects(client, address, deviceId);
+           _objects =  RetrieveAvailableObjects(client, address, deviceId);
 
             var objectElementCollection = new CustomListObjectElementCollection();
             if (_objects != null && _objects.Count > 0)
@@ -148,22 +148,25 @@ namespace BacNetExtension.CustomLists
             return objectElementCollection;
         }
 
-        private void RetrieveAvailableObjects(BacnetClient client, BacnetAddress address, uint deviceId)
+        private IList<BacnetValue> RetrieveAvailableObjects(BacnetClient client, BacnetAddress address, uint deviceId)
         {
             var objectId = new BacnetObjectId(BacnetObjectTypes.OBJECT_DEVICE, deviceId);
             var propertyId = BacnetPropertyIds.PROP_OBJECT_LIST;
 
             try
             {
-                if (!client.ReadPropertyRequest(address, objectId, propertyId, out _objects))
+                if (!client.ReadPropertyRequest(address, objectId, propertyId, out var objects))
                 {
                     throw new Exception("Failed to read object list.");
                 }
+                return objects;
             }
             catch (Exception ex)
             {
                 Log.Error($"Error reading object list: {ex.ToString()}");
             }
+
+            return null;
         }
 
         private string GetPropertyValue(BacnetClient client, BacnetAddress address, string objectName, string instance,
