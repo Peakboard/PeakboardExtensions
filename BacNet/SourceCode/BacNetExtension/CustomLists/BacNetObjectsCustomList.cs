@@ -62,82 +62,88 @@ namespace BacNetExtension.CustomLists
         {
             BacnetClient client = BacNetHelper.CreateBacNetClient(data);
             BacnetAddress address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-            
+
             uint deviceId = uint.Parse(data.Properties["DeviceId"]);
             RetrieveAvailableObjects(client, address, deviceId);
 
             var objectElementCollection = new CustomListObjectElementCollection();
-            
-            foreach (var item in _objects)
+            if (_objects != null && _objects.Count > 0)
             {
-                try
+                foreach (var item in _objects)
                 {
-                    var itemElement = new CustomListObjectElement();
-                    string[] nameWithInstance = item.ToString().Split(':');
-                    if (nameWithInstance.Length > 1)
+                    try
                     {
-                        string objectName = nameWithInstance[0];
-                        string objectInstance = nameWithInstance[1];
-                        string mappedName =
-                            _bacnetObjectNameToTypeMap.FirstOrDefault(b => b.Value.ToString() == objectName).Key ??
-                            objectName;
-
-                        for (int i = 0; i < _propertyNames.Length; i++)
+                        var itemElement = new CustomListObjectElement();
+                        string[] nameWithInstance = item.ToString().Split(':');
+                        if (nameWithInstance.Length > 1)
                         {
-                           
-                            //Type
-                            if (i == 5)
-                            {
-                                itemElement.Add(_propertyNames[i], mappedName);
-                                continue;
-                            }
+                            string objectName = nameWithInstance[0];
+                            string objectInstance = nameWithInstance[1];
+                            string mappedName =
+                                _bacnetObjectNameToTypeMap.FirstOrDefault(b => b.Value.ToString() == objectName).Key ??
+                                objectName;
 
-                            //Instance number
-                            if (i == 6)
+                            for (int i = 0; i < _propertyNames.Length; i++)
                             {
-                                itemElement.Add(_propertyNames[i], objectInstance);
-                                continue;
-                            }
-
-                            string rawValue = GetPropertyValue(client, address, mappedName, objectInstance,
-                                _propertyNames[i]);
-                            string value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY")
-                                ? ""
-                                : rawValue;
-
-                            //if _propertyNames[i] == "Unit"
-                            if (i == 2)
-                            {
-                                switch (rawValue)
+                                //Type
+                                if (i == 5)
                                 {
-                                    case "62":
-                                        value = "\u00b0C";
-                                        break;
-                                    case "90":
-                                        value = "\u00b0";
-                                        break;
-                                    case "66":
-                                        value = "\u00b0F·d";
-                                        break;
-                                    case "65":
-                                        value = "\u00b0C·d";
-                                        break;
-                                    case "91":
-                                        value = "\u00b0C/h";
-                                        break;
+                                    itemElement.Add(_propertyNames[i], mappedName);
+                                    continue;
                                 }
+
+                                //Instance number
+                                if (i == 6)
+                                {
+                                    itemElement.Add(_propertyNames[i], objectInstance);
+                                    continue;
+                                }
+
+                                string rawValue = GetPropertyValue(client, address, mappedName, objectInstance,
+                                    _propertyNames[i]);
+                                string value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY")
+                                    ? ""
+                                    : rawValue;
+
+                                //if _propertyNames[i] == "Unit"
+                                if (i == 2)
+                                {
+                                    switch (rawValue)
+                                    {
+                                        case "62":
+                                            value = "\u00b0C";
+                                            break;
+                                        case "90":
+                                            value = "\u00b0";
+                                            break;
+                                        case "66":
+                                            value = "\u00b0F·d";
+                                            break;
+                                        case "65":
+                                            value = "\u00b0C·d";
+                                            break;
+                                        case "91":
+                                            value = "\u00b0C/h";
+                                            break;
+                                    }
+                                }
+
+                                itemElement.Add(_propertyNames[i], value);
                             }
-
-                            itemElement.Add(_propertyNames[i], value);
                         }
-                    }
 
-                    objectElementCollection.Add(itemElement);
+                        objectElementCollection.Add(itemElement);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error($"1. Error for {item.Tag}:\n" + e.ToString());
+                    }
                 }
-                catch (Exception e)
-                {
-                    Log.Error($"1. Error for {item.Tag}:\n"+ e.ToString());
-                }
+            }
+            else
+            {
+                Log.Error("No objects found. Please check the connection and device ID.");
+                return objectElementCollection;
             }
 
             client.Dispose();
