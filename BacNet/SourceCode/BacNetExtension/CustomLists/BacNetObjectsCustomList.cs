@@ -143,9 +143,7 @@ namespace BacNetExtension.CustomLists
             else
             {
                 Log.Error("No objects found. Please check the connection and device ID.");
-                return objectElementCollection;
             }
-
             client.Dispose();
             return objectElementCollection;
         }
