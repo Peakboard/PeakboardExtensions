@@ -14,7 +14,8 @@ namespace BacNetExtension.CustomLists
     {
         private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectNameToTypeMap;
 
-        private List<BacnetObjectDescription> objectsDescriptionExternal, objectsDescriptionDefault;
+        private List<BacnetObjectDescription> _objectsDescriptionExternal = new List<BacnetObjectDescription>();
+        private List<BacnetObjectDescription> _objectsDescriptionDefault = new List<BacnetObjectDescription>();
         private IList<BacnetValue> _objects = new List<BacnetValue>();
         private string[] _propertyNames = { "ObjectName", "PresentValue", "Unit", "StatusFlags", "Description", "Type","InstanceNumber","Props" };
 
@@ -29,6 +30,7 @@ namespace BacNetExtension.CustomLists
                     StringComparer.OrdinalIgnoreCase
                 );
         }
+
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -134,7 +136,7 @@ namespace BacNetExtension.CustomLists
                 }
                 catch (Exception e)
                 {
-                    Log.Error(e.ToString());
+                    Log.Error($"1. Error for {item.Tag}:\n"+ e.ToString());
                 }
             }
 
@@ -153,12 +155,10 @@ namespace BacNetExtension.CustomLists
                 {
                     throw new Exception("Failed to read object list.");
                 }
-
-                Log.Info($"Objects count = {_objects.Count}");
             }
             catch (Exception ex)
             {
-                Log.Error($"Error reading object list: {ex}");
+                Log.Error($"Error reading object list: {ex.ToString()}");
             }
         }
 
@@ -195,7 +195,7 @@ namespace BacNetExtension.CustomLists
                 try
                 {
                     //fetch properties with single calls
-                    if (!BacNetHelper.ReadAllPropertiesBySingle(client, address, objectId, out var multi_value_list, ref objectsDescriptionExternal, ref objectsDescriptionDefault))
+                    if (!BacNetHelper.ReadAllPropertiesBySingle(client, address, objectId, out var multi_value_list, ref _objectsDescriptionExternal, ref _objectsDescriptionDefault))
                     {
                         Log.Error("Couldn't fetch properties");
                     }
@@ -203,7 +203,7 @@ namespace BacNetExtension.CustomLists
                 }
                 catch (Exception ex)
                 {
-                    Log.Error("Error during read: " + ex.Message);
+                    Log.Error("Error during read: " + ex.ToString());
                 }
                 return "";
             }
