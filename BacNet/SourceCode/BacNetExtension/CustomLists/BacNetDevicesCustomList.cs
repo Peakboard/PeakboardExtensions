@@ -80,7 +80,7 @@ namespace BacNetExtension.CustomLists
                     }
                     else
                     {
-                        Log.Info("No devices found.");
+                        Log.Warning("No devices found.");
                     }
 
                     return objectElementCollection;
@@ -98,13 +98,13 @@ namespace BacNetExtension.CustomLists
         {
             _devices = new List<Device>();
             var transport = new BacnetIpUdpProtocolTransport(port);
-            BacnetClient client = new BacnetClient(transport);
+            var client = new BacnetClient(transport);
+            
             client.Start();
             client.OnIam += OnIamReceived;
             client.WhoIs();
 
             _lastEventTime = DateTime.Now;
-            Log.Info("Waiting for devices...");
 
             while ((DateTime.Now - _lastEventTime).TotalMilliseconds < _timeoutMilliseconds)
             {
@@ -128,7 +128,6 @@ namespace BacNetExtension.CustomLists
             if (_devices.FirstOrDefault(d => d.DeviceId == device.DeviceId) == null)
             {
                 _devices.Add(device);
-                Log.Info($"Device added: DeviceID={device.DeviceId}, Address={device.Address}");
             }
 
             _lastEventTime = DateTime.Now;

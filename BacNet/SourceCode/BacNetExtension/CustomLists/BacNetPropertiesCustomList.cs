@@ -13,10 +13,11 @@ namespace BacNetExtension.CustomLists
     [CustomListIcon("BacNetExtension.pb_datasource_bacnet.png")]
     public class BacNetPropertiesCustomList : CustomListBase
     {
+        private List<BacnetObjectDescription> _objectsDescriptionExternal = new List<BacnetObjectDescription>();
+        private List<BacnetObjectDescription> _objectsDescriptionDefault = new List<BacnetObjectDescription>();
         private readonly Dictionary<string, BacnetPropertyIds> _bacnetPropertiesMap;
         private readonly Dictionary<string, BacnetObjectTypes> _bacnetObjectsMap;
         private string _listName;
-        private uint _subscriptionIdCounter;
         private CustomListObjectElementCollection _oldValues;
         private Dictionary<uint, Timer> _covTimers = new Dictionary<uint, Timer>();
         private BacNetPropertyReader _propertyReader;
@@ -28,7 +29,7 @@ namespace BacNetExtension.CustomLists
         {
             _bacnetPropertiesMap = Enum.GetValues(typeof(BacnetPropertyIds))
                 .Cast<BacnetPropertyIds>()
-                .Where(e => e.ToString().StartsWith("PROP_"))
+                .Where(e => e.ToString().StartsWith("PROP_") || e == BacnetPropertyIds.MAX_BACNET_PROPERTY_ID)
                 .ToDictionary(
                     e => e.ToString().Replace("PROP_", "").ToPascalCase(),
                     e => e,
@@ -98,7 +99,7 @@ namespace BacNetExtension.CustomLists
             try
             {
                 var client = BacNetHelper.CreateBacNetClient(data);
-                _propertyReader = new BacNetPropertyReader(client, _bacnetObjectsMap,_logger);
+                _propertyReader = new BacNetPropertyReader(client, _bacnetObjectsMap,_logger, ref _objectsDescriptionExternal, ref _objectsDescriptionDefault);
 
                 var address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
                 var objectName = data.Properties["Type"];
@@ -106,7 +107,12 @@ namespace BacNetExtension.CustomLists
 
                 var properties = _propertyReader.GetPropetiesWithTypes(address, objectName, objectInstance);
                 var columns = new CustomListColumnCollection();
-
+                
+                if (properties == null || !properties.Any())
+                {
+                    throw new Exception($"No properties found for Type {objectName} instance {objectInstance}. Please check the connection Type and InstanceNumber.");
+                }
+                
                 foreach (var property in properties)
                 {
                     var notMappedPropertyName = property.Key.ToString();
@@ -116,7 +122,7 @@ namespace BacNetExtension.CustomLists
 
                 if (!columns.Any())
                 {
-                    throw new Exception("No properties found");
+                    throw new Exception("No properties found. Please check the connection Type and InstanceNumber.");
                 }
 
                 client.Dispose();
@@ -134,10 +140,10 @@ namespace BacNetExtension.CustomLists
             try
             {
                 var client = BacNetHelper.CreateBacNetClient(data);
-                _propertyReader = new BacNetPropertyReader(client, _bacnetObjectsMap,_logger);
+                _propertyReader = new BacNetPropertyReader(client, _bacnetObjectsMap,_logger,ref _objectsDescriptionExternal, ref _objectsDescriptionDefault);
 
                 var address = new BacnetAddress(BacnetAddressTypes.IP, data.Properties["Address"]);
-                var objectName = data.Properties["Type"];
+                var type = data.Properties["Type"];
                 var objectInstance = data.Properties["InstanceNumber"];
 
                 var items = new CustomListObjectElementCollection();
@@ -151,7 +157,12 @@ namespace BacNetExtension.CustomLists
 
                     foreach (var instance in instancesArray)
                     {
-                        var properties = _propertyReader.GetSupportedPropertiesWithValues(address, objectName, instance.ToString());
+                        var properties = _propertyReader.GetSupportedPropertiesWithValues(address, type, instance.ToString());
+                        if (properties == null || !properties.Any())
+                        {
+                            Log.Warning($"No properties found for Type {type} instance {instance}");
+                            continue;
+                        }
                         items.Add(CreateItemElement(properties));
                     }
                 }
@@ -159,7 +170,12 @@ namespace BacNetExtension.CustomLists
                 {
                     foreach (var instance in objectInstance.Split(';'))
                     {
-                        var properties = _propertyReader.GetSupportedPropertiesWithValues(address, objectName, instance);
+                        var properties = _propertyReader.GetSupportedPropertiesWithValues(address, type, instance);
+                        if (properties == null || !properties.Any())
+                        {
+                            Log.Warning($"No properties found for Type {type} instance {instance}");
+                            continue;
+                        }
                         items.Add(CreateItemElement(properties));
                     }
                 }
@@ -270,7 +286,7 @@ namespace BacNetExtension.CustomLists
             }
             catch (Exception ex)
             {
-                Log.Error("Error handling COV notification", ex);
+                Log.Warning("Error handling COV notification", ex);
             }
             
         }
@@ -288,6 +304,7 @@ namespace BacNetExtension.CustomLists
             var propertyName = GetPropertyName(propertyValue);
             if (string.IsNullOrEmpty(propertyName))
             {
+                Log.Warning($"Property {propertyValue.ToString()} not found in the mapping");
                 return;
             }
 
@@ -349,11 +366,22 @@ namespace BacNetExtension.CustomLists
             var item = new CustomListObjectElement();
             foreach (var property in properties)
             {
-                var newKey = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == property.Key).Key;
-                if (newKey != null)
+                var mappedPropertyName = _bacnetPropertiesMap.FirstOrDefault(p => p.Value.ToString() == property.Key).Key;
+                if (mappedPropertyName != null)
                 {
-                    var value = property.Value.Split(':');
-                    item.Add(newKey, value.Length > 1 ? value[1] : property.Value);
+                    var s = property.Value?.Trim();
+                    if (s != null && (s.StartsWith("{") && s.EndsWith("}")|| s.StartsWith("[") && s.EndsWith("]")))
+                    {
+                        item.Add(mappedPropertyName, property.Value); 
+                    }
+                    else
+                    {
+                        if (property.Value != null)
+                        {
+                            var value = property.Value.Split(':');
+                            item.Add(mappedPropertyName, value.Length > 1 ? value[1] : property.Value);
+                        }
+                    }
                 }
                 else
                 {
