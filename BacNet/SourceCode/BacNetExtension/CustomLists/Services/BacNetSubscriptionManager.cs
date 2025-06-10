@@ -32,10 +32,7 @@ namespace BacNetExtension.CustomLists.Services
             {
                 BacNetHelper.ValidateAddress(address);
 
-                if (!_objectMap.TryGetValue(objectName, out var type))
-                {
-                    throw new Exception($"Invalid object name: {objectName}");
-                }
+                var type = BacNetHelper.GetObjectTypeFromName(_objectMap, objectName);
 
                 foreach (var instance in instances)
                 {
