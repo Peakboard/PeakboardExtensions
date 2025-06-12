@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <enableDynamicLoading>true</enableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BACnet" Version="3.0.1" />
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" >
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Extension.xml" />
+      <Content Include="Extension.xml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </Content>
+      <None Remove="ReadSinglePropDescr.xml" />
+      <Content Include="ReadSinglePropDescr.xml" />
+      <None Remove="ReadSinglePropDescrDefault.xml" />
+      <Content Include="ReadSinglePropDescrDefault.xml" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="pb_datasource_bacnet.png" />
+      <EmbeddedResource Include="pb_datasource_bacnet.png" />
+    </ItemGroup>
+
+</Project>
