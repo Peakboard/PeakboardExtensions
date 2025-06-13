@@ -1,7 +1,6 @@
-﻿#nullable enable
-using Peakboard.ExtensionKit;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using Peakboard.ExtensionKit;
 using System.IO.BACnet;
 using System.Linq;
 using BacNetExtension.CustomLists.Helpers;
@@ -27,6 +26,8 @@ namespace BacNetExtension.CustomLists
                 .Where(e => e.ToString().StartsWith("OBJECT_") ||
                             e == BacnetObjectTypes.MAX_BACNET_OBJECT_TYPE ||
                             e == BacnetObjectTypes.MAX_ASHRAE_OBJECT_TYPE)
+                .GroupBy(e => e.ToString().Replace("OBJECT_", "").ToPascalCase(), StringComparer.OrdinalIgnoreCase)
+                .Select(g => g.First())
                 .ToDictionary(
                     e => e.ToString().Replace("OBJECT_", "").ToPascalCase(),
                     e => e,
@@ -86,23 +87,35 @@ namespace BacNetExtension.CustomLists
                                 string objectInstance = nameWithInstance[1];
                                 string mappedName = _bacnetObjectNameToTypeMap.FirstOrDefault(b => b.Value.ToString() == objectName).Key ?? objectName;
                                 
-                                for (int i = 0; i < _propertyNames.Length; i++)
+                                var properties = GetPropertyValue(client, address, item.Value);
+
+                                if (properties != null && properties.Any())
                                 {
-                                    // TYPE
-                                    if (i == 5)
+                                    for (int i = 0; i < _propertyNames.Length; i++)
                                     {
-                                        itemElement.Add(_propertyNames[i], mappedName);
-                                        continue;
+                                        //Type
+                                        if (i == 5)
+                                        {
+                                            itemElement.Add(_propertyNames[i], mappedName);
+                                            continue;
+                                        }
+                                        //InstanceNumber
+                                        if (i == 6)
+                                        {
+                                            itemElement.Add(_propertyNames[i], objectInstance);
+                                            continue;
+                                        }
+                                        //Props
+                                        if (i == 7)
+                                        {
+                                            int propsCount = properties[0].values.Count - 5; //5 properties are always present and rest is count of all properties
+                                            itemElement.Add(_propertyNames[i], propsCount);
+                                            continue;
+                                        }
+                                        var rawValue = BacNetPropertyReader.GetPropertyValueAsString(properties[0].values[i]);
+                                        var value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY") ? "" : rawValue;
+                                        itemElement.Add(_propertyNames[i], value);
                                     }
-                                    // INSTANCE NUMBER
-                                    if (i == 6)
-                                    {
-                                        itemElement.Add(_propertyNames[i], objectInstance);
-                                        continue;
-                                    }
-                                    string rawValue = GetPropertyValue(client, address, item.Value, _propertyNames[i]) ?? "";
-                                    string value = rawValue.Contains("ERROR_CLASS_PROPERTY: ERROR_CODE_UNKNOWN_PROPERTY") ? "" : rawValue;
-                                    itemElement.Add(_propertyNames[i], value);
                                 }
                             }
                             objectElementCollection.Add(itemElement);
@@ -154,82 +167,65 @@ namespace BacNetExtension.CustomLists
             return null;
         }
 
-        private string? GetPropertyValue(BacnetClient client, BacnetAddress address, object objectID, string propertyName)
+        private IList<BacnetReadAccessResult>? GetPropertyValue(BacnetClient client, BacnetAddress address,
+            object objectID)
         {
+            IList<BacnetReadAccessResult> results = new List<BacnetReadAccessResult>();
+
             if (objectID is BacnetObjectId)
             {
                 var objectId = (BacnetObjectId) objectID;
-                var propertyId = GetBacnetPropertyType(propertyName);
 
                 BacnetPropertyReference[] request =
                 {
-                    new BacnetPropertyReference(propertyId, System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_OBJECT_NAME,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL),
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_PRESENT_VALUE,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL),
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_UNITS,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL),
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_STATUS_FLAGS,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL),
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_DESCRIPTION,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL),
+
+                    new BacnetPropertyReference((uint) BacnetPropertyIds.PROP_ALL,
+                        System.IO.BACnet.Serialize.ASN1.BACNET_ARRAY_ALL)
                 };
                 try
                 {
-                    if (!client.ReadPropertyMultipleRequest(address, objectId, request, out var readResults))
+                    if (!client.ReadPropertyMultipleRequest(address, objectId, request, out results))
                     {
                         throw new Exception("Error: Failed to retrieve properties from the BACnet device.");
                     }
 
-                    if (propertyId == (uint) BacnetPropertyIds.PROP_ALL)
-                    {
-                        return readResults[0].values.Count.ToString();
-                    }
-
-                    var result = BacNetPropertyReader.GetPropertyValueAsString(readResults[0].values[0]);
-                    return result;
+                    return results;
                 }
                 catch (Exception ex1)
                 {
                     Log.Warning($"ReadPropertyMultipleRequest Exception: {ex1}");
                     try
                     {
-                        if (!BacNetHelper.ReadAllPropertiesBySingle(client, address, objectId, out var multiValueList,
+                        if (!BacNetHelper.ReadAllPropertiesBySingle(client, address, objectId, out results,
                                 ref _objectsDescriptionExternal, ref _objectsDescriptionDefault))
                         {
-                            Log.Error("Couldn't fetch properties.");
-                            return string.Empty;
+                            Log.Warning("Couldn't fetch properties.");
+                            return results;
                         }
 
-                        var result = BacNetPropertyReader.GetPropertyValueAsString(multiValueList[0].values[0]);
-                        return result;
+                        return results;
                     }
                     catch (Exception ex2)
                     {
                         Log.Error($"Error while reading properties: {ex2}");
                     }
 
-                    return string.Empty;
+                    return results;
                 }
             }
-            else
-            {
-                Log.Warning($"Invalid object ID type: {objectID.GetType().Name}. Expected BacnetObjectId.");
-            }
 
-            return string.Empty;
+            Log.Warning($"Invalid object ID type: {objectID.GetType().Name}. Expected BacnetObjectId.");
+            return results;
         }
-        private uint GetBacnetPropertyType(string property)
-        {
-            switch (property)
-            {
-                case "PresentValue":
-                    return (uint) BacnetPropertyIds.PROP_PRESENT_VALUE;
-                case "StatusFlags":
-                    return (uint) BacnetPropertyIds.PROP_STATUS_FLAGS;
-                case "Description":
-                    return (uint) BacnetPropertyIds.PROP_DESCRIPTION;
-                case "ObjectName":
-                    return (uint) BacnetPropertyIds.PROP_OBJECT_NAME;
-                case "Unit":
-                    return (uint) BacnetPropertyIds.PROP_UNITS;
-                case "Props":
-                    return (uint) BacnetPropertyIds.PROP_ALL;
-                default:
-                    throw new ArgumentException($"Invalid property: {property}");
-            }
-        }
-        
     }
 }
