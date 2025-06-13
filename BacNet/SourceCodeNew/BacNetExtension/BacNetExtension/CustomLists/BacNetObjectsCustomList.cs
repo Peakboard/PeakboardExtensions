@@ -224,26 +224,5 @@ namespace BacNetExtension.CustomLists
             Log.Warning($"Invalid object ID type: {objectID.GetType().Name}. Expected BacnetObjectId.");
             return results;
         }
-        private uint GetBacnetPropertyType(string property)
-        {
-            switch (property)
-            {
-                case "PresentValue":
-                    return (uint) BacnetPropertyIds.PROP_PRESENT_VALUE;
-                case "StatusFlags":
-                    return (uint) BacnetPropertyIds.PROP_STATUS_FLAGS;
-                case "Description":
-                    return (uint) BacnetPropertyIds.PROP_DESCRIPTION;
-                case "ObjectName":
-                    return (uint) BacnetPropertyIds.PROP_OBJECT_NAME;
-                case "Unit":
-                    return (uint) BacnetPropertyIds.PROP_UNITS;
-                case "Props":
-                    return (uint) BacnetPropertyIds.PROP_ALL;
-                default:
-                    throw new ArgumentException($"Invalid property: {property}");
-            }
-        }
-        
     }
 }
