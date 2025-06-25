@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data;
 using MySql.Data.MySqlClient;
+using MySqlX.XDevAPI.Relational;
 using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionMySql
@@ -24,6 +25,23 @@ namespace PeakboardExtensionMySql
                     new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value="" },
                     new CustomListPropertyDefinition() { Name = "SQLStatement", Value = "select * from testtable", EvalParameters = true, MultiLine = true  },
                 },
+                Functions = new CustomListFunctionDefinitionCollection
+                {
+                    new CustomListFunctionDefinition()
+                    {
+                        Name = "ExecuteStatement",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "ExecuteStatement",
+                                Description = "Enter your SQL Statement",
+                                Optional = false,
+                                Type = CustomListFunctionParameterTypes.String
+                            }
+                        },
+                    }
+                }
             };
         }
 
@@ -87,6 +105,26 @@ namespace PeakboardExtensionMySql
             this.Log?.Info(string.Format("MySql extension fetched {0} rows.", items.Count));
 
             return items;
+        }
+
+        protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
+        {
+            var ret = new CustomListExecuteReturnContext();
+
+            if (context.FunctionName.Equals("ExecuteStatement", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var con = GetConnection(data); // Verbindung zur MySQL-Datenbank herstellen
+
+                MySqlCommand command = new MySqlCommand(context.Values[0].StringValue, con);
+
+                // SQL-Statement ausführen
+                int rowsAffected = command.ExecuteNonQuery();
+                Console.WriteLine($"{rowsAffected} rows inserted.");
+
+                con.Close();
+            }
+
+            return ret;
         }
 
         private DataTable GetSQLTable(CustomListData data)

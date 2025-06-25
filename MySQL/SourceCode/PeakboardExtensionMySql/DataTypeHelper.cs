@@ -58,7 +58,7 @@ namespace Peakboard.ExtensionKit
             }
         }
 
-        private static object GetDefaultValue(Type type)
+        public static object GetDefaultValue(Type type)
         {
             if (type == typeof(string))
                 return string.Empty;
