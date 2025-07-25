@@ -22,6 +22,8 @@ namespace PeakboardExtensionLDAP
                 PropertyInputPossible = true,
                 PropertyInputDefaults = {
                     new CustomListPropertyDefinition(){ Name = "Server", Value = ""},
+                    new CustomListPropertyDefinition(){ Name = "User", Value = ""},
+                    new CustomListPropertyDefinition(){ Name = "Password", Value = "", Masked=true},
                     new CustomListPropertyDefinition(){ Name = "Properties", Value = "displayName;mail;telephoneNumber;department;title;objectSid;",  MultiLine = true},
                 }
             };
@@ -54,11 +56,26 @@ namespace PeakboardExtensionLDAP
             // Extract the SAM account name (username)
             string samAccountName = currentUser.Split('\\')[1];
 
+            DirectorySearcher searcher;
+
+            var user = data.Properties["User"];
+            var password = data.Properties["Password"];
+
             // Search LDAP directory
-            DirectorySearcher searcher = new DirectorySearcher(new DirectoryEntry(data.Properties["Server"]))
+            if (!string.IsNullOrEmpty(user) && !string.IsNullOrEmpty(password))
             {
-                Filter = $"(&(objectClass=user)(samAccountName={samAccountName}))"
-            };
+                searcher = new DirectorySearcher(new DirectoryEntry(data.Properties["Server"], user, password))
+                {
+                    Filter = $"(&(objectClass=user)(samAccountName={samAccountName}))"
+                };
+            }
+            else
+            {
+                searcher = new DirectorySearcher(new DirectoryEntry(data.Properties["Server"]))
+                {
+                    Filter = $"(&(objectClass=user)(samAccountName={samAccountName}))"
+                };
+            }
 
             foreach (CustomListColumn column in columns)
             {
