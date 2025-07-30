@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Platforms>x64</Platforms>
+		<PlatformTarget>x64</PlatformTarget>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <None Remove="elephant64.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Extension.xml" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <EmbeddedResource Include="Elephant64.png" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Npgsql" Version="9.0.3" />
+		<PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0">
+			<Private>false</Private>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+</Project>
