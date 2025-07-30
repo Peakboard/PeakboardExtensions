@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.peakboard.com/pbmx/2020/extensions">
+	<Extensions>
+		<Extension ID="HubSpot" Version="1.0" Path="HubSpot.dll" Class="HubSpot.HubSpotExtension" Parameters="" />
+	</Extensions>
+</ExtensionCatalog>
