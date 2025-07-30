@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.36105.23 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CatFacts", "CatFacts\CatFacts.csproj", "{8463FA27-7E46-45E1-89C1-3EAAFDAF0C67}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8463FA27-7E46-45E1-89C1-3EAAFDAF0C67}.Debug|x64.ActiveCfg = Debug|x64
+		{8463FA27-7E46-45E1-89C1-3EAAFDAF0C67}.Debug|x64.Build.0 = Debug|x64
+		{8463FA27-7E46-45E1-89C1-3EAAFDAF0C67}.Release|x64.ActiveCfg = Release|x64
+		{8463FA27-7E46-45E1-89C1-3EAAFDAF0C67}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {87334844-74B3-4EAD-AFE3-7128572FA739}
+	EndGlobalSection
+EndGlobal
