@@ -1,0 +1,8 @@
+
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+  <Extensions>
+    <Extension ID="CheckMkExtension"
+               Path="ServerExtension.dll"
+               Class="CheckMkExtension.CheckMkExtension" />
+  </Extensions>
+</ExtensionCatalog>
