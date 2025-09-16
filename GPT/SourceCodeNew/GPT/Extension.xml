@@ -1,0 +1,8 @@
+
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+  <Extensions>
+    <Extension ID="ChatGPT"
+               Path="GPT.dll"
+               Class="GPT.GPTExtension" />
+  </Extensions>
+</ExtensionCatalog>
