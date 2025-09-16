@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <enableDynamicLoading>true</enableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NdefLibrary" Version="4.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="PCSC" Version="7.0.1" />
+    <PackageReference Include="PCSC.Iso7816" Version="7.0.1" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="pb_datasource_mifare.png" />
+    <EmbeddedResource Include="pb_datasource_mifare.png" />
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
