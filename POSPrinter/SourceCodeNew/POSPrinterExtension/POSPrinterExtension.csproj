@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <enableDynamicLoading>true</enableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ESCPOS_NET" Version="3.0.0" />
+    <PackageReference Include="HtmlAgilityPack" Version="1.12.3" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.15" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="pb_datasource_pos_printer.png" />
+    <EmbeddedResource Include="pb_datasource_pos_printer.png" />
+  </ItemGroup>
+
+</Project>
