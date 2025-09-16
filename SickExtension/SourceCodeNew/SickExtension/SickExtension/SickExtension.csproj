@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <enableDynamicLoading>true</enableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Sick.png" />
+      <EmbeddedResource Include="Sick.png" />
+      <None Update="Extension.xml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
