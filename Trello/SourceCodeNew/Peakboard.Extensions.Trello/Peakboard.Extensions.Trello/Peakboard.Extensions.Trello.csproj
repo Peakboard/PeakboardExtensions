@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <enableDynamicLoading>true</enableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Manatee.Trello" Version="4.4.3" />
+      <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="logo.png" />
+      <EmbeddedResource Include="logo.png" />
+      <None Update="Extension.xml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
+</Project>
