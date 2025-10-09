@@ -36,6 +36,10 @@ namespace WheelMe
             {
                 throw new InvalidOperationException("Invalid BaseURL");
             }
+            if (!data.Properties["BaseURL"].EndsWith($"/"))
+            {
+                throw new InvalidOperationException("BaseURL must end with /");
+            }
             if (string.IsNullOrWhiteSpace(data.Properties["UserName"]))
             {
                 throw new InvalidOperationException("Invalid UserName");

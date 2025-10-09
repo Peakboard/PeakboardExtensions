@@ -3,6 +3,7 @@
   <Extensions>
     <Extension ID="WheelMe"
                Path="WheelMe.dll"
+			   version="1.1"
                Class="WheelMe.WheelMeExtension" />
   </Extensions>
 </ExtensionCatalog>

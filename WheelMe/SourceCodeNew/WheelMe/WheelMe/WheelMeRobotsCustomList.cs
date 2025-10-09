@@ -98,6 +98,10 @@ namespace WheelMe
             {
                 throw new InvalidOperationException("Invalid BaseURL");
             }
+            if (!data.Properties["BaseURL"].EndsWith($"/"))
+            {
+                throw new InvalidOperationException("BaseURL must end with /");
+            }
             if (string.IsNullOrWhiteSpace(data.Properties["UserName"]))
             {
                 throw new InvalidOperationException("Invalid UserName");
@@ -129,6 +133,9 @@ namespace WheelMe
             columns.Add(new CustomListColumn("NavigatingToPositionName", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("CurrentPositionId", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("CurrentPositionName", CustomListColumnTypes.String));
+            columns.Add(new CustomListColumn("LastNavigatedPositionId", CustomListColumnTypes.String));
+            columns.Add(new CustomListColumn("LastNavigatedPositionIdName", CustomListColumnTypes.String));
+            columns.Add(new CustomListColumn("NextGoalTimestamp", CustomListColumnTypes.String));
             columns.Add(new CustomListColumn("ChargeStateTL", CustomListColumnTypes.Number));
             columns.Add(new CustomListColumn("ChargeStateTR", CustomListColumnTypes.Number));
             columns.Add(new CustomListColumn("ChargeStateBL", CustomListColumnTypes.Number));
@@ -155,6 +162,9 @@ namespace WheelMe
                 item.Add("NavigatingToPositionName", row.NavigatingToPositionName);
                 item.Add("CurrentPositionId", row.CurrentPositionId);
                 item.Add("CurrentPositionName", row.CurrentPositionName);
+                item.Add("LastNavigatedPositionId", row.LastNavigatedPositionId);
+                item.Add("LastNavigatedPositionIdName", row.LastNavigatedPositionIdName);
+                item.Add("NextGoalTimestamp", row.NextGoalTimestamp);
                 item.Add("ChargeStateTL", row.ChargeStateTL);
                 item.Add("ChargeStateTR", row.ChargeStateTR);
                 item.Add("ChargeStateBL", row.ChargeStateBL);
@@ -194,6 +204,9 @@ namespace WheelMe
                             item.NavigatingToPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.NavigatingToPositionId);
                             item.CurrentPositionId = row["currentPositionId"]?.ToString();
                             item.CurrentPositionName = WheelMeHelper.GetPositionNameFromID(client, data, item.CurrentPositionId);
+                            item.LastNavigatedPositionId = row["lastNavigatedPositionId"]?.ToString();
+                            item.LastNavigatedPositionIdName = WheelMeHelper.GetPositionNameFromID(client, data, item.LastNavigatedPositionId);
+                            item.NextGoalTimestamp = row["nextGoalTimestamp"]?.ToString();
                             item.IsRobotCharging = row["robotState"]?["isRobotCharging"]?.ToString() ?? "N/A";
                             item.StuckReason = row["robotState"]?["stuckReason"]?.ToString() ?? "N/A";
                             if (row["robotState"]?["batteryInfo"] != null && (bool)row["robotState"]?["batteryInfo"]?.HasValues)
@@ -324,6 +337,9 @@ namespace WheelMe
             public string NavigatingToPositionName;
             public string CurrentPositionId;
             public string CurrentPositionName;
+            public string LastNavigatedPositionId;
+            public string LastNavigatedPositionIdName;
+            public string NextGoalTimestamp;
             public double ChargeStateTL;
             public double ChargeStateTR;
             public double ChargeStateBL;
