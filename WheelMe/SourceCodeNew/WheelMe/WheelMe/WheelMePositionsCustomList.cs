@@ -68,7 +68,7 @@ namespace WheelMe
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            using (HttpClient client = new HttpClient())
+            using (HttpClient client = WheelMeHelper.GetHttpClient())
             {
                 WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
                 HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + $"api/public/maps/{data.Properties["FloorID"]}/positions").Result;

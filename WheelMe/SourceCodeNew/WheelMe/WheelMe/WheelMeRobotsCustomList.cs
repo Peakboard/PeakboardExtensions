@@ -178,7 +178,7 @@ namespace WheelMe
 
         private List<Robot> GetRobotList(CustomListData data)
         {
-            using (HttpClient client = new HttpClient())
+            using (HttpClient client = WheelMeHelper.GetHttpClient())
             {
                 WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
                 HttpResponseMessage response = client.GetAsync(data.Properties["BaseURL"] + $"api/public/maps/{data.Properties["FloorID"]}/robots").Result;
@@ -245,7 +245,7 @@ namespace WheelMe
                 string FloorID = context.Values[1].StringValue;
                 string PositionID = context.Values[2].StringValue;
 
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = WheelMeHelper.GetHttpClient())
                 {
                     WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
                     string json = $"{{\r\n  \"positionId\": \"{PositionID}\"\r\n}}";
@@ -271,7 +271,7 @@ namespace WheelMe
 
                 this.Log?.Info($"Trying to navigate robot {RobotID} to position {PositionName}");
 
-                using (HttpClient client = new HttpClient())
+                using (HttpClient client = WheelMeHelper.GetHttpClient())
                 {
                     WheelMeExtension.AuthenticateClient(client, data.Properties["BaseURL"], data.Properties["UserName"], data.Properties["Password"]);
 

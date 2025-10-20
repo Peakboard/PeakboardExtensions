@@ -10,6 +10,19 @@ namespace WheelMe
     {
         private static Dictionary<string, string> myPositionList = new Dictionary<string, string>();
 
+        public static HttpClient GetHttpClient()
+        {
+            var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = (request, cert, chain, errors) =>
+                {
+                    Console.WriteLine("SSL error skipped");
+                    return true;
+                }
+            };
+            return new HttpClient(handler);
+        }
+
         public static string GetPositionNameFromID(HttpClient client, CustomListData data, string ID)
         {
             if (string.IsNullOrEmpty(ID))
