@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+	<Extensions>
+		<Extension ID="WheelMe"
+				   Path="WheelMe.dll"
+				   Version="2.0"
+				   Class="WheelMe.WheelMeExtension" />
+	</Extensions>
+</ExtensionCatalog>
