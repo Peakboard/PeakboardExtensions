@@ -2,7 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.peakboard.com/pbmx/2020/extensions">
   <Extensions>
     <Extension ID="MQTTServer"
-			   Version="1.0"
+			   Version="2.0"
                Path="MQTTServer.dll"
                Class="MQTTServer.MQTTServerExtension" />
   </Extensions>

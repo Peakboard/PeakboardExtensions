@@ -99,7 +99,7 @@ internal class MQTTServerCustomList : CustomListBase
             Stop();
         }
 
-        return default;
+        return new CustomListExecuteReturnContext();
     }
 
     private void Start(CustomListData data)

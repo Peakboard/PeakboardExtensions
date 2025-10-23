@@ -15,7 +15,7 @@ public class MQTTServerExtension : ExtensionBase
             ID = "MQTTServer",
             Name = "MQTTServer",
             Description = "This extension provides information about MQTTServer.",
-            Version = "1.0",
+            Version = "2.0",
         };
     }
 
