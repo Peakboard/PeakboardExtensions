@@ -24,7 +24,7 @@ namespace WheelMe
                 PropertyInputDefaults = {
                 new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
                 new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value=""  },
+                new CustomListPropertyDefinition() { Name = "Password", TypeDefinition = TypeDefinition.String.With(masked: true) },
                 new CustomListPropertyDefinition() { Name = "FloorID", Value="2"  },
                 new CustomListPropertyDefinition() { Name = "RobotNameFilter", Value="*"  }
                     },
@@ -194,10 +194,13 @@ namespace WheelMe
                         item.ID = row["id"]?.ToString();
                         item.Name = row["name"]?.ToString();
 
-                        if (item.Name.Equals(data.Properties["RobotNameFilter"]) || data.Properties["RobotNameFilter"].Equals("*"))
+                        var robotNameFilter = data.Properties["RobotNameFilter"];
+                        if ((item.Name?.Equals(robotNameFilter) == true) || (robotNameFilter?.Equals("*") == true))
                         {
-                            item.PositionX = double.Parse(row["position"]?["x"]?.ToString());
-                            item.PositionY = double.Parse(row["position"]?["y"]?.ToString());
+                            var positionXStr = row["position"]?["x"]?.ToString();
+                            var positionYStr = row["position"]?["y"]?.ToString();
+                            item.PositionX = double.Parse(positionXStr ?? "0");
+                            item.PositionY = double.Parse(positionYStr ?? "0");
                             item.State = row["state"]?.ToString();
                             item.OperatingMode = row["operatingMode"]?.ToString();
                             item.NavigatingToPositionId = row["navigatingToPositionId"]?.ToString();
@@ -209,12 +212,13 @@ namespace WheelMe
                             item.NextGoalTimestamp = row["nextGoalTimestamp"]?.ToString();
                             item.IsRobotCharging = row["robotState"]?["isRobotCharging"]?.ToString() ?? "N/A";
                             item.StuckReason = row["robotState"]?["stuckReason"]?.ToString() ?? "N/A";
-                            if (row["robotState"]?["batteryInfo"] != null && (bool)row["robotState"]?["batteryInfo"]?.HasValues)
+                            var batteryInfo = row["robotState"]?["batteryInfo"];
+                            if (batteryInfo != null && batteryInfo.HasValues)
                             {
-                                item.ChargeStateTL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeState"]?.ToString() ?? "0") );
-                                item.ChargeStateTR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["trChargeState"]?.ToString() ?? "0") );
-                                item.ChargeStateBL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["blChargeState"]?.ToString() ?? "0") );
-                                item.ChargeStateBR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["brChargeState"]?.ToString() ?? "0") );
+                                item.ChargeStateTL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateTR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["trChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateBL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["blChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateBR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["brChargeState"]?.ToString() ?? "0"));
                             }
                             else
                             {

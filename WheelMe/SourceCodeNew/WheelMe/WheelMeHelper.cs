@@ -40,9 +40,10 @@ namespace WheelMe
 
                     foreach (var row in rawPositionList)
                     {
-                        if (!myPositionList.ContainsKey(row["id"]?.ToString()))
+                        var id = row["id"]?.ToString();
+                        if (!string.IsNullOrEmpty(id) && !myPositionList.ContainsKey(id))
                         {
-                            myPositionList.Add(row["id"]?.ToString(), row["name"]?.ToString());
+                            myPositionList.Add(id, row["name"]?.ToString() ?? "");
                         }
                     }
                 }

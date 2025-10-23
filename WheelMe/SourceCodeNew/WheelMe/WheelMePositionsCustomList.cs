@@ -24,7 +24,7 @@ namespace WheelMe
                 PropertyInputDefaults = {
                 new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
                 new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value=""  },
+                new CustomListPropertyDefinition() { Name = "Password", TypeDefinition = TypeDefinition.String.With(masked: true)  },
                 new CustomListPropertyDefinition() { Name = "FloorID", Value="2"  }
                     }
             };
@@ -86,8 +86,10 @@ namespace WheelMe
                         item.Add("ID", row["id"]?.ToString());
                         item.Add("Name", row["name"]?.ToString());
                         item.Add("State", row["state"]?.ToString());
-                        item.Add("PositionX", double.Parse(row["position"]?["x"]?.ToString()));
-                        item.Add("PositionY", double.Parse(row["position"]?["y"]?.ToString()));
+                        var positionXStr = row["position"]?["x"]?.ToString();
+                        var positionYStr = row["position"]?["y"]?.ToString();
+                        item.Add("PositionX", double.Parse(positionXStr ?? "0"));
+                        item.Add("PositionY", double.Parse(positionYStr ?? "0"));
                         item.Add("OccupiedBy", row["occupiedBy"]?.ToString());
                         items.Add(item);
                     }

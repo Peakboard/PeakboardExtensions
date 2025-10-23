@@ -24,7 +24,7 @@ namespace WheelMe
                 PropertyInputDefaults = {
                 new CustomListPropertyDefinition() { Name = "BaseURL", Value = "https://XXX.playground.wheelme-web.com/" },
                 new CustomListPropertyDefinition() { Name = "UserName", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Password", Masked = true, Value=""  },
+                new CustomListPropertyDefinition() { Name = "Password", TypeDefinition = TypeDefinition.String.With(masked: true)  },
             }
             };
         }
