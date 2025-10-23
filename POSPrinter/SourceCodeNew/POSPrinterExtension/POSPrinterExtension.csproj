@@ -10,7 +10,11 @@
   <ItemGroup>
     <PackageReference Include="ESCPOS_NET" Version="3.0.0" />
     <PackageReference Include="HtmlAgilityPack" Version="1.12.3" />
-    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+
     <PackageReference Include="System.Drawing.Common" Version="8.0.15" />
   </ItemGroup>
 
