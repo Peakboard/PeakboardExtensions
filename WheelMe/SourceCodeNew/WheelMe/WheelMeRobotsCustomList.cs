@@ -215,10 +215,10 @@ namespace WheelMe
                             var batteryInfo = row["robotState"]?["batteryInfo"];
                             if (batteryInfo != null && batteryInfo.HasValues)
                             {
-                                item.ChargeStateTL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeState"]?.ToString() ?? "0"));
-                                item.ChargeStateTR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["trChargeState"]?.ToString() ?? "0"));
-                                item.ChargeStateBL = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["blChargeState"]?.ToString() ?? "0"));
-                                item.ChargeStateBR = Convert.ToInt32(double.Parse(row["robotState"]?["batteryInfo"]?["brChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateTL = (int)Math.Round(double.Parse(row["robotState"]?["batteryInfo"]?["tlChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateTR = (int)Math.Round(double.Parse(row["robotState"]?["batteryInfo"]?["trChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateBL = (int)Math.Round(double.Parse(row["robotState"]?["batteryInfo"]?["blChargeState"]?.ToString() ?? "0"));
+                                item.ChargeStateBR = (int)Math.Round(double.Parse(row["robotState"]?["batteryInfo"]?["brChargeState"]?.ToString() ?? "0"));
                             }
                             else
                             {
