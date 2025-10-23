@@ -9,7 +9,11 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+
   </ItemGroup>
 
   <ItemGroup>
