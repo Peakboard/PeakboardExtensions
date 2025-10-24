@@ -23,7 +23,7 @@ namespace Databricks
                 PropertyInputDefaults = {
                 new CustomListPropertyDefinition() { Name = "URL", Value = "" },
                 new CustomListPropertyDefinition() { Name = "BearerToken", Value = "" },
-                new CustomListPropertyDefinition() { Name = "Body", Value = "", MultiLine = true }
+                new CustomListPropertyDefinition() { Name = "Body", Value = "", MultiLine = true, }
             }
             };
         }
