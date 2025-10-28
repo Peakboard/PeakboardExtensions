@@ -21,7 +21,7 @@ internal class NetworkFilesCustomList : CustomListBase
                 new CustomListPropertyDefinition(){ Name = "User", Value = "johndoe"},
                 new CustomListPropertyDefinition(){ Name = "Password", Masked = true},
                 new CustomListPropertyDefinition(){ Name = "UNCFolder", Value = @"\\server\folder"},
-                new CustomListPropertyDefinition(){ Name = "Check subfolders", Value = "False"}
+                new CustomListPropertyDefinition(){ Name = "CheckSubfolders", Value = "False"}
             }
         };
     }
@@ -43,7 +43,7 @@ internal class NetworkFilesCustomList : CustomListBase
         data.Properties.TryGetValue("User", out var user);
         data.Properties.TryGetValue("Password", out var password);
         data.Properties.TryGetValue("Domain", out var domain);
-        data.Properties.TryGetValue("Check subfolders", out var checkSubfolders);
+        data.Properties.TryGetValue("CheckSubfolders", out var checkSubfolders);
         var credentials = new NetworkCredential(user, password, domain);
 
         using (var nc = new NetworkConnection(folder, credentials))
