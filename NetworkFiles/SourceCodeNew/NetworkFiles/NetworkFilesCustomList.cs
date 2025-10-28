@@ -21,7 +21,7 @@ internal class NetworkFilesCustomList : CustomListBase
                 new CustomListPropertyDefinition(){ Name = "User", Value = "johndoe"},
                 new CustomListPropertyDefinition(){ Name = "Password", Masked = true},
                 new CustomListPropertyDefinition(){ Name = "UNCFolder", Value = @"\\server\folder"},
-                new CustomListPropertyDefinition(){ Name = "CheckSubfolders", Value = "False"}
+                new CustomListPropertyDefinition(){ Name = "CheckSubfolders", Value = "False", TypeDefinition = new CustomListPropertyBooleanTypeDefinition()}
             }
         };
     }
