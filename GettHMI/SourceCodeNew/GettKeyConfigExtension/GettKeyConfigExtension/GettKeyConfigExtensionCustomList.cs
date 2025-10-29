@@ -1,11 +1,8 @@
-﻿using System;
-using System.Diagnostics;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Runtime.InteropServices;
-using System.Threading;
-using GettKeyConfigExtension.Helper;
 using GETT_CapDeviceLib;
 using GETT_CapDeviceLib.Parameter;
+using GettKeyConfigExtension.Helper;
 using Peakboard.ExtensionKit;
 
 namespace GettKeyConfigExtension
@@ -342,7 +339,7 @@ namespace GettKeyConfigExtension
 
                 if (deviceHandle.IsConnected)
                 {
-                    for (int i = 0; i <= keyColors.Length; i++)
+                    for (int i = 0; i < keyColors.Length; i++)
                     {
 
                         if (keyColors[i] != null)

@@ -12,7 +12,7 @@ namespace GettKeyConfigExtension
                 ID = "GettKeyConfigExtension",
                 Name = "Gett HMI Keys",
                 Description = "This Extension is used to configure GETT HMI Keys",
-                Version = "2.0",
+                Version = "3.0",
                 Author = "Benjamin Sturm",
                 Company = "Peakboard GmbH",
                 Copyright = "Peakboard GmbH",
