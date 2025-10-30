@@ -1,8 +1,10 @@
-
-<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.peakboard.com/pbmx/2020/extensions">
   <Extensions>
     <Extension ID="CheckMkExtension"
+               Version="2.0"
                Path="ServerExtension.dll"
-               Class="CheckMkExtension.CheckMkExtension" />
+               Class="CheckMkExtension.CheckMkExtension"
+               Parameters="" />
   </Extensions>
 </ExtensionCatalog>
