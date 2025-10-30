@@ -23,7 +23,7 @@ namespace CheckMkExtension
                 PropertyInputDefaults =
                 {
                     new CustomListPropertyDefinition(){Name = "IP",Value="Enter CheckMk Server IP or host here"},
-                    new CustomListPropertyDefinition(){Name = "Live Status Port",Value="6557"}
+                    new CustomListPropertyDefinition(){Name = "LiveStatusPort",Value="6557"}
                 }
             };
         }
@@ -40,7 +40,7 @@ namespace CheckMkExtension
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             var ip = data.Properties["IP"];
-            var port = data.Properties["Live Status Port"];
+            var port = data.Properties["LiveStatusPort"];
 
             try
             {
@@ -102,7 +102,7 @@ namespace CheckMkExtension
             if (string.IsNullOrWhiteSpace(ip))
                 throw new Exception("IP/Host is empty.");
             if (!int.TryParse(port, out var _port))
-                throw new Exception("Live Status Port must be a number. Default 6557.");
+                throw new Exception("LiveStatusPort must be a number. Default 6557.");
 
             // Livestatus query (Json) - terminate with extra newline
             string query = "GET services\nColumns: host_name description plugin_output state\nFilter: state >= 1\nOutputFormat: json\n\n";
