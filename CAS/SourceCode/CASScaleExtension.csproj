@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+	<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="pb_datasource_cas.png" />
+  </ItemGroup>
+
+<ItemGroup>
+    <Content Include="Extension.xml" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+<ItemGroup>
+  <EmbeddedResource Include="pb_datasource_cas.png" />
+</ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="InTheHand.BluetoothLE" Version="4.0.43" />
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+    <PackageReference Include="System.IO.Ports" Version="9.0.10" />
+  </ItemGroup>
+</Project>

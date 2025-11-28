@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36603.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CASScaleExtension", "CASScaleExtension.csproj", "{FE41622A-7C64-A069-8D1C-05D79DFAE70E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CASScaleExtension.TestConsole", "CASScaleExtension.TestConsole\CASScaleExtension.TestConsole.csproj", "{60C9660B-91C0-48BC-B010-3D9E3E1773CF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FE41622A-7C64-A069-8D1C-05D79DFAE70E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FE41622A-7C64-A069-8D1C-05D79DFAE70E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FE41622A-7C64-A069-8D1C-05D79DFAE70E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FE41622A-7C64-A069-8D1C-05D79DFAE70E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60C9660B-91C0-48BC-B010-3D9E3E1773CF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60C9660B-91C0-48BC-B010-3D9E3E1773CF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60C9660B-91C0-48BC-B010-3D9E3E1773CF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60C9660B-91C0-48BC-B010-3D9E3E1773CF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {79A23CDC-A8CD-452B-923B-BB85B0A63626}
+	EndGlobalSection
+EndGlobal
