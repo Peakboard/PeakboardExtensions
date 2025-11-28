@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+	<Extensions>
+		<Extension ID="GettKeyConfigExtension"
+				   Version="3.0"
+				   Path="GettKeyConfigExtension.dll"
+				   Class="GettKeyConfigExtension.GettKeyConfigExtension" />
+	</Extensions>
+</ExtensionCatalog>

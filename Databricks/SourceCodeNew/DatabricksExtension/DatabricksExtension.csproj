@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+ <EnableDynamicLoading>true</EnableDynamicLoading>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="databricks.png" />
+    <EmbeddedResource Include="databricks.png" />
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+   <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.0">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+
+  </ItemGroup>
+
+</Project>
