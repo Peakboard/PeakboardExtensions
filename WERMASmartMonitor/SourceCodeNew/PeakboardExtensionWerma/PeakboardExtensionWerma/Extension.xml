@@ -2,6 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
   <Extensions>
     <Extension ID="Werma"
+			   Version="2.0"
                Path="PeakboardExtensionWerma.dll"
                Class="PeakboardExtensionWerma.WermaExtension" />
   </Extensions>

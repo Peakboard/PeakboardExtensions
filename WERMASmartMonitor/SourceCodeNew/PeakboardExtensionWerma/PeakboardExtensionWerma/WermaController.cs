@@ -1,14 +1,6 @@
 ﻿using Peakboard.ExtensionKit;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using Microsoft.Data.SqlClient;
 
 namespace PeakboardExtensionWerma
@@ -165,7 +157,7 @@ namespace PeakboardExtensionWerma
             data.Properties.TryGetValue("Username", StringComparison.OrdinalIgnoreCase, out var Username);
             data.Properties.TryGetValue("Password", StringComparison.OrdinalIgnoreCase, out var Password);
 
-            SqlConnection con = new SqlConnection(string.Format("server={0};database={1};user id={2};password={3}", Host, Database, Username, Password));
+            SqlConnection con = new SqlConnection(string.Format("server={0};database={1};user id={2};password={3};TrustServerCertificate=True;", Host, Database, Username, Password));
             con.Open();
 
             return con;

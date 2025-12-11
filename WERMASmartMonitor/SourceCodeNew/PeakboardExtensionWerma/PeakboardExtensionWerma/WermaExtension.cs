@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Peakboard.ExtensionKit;
+﻿using Peakboard.ExtensionKit;
 
 namespace PeakboardExtensionWerma
 {
@@ -17,7 +12,7 @@ namespace PeakboardExtensionWerma
                 ID = "Werma",
                 Name = "Werma Extension",
                 Description = "This is an Extension for accessing Werma data.",
-                Version = "1.0",
+                Version = "2.0",
                 Author = "Peakboard Team",
                 Company = "Peakboard GmbH",
                 Copyright = "Copyright © 2021",
