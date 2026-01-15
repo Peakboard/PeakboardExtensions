@@ -21,7 +21,7 @@ namespace WheelMe
                 ID = "WheelMe",
                 Name = "Wheel.Me Extension",
                 Description = "Get your data from Wheel.Me",
-                Version = "2.2",
+                Version = "2.3",
                 MinVersion = "1.0",
                 Author = "Michelle Wu",
                 Company = "Peakboard GmbH.",

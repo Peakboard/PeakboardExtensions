@@ -241,8 +241,6 @@ namespace WheelMe
 
         protected override CustomListExecuteReturnContext ExecuteFunctionOverride(CustomListData data, CustomListExecuteParameterContext context)
         {
-            var returnContext = default(CustomListExecuteReturnContext);
-
             if (context.FunctionName.Equals("NavigateToPositionID", StringComparison.InvariantCultureIgnoreCase))
             {
                 string RobotID = context.Values[0].StringValue;
@@ -325,7 +323,7 @@ namespace WheelMe
                 throw new DataErrorException("Function is not supported in this version.");
             }
 
-            return returnContext;
+            return new CustomListExecuteReturnContext(); 
         }
 
 
