@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+	<Extensions>
+		<Extension ID="Dataverse"
+				   Path="Dataverse.dll"
+				   Version="2.0"
+				   Class="Dataverse.DataverseExtension" />
+	</Extensions>
+</ExtensionCatalog>
