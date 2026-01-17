@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System.Net.Http;
 using Peakboard.ExtensionKit;
 using System.Net.NetworkInformation;
+using Microsoft.PowerPlatform.Dataverse.Client;
 
 namespace Dataverse
 {
@@ -34,34 +35,39 @@ namespace Dataverse
             return new CustomListCollection
             {
                 new DataverseEntityCustomList(),
+                new DataverseFetchXMLCustomList(),
             };
         }
 
         private static string MyLocalToken = string.Empty;
 
 
-        public static void AuthenticateClient(HttpClient client, string BaseURL, string UserName, string Password) 
+        public static ServiceClient GetConnection(CustomListData data)
         {
-            if (!string.IsNullOrEmpty(MyLocalToken) && !client.DefaultRequestHeaders.Contains("Authorization"))
-            {
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + MyLocalToken);
-                return;
-            }
-            string json = $"{{ \"email\": \"{UserName}\", \"password\": \"{Password}\" }}";
-            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
-            HttpResponseMessage response = client.PostAsync(BaseURL + "api/public/authentication", content).Result;
-            var responseBody = response.Content.ReadAsStringAsync().Result;
+            var dataverseUrl = data.Properties["DataverseURL"];
+            var clientId = data.Properties["ClientId"];
+            var clientSecret = data.Properties["ClientSecret"];
+            var tenantId = data.Properties["TenantId"];
 
-            if (response.IsSuccessStatusCode)
-            {
-                var rawdata = JObject.Parse(responseBody);
-                MyLocalToken = rawdata["token"]?.ToString();
-                client.DefaultRequestHeaders.Add("Authorization", "Bearer " + MyLocalToken);
-            }
-            else
-            {
-                throw new Exception("Error during authentification\r\n" + responseBody.ToString() + "\r\nOriginal Request: " + json);
-            }
+            var connectionString = $@"
+                AuthType=ClientSecret;
+                Url={dataverseUrl};
+                ClientId={clientId};
+                ClientSecret={clientSecret};
+                Authority=https://login.microsoftonline.com/{tenantId};
+                RequireNewInstance=true";
+
+                var serviceClient = new ServiceClient(connectionString);
+
+                if (serviceClient.IsReady)
+                {
+                    return serviceClient;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Could not connect to Dataverse: " );  
+
+                }
         }
 
 

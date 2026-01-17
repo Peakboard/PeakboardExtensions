@@ -67,37 +67,9 @@ protected override CustomListDefinition GetDefinitionOverride()
             }
         }
 
-        public static ServiceClient GetConnection(CustomListData data)
-        {
-            var dataverseUrl = data.Properties["DataverseURL"];
-            var clientId = data.Properties["ClientId"];
-            var clientSecret = data.Properties["ClientSecret"];
-            var tenantId = data.Properties["TenantId"];
-
-            var connectionString = $@"
-                AuthType=ClientSecret;
-                Url={dataverseUrl};
-                ClientId={clientId};
-                ClientSecret={clientSecret};
-                Authority=https://login.microsoftonline.com/{tenantId};
-                RequireNewInstance=true";
-
-                var serviceClient = new ServiceClient(connectionString);
-
-                if (serviceClient.IsReady)
-                {
-                    return serviceClient;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Could not connect to Dataverse: " );  
-
-                }
-        }
-
         protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
         {
-            var serviceClient = GetConnection(data);
+            var serviceClient = DataverseExtension.GetConnection(data);
             // this.logger.Info($"Connected to Dataverse Organization: {serviceClient.ConnectedOrgFriendlyName}");
 
             var query = new QueryExpression(data.Properties["Entity"]);
@@ -150,7 +122,7 @@ protected override CustomListDefinition GetDefinitionOverride()
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
-            var serviceClient = GetConnection(data);
+            var serviceClient = DataverseExtension.GetConnection(data);
             this.Log.Info($"Connected to Dataverse Organization: {serviceClient.ConnectedOrgFriendlyName}");
 
             var query = new QueryExpression(data.Properties["Entity"]);
