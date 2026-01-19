@@ -107,7 +107,8 @@ protected override CustomListDefinition GetDefinitionOverride()
                 else if (attributeTypeCode == AttributeTypeCode.Double || 
                          attributeTypeCode == AttributeTypeCode.Decimal || 
                          attributeTypeCode == AttributeTypeCode.Integer || 
-                         attributeTypeCode == AttributeTypeCode.BigInt)
+                         attributeTypeCode == AttributeTypeCode.BigInt ||
+                         attributeTypeCode == AttributeTypeCode.Money)
                 {
                     columns.Add(new CustomListColumn(columnName, CustomListColumnTypes.Number));
                 }
@@ -167,7 +168,8 @@ protected override CustomListDefinition GetDefinitionOverride()
                         else if (attributeTypeCode == AttributeTypeCode.Double || 
                                  attributeTypeCode == AttributeTypeCode.Decimal || 
                                  attributeTypeCode == AttributeTypeCode.Integer || 
-                                 attributeTypeCode == AttributeTypeCode.BigInt)
+                                 attributeTypeCode == AttributeTypeCode.BigInt ||
+                                 attributeTypeCode == AttributeTypeCode.Money)
                         {
                             item.Add(columnName, 0);
                         }
@@ -200,6 +202,11 @@ protected override CustomListDefinition GetDefinitionOverride()
                         {
                             item.Add(columnName, entityRef.Id.ToString());
                         }
+                        // Handle Money by extracting the numeric value
+                        else if (value is Money money)
+                        {
+                            item.Add(columnName, Convert.ToDouble(money.Value));
+                        }
                         else if (attributeTypeCode == AttributeTypeCode.Boolean)
                         {
                             item.Add(columnName, value);
@@ -207,7 +214,8 @@ protected override CustomListDefinition GetDefinitionOverride()
                         else if (attributeTypeCode == AttributeTypeCode.Double || 
                                  attributeTypeCode == AttributeTypeCode.Decimal || 
                                  attributeTypeCode == AttributeTypeCode.Integer || 
-                                 attributeTypeCode == AttributeTypeCode.BigInt)
+                                 attributeTypeCode == AttributeTypeCode.BigInt ||
+                                 attributeTypeCode == AttributeTypeCode.Money)
                         {
                             item.Add(columnName, Convert.ToDouble(value));
                         }
@@ -221,32 +229,6 @@ protected override CustomListDefinition GetDefinitionOverride()
 
                 items.Add(item);
 
-                /*
-                foreach (var attribute in entity.Attributes)
-                {
-                    var columnName = attribute.Key;
-                    var value = attribute.Value;
-                    var attributeTypeCode = attributeTypeMap.ContainsKey(columnName) 
-                        ? attributeTypeMap[columnName] 
-                        : AttributeTypeCode.String;
-
-                    if (attributeTypeCode == AttributeTypeCode.Boolean)
-                    {
-                        item.Add(columnName, value);
-                    }
-                    else if (attributeTypeCode == AttributeTypeCode.Double || 
-                            attributeTypeCode == AttributeTypeCode.Decimal || 
-                            attributeTypeCode == AttributeTypeCode.Integer || 
-                            attributeTypeCode == AttributeTypeCode.BigInt)
-                    {
-                        item.Add(columnName, Convert.ToDouble(value));
-                    }
-                    else
-                    {
-                        item.Add(columnName, value.ToString());
-                    }
-                }
-                */
             }
             return items;
         }

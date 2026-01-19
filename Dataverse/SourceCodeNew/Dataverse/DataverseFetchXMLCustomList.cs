@@ -26,8 +26,21 @@ namespace Dataverse
             {
                 var doc = new XmlDocument();
                 doc.LoadXml(fetchXml);
+                
+                // Extract main entity names
                 var entityNodes = doc.GetElementsByTagName("entity");
                 foreach (XmlElement node in entityNodes)
+                {
+                    var entityName = node.GetAttribute("name");
+                    if (!string.IsNullOrWhiteSpace(entityName))
+                    {
+                        entityNames.Add(entityName);
+                    }
+                }
+                
+                // Extract linked entity names
+                var linkEntityNodes = doc.GetElementsByTagName("link-entity");
+                foreach (XmlElement node in linkEntityNodes)
                 {
                     var entityName = node.GetAttribute("name");
                     if (!string.IsNullOrWhiteSpace(entityName))
@@ -143,7 +156,8 @@ namespace Dataverse
                     else if (attributeTypeCode == AttributeTypeCode.Double || 
                              attributeTypeCode == AttributeTypeCode.Decimal || 
                              attributeTypeCode == AttributeTypeCode.Integer || 
-                             attributeTypeCode == AttributeTypeCode.BigInt)
+                             attributeTypeCode == AttributeTypeCode.BigInt ||
+                             attributeTypeCode == AttributeTypeCode.Money)
                     {
                         columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.Number));
                     }
@@ -205,7 +219,21 @@ namespace Dataverse
                 {
                     var columnName = attribute.Key;
                     var value = attribute.Value;
-                    var attributeTypeCode = attributeTypeMap.ContainsKey(columnName) ? attributeTypeMap[columnName] : AttributeTypeCode.String;
+                    
+                    // Handle linked entity attributes (format: alias.attributeName)
+                    var lookupKey = columnName;
+                    if (columnName.Contains("."))
+                    {
+                        lookupKey = columnName.Split('.')[1];
+                    }
+                    
+                    // Extract value from AliasedValue (linked entity attributes)
+                    if (value is AliasedValue aliasedValue)
+                    {
+                        value = aliasedValue.Value;
+                    }
+                    
+                    var attributeTypeCode = attributeTypeMap.ContainsKey(lookupKey) ? attributeTypeMap[lookupKey] : AttributeTypeCode.String;
                     
                     if (value == null)
                     {
@@ -217,7 +245,8 @@ namespace Dataverse
                         else if (attributeTypeCode == AttributeTypeCode.Double || 
                                  attributeTypeCode == AttributeTypeCode.Decimal || 
                                  attributeTypeCode == AttributeTypeCode.Integer || 
-                                 attributeTypeCode == AttributeTypeCode.BigInt)
+                                 attributeTypeCode == AttributeTypeCode.BigInt ||
+                                 attributeTypeCode == AttributeTypeCode.Money)
                         {
                             item.Add(columnName, 0);
                         }
@@ -231,7 +260,7 @@ namespace Dataverse
                         // Handle OptionSetValue by extracting the plain text label
                         if (value is OptionSetValue optionSetValue)
                         {
-                            var attributeMetadata = attributeMetadataMap.ContainsKey(columnName) ? attributeMetadataMap[columnName] : null;
+                            var attributeMetadata = attributeMetadataMap.ContainsKey(lookupKey) ? attributeMetadataMap[lookupKey] : null;
                             if (attributeMetadata is PicklistAttributeMetadata picklistMetadata)
                             {
                                 var option = picklistMetadata.OptionSet.Options
@@ -248,6 +277,11 @@ namespace Dataverse
                         {
                             item.Add(columnName, entityRef.Id.ToString());
                         }
+                        // Handle Money by extracting the numeric value
+                        else if (value is Money money)
+                        {
+                            item.Add(columnName, Convert.ToDouble(money.Value));
+                        }
                         else if (attributeTypeCode == AttributeTypeCode.Boolean)
                         {
                             item.Add(columnName, value);
@@ -255,7 +289,8 @@ namespace Dataverse
                         else if (attributeTypeCode == AttributeTypeCode.Double || 
                                  attributeTypeCode == AttributeTypeCode.Decimal || 
                                  attributeTypeCode == AttributeTypeCode.Integer || 
-                                 attributeTypeCode == AttributeTypeCode.BigInt)
+                                 attributeTypeCode == AttributeTypeCode.BigInt ||
+                                 attributeTypeCode == AttributeTypeCode.Money)
                         {
                             item.Add(columnName, Convert.ToDouble(value));
                         }

@@ -22,7 +22,7 @@ namespace Dataverse
                 ID = "Dataverse",
                 Name = "Dataverse Extension",
                 Description = "COnnect to MS Dataverse to read data from your tables.",
-                Version = "2.0",
+                Version = "2.1",
                 MinVersion = "1.0",
                 Author = "Patrick",
                 Company = "Peakboard GmbH",
