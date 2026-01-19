@@ -21,8 +21,8 @@ namespace Dataverse
             {
                 ID = "Dataverse",
                 Name = "Dataverse Extension",
-                Description = "COnnect to MS Dataverse to read data from your tables.",
-                Version = "2.1",
+                Description = "Connect to MS Dataverse to read data from your tables.",
+                Version = "2.2",
                 MinVersion = "1.0",
                 Author = "Patrick",
                 Company = "Peakboard GmbH",
@@ -49,25 +49,18 @@ namespace Dataverse
             var clientSecret = data.Properties["ClientSecret"];
             var tenantId = data.Properties["TenantId"];
 
-            var connectionString = $@"
-                AuthType=ClientSecret;
-                Url={dataverseUrl};
-                ClientId={clientId};
-                ClientSecret={clientSecret};
-                Authority=https://login.microsoftonline.com/{tenantId};
-                RequireNewInstance=true";
+            var connectionString = $@"AuthType=ClientSecret;Url={dataverseUrl};ClientId={clientId};ClientSecret={clientSecret};Authority=https://login.microsoftonline.com/{tenantId};RequireNewInstance=true";
 
-                var serviceClient = new ServiceClient(connectionString);
+            var serviceClient = new ServiceClient(connectionString);
+            if (serviceClient.IsReady)
+            {
+                return serviceClient;
+            }
+            else
+            {
+                throw new InvalidOperationException("Could not connect to Dataverse: " );  
 
-                if (serviceClient.IsReady)
-                {
-                    return serviceClient;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Could not connect to Dataverse: " );  
-
-                }
+            }
         }
 
 
