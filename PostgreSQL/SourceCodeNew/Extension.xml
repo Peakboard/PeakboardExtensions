@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.peakboard.com/pbmx/2020/extensions">
+  <Extensions>
+    <Extension
+      ID="PostgreSQL"
+      Version="1.0"
+      Path="PostgreSQL.dll"
+      Class="PostgreSQL.PostgreSQLExtension"
+      Parameters="" />
+  </Extensions>
+</ExtensionCatalog>
