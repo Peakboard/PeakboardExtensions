@@ -43,7 +43,7 @@ public class PostgreSQLCustomList : CustomListBase
     {
         return new CustomListDefinition
         {
-            ID = "PostgreSQL",
+            ID = PostgreSQLExtension.ExtensionId,
             Name = "SQL Statement",
             Description = "Returns data from a PostgreSQL Database",
             PropertyInputPossible = true,

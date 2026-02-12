@@ -2,7 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.peakboard.com/pbmx/2020/extensions">
   <Extensions>
     <Extension
-      ID="PostgreSQL"
+      ID="Peakboard.Extensions.Npgsql"
       Version="1.0"
       Path="PostgreSQL.dll"
       Class="PostgreSQL.PostgreSQLExtension"
