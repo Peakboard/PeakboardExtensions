@@ -14,10 +14,10 @@ public class PostgreSQLExtension : ExtensionBase
     {
         return new ExtensionDefinition
         {
-            ID = "PostgreSQL",
+            ID = "Peakboard.Extensions.Npgsql",
             Name = "PostgreSQL",
             Description = "This is an Extension for accessing a PostgreSQL Database.",
-            Version = "1.0",
+            Version = "2.0",
             Author = "Peakboard Team",
             Company = "Peakboard GmbH",
             Copyright = "Copyright © 2025"
