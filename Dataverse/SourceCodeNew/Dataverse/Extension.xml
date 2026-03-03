@@ -3,7 +3,7 @@
 	<Extensions>
 		<Extension ID="Dataverse"
 				   Path="Dataverse.dll"
-				   Version="2.0"
+				   Version="2.3"
 				   Class="Dataverse.DataverseExtension" />
 	</Extensions>
 </ExtensionCatalog>
