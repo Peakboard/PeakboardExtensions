@@ -26,7 +26,7 @@ namespace Dataverse
             {
                 var doc = new XmlDocument();
                 doc.LoadXml(fetchXml);
-                
+
                 // Extract main entity names
                 var entityNodes = doc.GetElementsByTagName("entity");
                 foreach (XmlElement node in entityNodes)
@@ -37,7 +37,7 @@ namespace Dataverse
                         entityNames.Add(entityName);
                     }
                 }
-                
+
                 // Extract linked entity names
                 var linkEntityNodes = doc.GetElementsByTagName("link-entity");
                 foreach (XmlElement node in linkEntityNodes)
@@ -54,6 +54,60 @@ namespace Dataverse
                 // If parsing fails, return empty set
             }
             return entityNames;
+        }
+
+        private List<string> ExtractAttributeNamesFromFetchXML(string fetchXml)
+        {
+            var attributeNames = new List<string>();
+            try
+            {
+                var doc = new XmlDocument();
+                doc.LoadXml(fetchXml);
+
+                // Extract attribute names from the main entity
+                var entityNodes = doc.GetElementsByTagName("entity");
+                foreach (XmlElement entityNode in entityNodes)
+                {
+                    foreach (XmlNode child in entityNode.ChildNodes)
+                    {
+                        if (child is XmlElement element && element.LocalName == "attribute")
+                        {
+                            var attrName = element.GetAttribute("name");
+                            if (!string.IsNullOrWhiteSpace(attrName) && !attributeNames.Contains(attrName))
+                            {
+                                attributeNames.Add(attrName);
+                            }
+                        }
+                    }
+                }
+
+                // Extract attribute names from linked entities (with alias prefix)
+                var linkEntityNodes = doc.GetElementsByTagName("link-entity");
+                foreach (XmlElement linkNode in linkEntityNodes)
+                {
+                    var alias = linkNode.GetAttribute("alias");
+                    foreach (XmlNode child in linkNode.ChildNodes)
+                    {
+                        if (child is XmlElement element && element.LocalName == "attribute")
+                        {
+                            var attrName = element.GetAttribute("name");
+                            if (!string.IsNullOrWhiteSpace(attrName))
+                            {
+                                var fullName = !string.IsNullOrWhiteSpace(alias) ? $"{alias}.{attrName}" : attrName;
+                                if (!attributeNames.Contains(fullName))
+                                {
+                                    attributeNames.Add(fullName);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // If parsing fails, return empty list
+            }
+            return attributeNames;
         }
 
         protected override CustomListDefinition GetDefinitionOverride()
@@ -106,18 +160,12 @@ namespace Dataverse
         {
             var serviceClient = DataverseExtension.GetConnection(data);
 
-            var fetchResults = serviceClient.RetrieveMultiple(new FetchExpression(data.Properties["FetchXML"]));
-            
-            if (fetchResults.Entities.Count == 0)
-            {
-                throw new InvalidOperationException("No records found in the specified query.");
-            }   
-
             var columns = new CustomListColumnCollection();
-            
-            // Extract entity names from FetchXML
+
+            // Extract attribute names and entity names from FetchXML
+            var requestedAttributes = ExtractAttributeNamesFromFetchXML(data.Properties["FetchXML"]);
             var entityNames = ExtractEntityNamesFromFetchXML(data.Properties["FetchXML"]);
-            
+
             // Build metadata map for all involved entities
             var attributeTypeMap = new Dictionary<string, AttributeTypeCode>();
             foreach (var entityName in entityNames)
@@ -127,7 +175,7 @@ namespace Dataverse
                     var retrieveEntityRequest = new RetrieveEntityRequest { LogicalName = entityName, EntityFilters = EntityFilters.Attributes };
                     var retrieveEntityResponse = (RetrieveEntityResponse)serviceClient.Execute(retrieveEntityRequest);
                     var entityMetadata = retrieveEntityResponse.EntityMetadata;
-                    
+
                     foreach (var attribute in entityMetadata.Attributes)
                     {
                         attributeTypeMap[attribute.LogicalName] = attribute.AttributeType ?? AttributeTypeCode.String;
@@ -138,33 +186,32 @@ namespace Dataverse
                     // If metadata retrieval fails for an entity, continue
                 }
             }
-            
-            // Extract columns from the first result
-            if (fetchResults.Entities.Count > 0)
-            {
-                var firstEntity = fetchResults.Entities[0];
-                foreach (var attributeName in firstEntity.Attributes.Keys)
-                {
-                    var attributeTypeCode = attributeTypeMap.ContainsKey(attributeName) 
-                        ? attributeTypeMap[attributeName] 
-                        : AttributeTypeCode.String;
 
-                    if (attributeTypeCode == AttributeTypeCode.Boolean)
-                    {
-                        columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.Boolean));
-                    }
-                    else if (attributeTypeCode == AttributeTypeCode.Double || 
-                             attributeTypeCode == AttributeTypeCode.Decimal || 
-                             attributeTypeCode == AttributeTypeCode.Integer || 
-                             attributeTypeCode == AttributeTypeCode.BigInt ||
-                             attributeTypeCode == AttributeTypeCode.Money)
-                    {
-                        columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.Number));
-                    }
-                    else
-                    {
-                        columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.String));
-                    }
+            // Create columns based on the FetchXML attribute list (not the first row's data)
+            foreach (var attributeName in requestedAttributes)
+            {
+                // For linked entity attributes (alias.attributeName), look up the base attribute name
+                var lookupKey = attributeName.Contains(".") ? attributeName.Split('.')[1] : attributeName;
+
+                var attributeTypeCode = attributeTypeMap.ContainsKey(lookupKey)
+                    ? attributeTypeMap[lookupKey]
+                    : AttributeTypeCode.String;
+
+                if (attributeTypeCode == AttributeTypeCode.Boolean)
+                {
+                    columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.Boolean));
+                }
+                else if (attributeTypeCode == AttributeTypeCode.Double ||
+                         attributeTypeCode == AttributeTypeCode.Decimal ||
+                         attributeTypeCode == AttributeTypeCode.Integer ||
+                         attributeTypeCode == AttributeTypeCode.BigInt ||
+                         attributeTypeCode == AttributeTypeCode.Money)
+                {
+                    columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.Number));
+                }
+                else
+                {
+                    columns.Add(new CustomListColumn(attributeName, CustomListColumnTypes.String));
                 }
             }
 
@@ -177,21 +224,22 @@ namespace Dataverse
             this.Log.Info($"Connected to Dataverse Organization: {serviceClient.ConnectedOrgFriendlyName}");
 
             var fetchResults = serviceClient.RetrieveMultiple(new FetchExpression(data.Properties["FetchXML"]));
-            
+
             if (fetchResults.Entities.Count == 0)
             {
                 throw new InvalidOperationException("No records found in the specified query.");
-            }   
+            }
 
             var items = new CustomListObjectElementCollection();
-            
-            // Extract entity names from FetchXML
+
+            // Extract attribute names and entity names from FetchXML
+            var requestedAttributes = ExtractAttributeNamesFromFetchXML(data.Properties["FetchXML"]);
             var entityNames = ExtractEntityNamesFromFetchXML(data.Properties["FetchXML"]);
-            
+
             // Build metadata maps for all involved entities
             var attributeTypeMap = new Dictionary<string, AttributeTypeCode>();
             var attributeMetadataMap = new Dictionary<string, AttributeMetadata>();
-            
+
             foreach (var entityName in entityNames)
             {
                 try
@@ -199,7 +247,7 @@ namespace Dataverse
                     var retrieveEntityRequest = new RetrieveEntityRequest { LogicalName = entityName, EntityFilters = EntityFilters.Attributes };
                     var retrieveEntityResponse = (RetrieveEntityResponse)serviceClient.Execute(retrieveEntityRequest);
                     var entityMetadata = retrieveEntityResponse.EntityMetadata;
-                    
+
                     foreach (var attribute in entityMetadata.Attributes)
                     {
                         attributeTypeMap[attribute.LogicalName] = attribute.AttributeType ?? AttributeTypeCode.String;
@@ -211,40 +259,29 @@ namespace Dataverse
                     // If metadata retrieval fails for an entity, continue
                 }
             }
-            
-            foreach(var entity in fetchResults.Entities)
+
+            foreach (var entity in fetchResults.Entities)
             {
                 var item = new CustomListObjectElement();
-                foreach (var attribute in entity.Attributes)
+
+                // Iterate over the expected columns from FetchXML, not the entity's actual attributes
+                foreach (var columnName in requestedAttributes)
                 {
-                    var columnName = attribute.Key;
-                    var value = attribute.Value;
-                    
-                    // Handle linked entity attributes (format: alias.attributeName)
-                    var lookupKey = columnName;
-                    if (columnName.Contains("."))
-                    {
-                        lookupKey = columnName.Split('.')[1];
-                    }
-                    
-                    // Extract value from AliasedValue (linked entity attributes)
-                    if (value is AliasedValue aliasedValue)
-                    {
-                        value = aliasedValue.Value;
-                    }
-                    
+                    // For linked entity attributes (alias.attributeName), look up the base attribute name
+                    var lookupKey = columnName.Contains(".") ? columnName.Split('.')[1] : columnName;
                     var attributeTypeCode = attributeTypeMap.ContainsKey(lookupKey) ? attributeTypeMap[lookupKey] : AttributeTypeCode.String;
-                    
-                    if (value == null)
+
+                    // Check if the entity has this attribute
+                    if (!entity.Attributes.ContainsKey(columnName))
                     {
-                        // Handle null values
+                        // Attribute is missing (null in Dataverse) - add a default value
                         if (attributeTypeCode == AttributeTypeCode.Boolean)
                         {
                             item.Add(columnName, false);
                         }
-                        else if (attributeTypeCode == AttributeTypeCode.Double || 
-                                 attributeTypeCode == AttributeTypeCode.Decimal || 
-                                 attributeTypeCode == AttributeTypeCode.Integer || 
+                        else if (attributeTypeCode == AttributeTypeCode.Double ||
+                                 attributeTypeCode == AttributeTypeCode.Decimal ||
+                                 attributeTypeCode == AttributeTypeCode.Integer ||
                                  attributeTypeCode == AttributeTypeCode.BigInt ||
                                  attributeTypeCode == AttributeTypeCode.Money)
                         {
@@ -257,46 +294,76 @@ namespace Dataverse
                     }
                     else
                     {
-                        // Handle OptionSetValue by extracting the plain text label
-                        if (value is OptionSetValue optionSetValue)
+                        var value = entity.Attributes[columnName];
+
+                        // Extract value from AliasedValue (linked entity attributes)
+                        if (value is AliasedValue aliasedValue)
                         {
-                            var attributeMetadata = attributeMetadataMap.ContainsKey(lookupKey) ? attributeMetadataMap[lookupKey] : null;
-                            if (attributeMetadata is PicklistAttributeMetadata picklistMetadata)
+                            value = aliasedValue.Value;
+                        }
+
+                        if (value == null)
+                        {
+                            if (attributeTypeCode == AttributeTypeCode.Boolean)
                             {
-                                var option = picklistMetadata.OptionSet.Options
-                                    .FirstOrDefault(o => o.Value == optionSetValue.Value);
-                                item.Add(columnName, option?.Label?.UserLocalizedLabel?.Label ?? optionSetValue.Value.ToString());
+                                item.Add(columnName, false);
+                            }
+                            else if (attributeTypeCode == AttributeTypeCode.Double ||
+                                     attributeTypeCode == AttributeTypeCode.Decimal ||
+                                     attributeTypeCode == AttributeTypeCode.Integer ||
+                                     attributeTypeCode == AttributeTypeCode.BigInt ||
+                                     attributeTypeCode == AttributeTypeCode.Money)
+                            {
+                                item.Add(columnName, 0);
                             }
                             else
                             {
-                                item.Add(columnName, optionSetValue.Value.ToString());
+                                item.Add(columnName, string.Empty);
                             }
-                        }
-                        // Handle EntityReference by extracting the GUID
-                        else if (value is EntityReference entityRef)
-                        {
-                            item.Add(columnName, entityRef.Id.ToString());
-                        }
-                        // Handle Money by extracting the numeric value
-                        else if (value is Money money)
-                        {
-                            item.Add(columnName, Convert.ToDouble(money.Value));
-                        }
-                        else if (attributeTypeCode == AttributeTypeCode.Boolean)
-                        {
-                            item.Add(columnName, value);
-                        }
-                        else if (attributeTypeCode == AttributeTypeCode.Double || 
-                                 attributeTypeCode == AttributeTypeCode.Decimal || 
-                                 attributeTypeCode == AttributeTypeCode.Integer || 
-                                 attributeTypeCode == AttributeTypeCode.BigInt ||
-                                 attributeTypeCode == AttributeTypeCode.Money)
-                        {
-                            item.Add(columnName, Convert.ToDouble(value));
                         }
                         else
                         {
-                            item.Add(columnName, value.ToString());
+                            // Handle OptionSetValue by extracting the plain text label
+                            if (value is OptionSetValue optionSetValue)
+                            {
+                                var attributeMetadata = attributeMetadataMap.ContainsKey(lookupKey) ? attributeMetadataMap[lookupKey] : null;
+                                if (attributeMetadata is PicklistAttributeMetadata picklistMetadata)
+                                {
+                                    var option = picklistMetadata.OptionSet.Options
+                                        .FirstOrDefault(o => o.Value == optionSetValue.Value);
+                                    item.Add(columnName, option?.Label?.UserLocalizedLabel?.Label ?? optionSetValue.Value.ToString());
+                                }
+                                else
+                                {
+                                    item.Add(columnName, optionSetValue.Value.ToString());
+                                }
+                            }
+                            // Handle EntityReference by extracting the GUID
+                            else if (value is EntityReference entityRef)
+                            {
+                                item.Add(columnName, entityRef.Id.ToString());
+                            }
+                            // Handle Money by extracting the numeric value
+                            else if (value is Money money)
+                            {
+                                item.Add(columnName, Convert.ToDouble(money.Value));
+                            }
+                            else if (attributeTypeCode == AttributeTypeCode.Boolean)
+                            {
+                                item.Add(columnName, value);
+                            }
+                            else if (attributeTypeCode == AttributeTypeCode.Double ||
+                                     attributeTypeCode == AttributeTypeCode.Decimal ||
+                                     attributeTypeCode == AttributeTypeCode.Integer ||
+                                     attributeTypeCode == AttributeTypeCode.BigInt ||
+                                     attributeTypeCode == AttributeTypeCode.Money)
+                            {
+                                item.Add(columnName, Convert.ToDouble(value));
+                            }
+                            else
+                            {
+                                item.Add(columnName, value.ToString());
+                            }
                         }
                     }
                 }
