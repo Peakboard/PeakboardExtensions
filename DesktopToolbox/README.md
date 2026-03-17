@@ -11,6 +11,7 @@ The **Desktop Information** custom list returns a single row with details about 
 | Column           | Type   | Description                                      |
 |------------------|--------|--------------------------------------------------|
 | WindowsUserName  | String | The Windows user name of the current desktop session |
+| OSVersion        | String | The OS version string (e.g. "Microsoft Windows NT 10.0.26200.0") |
 
 ### Functions
 

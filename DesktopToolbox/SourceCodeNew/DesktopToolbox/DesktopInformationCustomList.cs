@@ -42,13 +42,18 @@ namespace DesktopToolbox
             return new CustomListColumnCollection
             {
                 new CustomListColumn("WindowsUserName", CustomListColumnTypes.String),
+                new CustomListColumn("OSVersion", CustomListColumnTypes.String),
             };
         }
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
         {
             var items = new CustomListObjectElementCollection();
-            items.Add(new CustomListObjectElement { { "WindowsUserName", Environment.UserName } });
+            items.Add(new CustomListObjectElement
+            {
+                { "WindowsUserName", Environment.UserName },
+                { "OSVersion", Environment.OSVersion.ToString() },
+            });
             return items;
         }
 
@@ -56,7 +61,7 @@ namespace DesktopToolbox
         {
             if (context.FunctionName.Equals("OpenURLInBrowser", StringComparison.InvariantCultureIgnoreCase))
             {
-                var url = context.Values[0].ToString();
+                var url = context.Values[0].StringValue;
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = "cmd",
