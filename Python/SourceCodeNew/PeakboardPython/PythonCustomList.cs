@@ -19,7 +19,7 @@ public class PythonCustomList : CustomListBase
                 new CustomListPropertyDefinition
                 {
                     Name = "Script",
-                    Value = "result.add_column(\"Column1\", \"string\")\nresult.add_row({\"Column1\": \"Hello\"})",
+                    Value = "import json\n\nresult.log_info(\"Fetching products from dummyjson API...\")\n\ntry:\n    response = result.fetch(\"https://dummyjson.com/products?limit=10\")\n    data = json.loads(response)\nexcept Exception as e:\n    result.log_error(\"Failed to fetch products: \" + str(e))\n    raise\n\nresult.add_column(\"Title\", \"string\")\nresult.add_column(\"Price\", \"number\")\nresult.add_column(\"Rating\", \"number\")\nresult.add_column(\"Brand\", \"string\")\nresult.add_column(\"Category\", \"string\")\n\nfor product in data[\"products\"]:\n    result.add_row({\n        \"Title\": product[\"title\"],\n        \"Price\": product[\"price\"],\n        \"Rating\": product[\"rating\"],\n        \"Brand\": str(product.get(\"brand\", \"\")),\n        \"Category\": product[\"category\"]\n    })\n\nresult.log_info(\"Successfully loaded \" + str(len(data[\"products\"])) + \" products\")",
                     TypeDefinition = TypeDefinition.String.With(multiLine: true)
                 },
             },
@@ -76,7 +76,7 @@ public class PythonCustomList : CustomListBase
         var engine = Python.CreateEngine();
         var scope = engine.CreateScope();
 
-        var helper = new PythonResultHelper();
+        var helper = new PythonResultHelper(Log);
         scope.SetVariable("result", helper);
 
         try
