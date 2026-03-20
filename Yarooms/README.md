@@ -1,8 +1,24 @@
-# Peakboard Extension for Yarooms
-This extension enables easy access to Yarooms meetings for the Peakboard designer.
-If you're only intested in the using the extension, just download the zip file in the Binary folder and install the extension by using the Manage dialog.
+# Peakboard Extension: Yarooms
 
-If you encounter any troubles, please contact support at peakboard dot com.
+This extension connects Peakboard to [Yarooms](https://www.yarooms.com/), a meeting room management system. Display room availability, bookings, and scheduling data on your Peakboard dashboards.
 
-# Release notes
+## Custom List: Yarooms Meetings
+
+Retrieves meeting and room booking data from the Yarooms API.
+
+### Configuration
+
+| Parameter | Description |
+|-----------|-------------|
+| API URL | Yarooms API endpoint |
+| API Key | Yarooms API authentication key |
+
+## Installation
+
+1. Download `PeakboardExtensionYarooms.zip` from the `Binaries` folder.
+2. Add the extension to Peakboard Designer via **Manage Extensions**.
+3. Add a new data source and select **Yarooms** from the extensions list.
+
+## Release Notes
+
 2020-09-04 Initial Release

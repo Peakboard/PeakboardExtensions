@@ -1,8 +1,24 @@
-# Peakboard Extension for MySQL
-This extension enables easy access to MySQL databases for the Peakboard designer.
-If you're only intested in the using the extension, just download the zip file in the Binary folder and install the extension by using the Manage dialog.
+# Peakboard Extension: MySQL
 
-If you encounter any troubles, please contact support at peakboard dot com.
+This extension provides a database connector for [MySQL](https://www.mysql.com/) databases, allowing you to execute SQL queries directly from Peakboard.
 
-# Release notes
+## Custom List: MySQL Query
+
+Execute SQL queries against a MySQL database and use the results as a Peakboard data source.
+
+### Configuration
+
+| Parameter | Description |
+|-----------|-------------|
+| Connection String | MySQL connection string |
+| SQL Statement | The SQL query to execute |
+
+## Installation
+
+1. Download `MySQLExtension.zip` from the `Binaries` folder.
+2. Add the extension to Peakboard Designer via **Manage Extensions**.
+3. Add a new data source and select **MySQL** from the extensions list.
+
+## Release Notes
+
 2020-10-12 Initial Release
