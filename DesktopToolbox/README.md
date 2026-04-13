@@ -2,6 +2,10 @@
 
 This extension provides information about the current Windows desktop session and offers utility functions for interacting with the local desktop environment.
 
+Please find more information on how to use the Desktop Toolbox with Peakboard here:
+
+[Side by Side - Making Peakboard BYOD Play Nice among other Windows Apps](https://how-to-dismantle-a-peakboard-box.com/Side-by-Side-Making-Peakboard-BYOD-Play-Nice-among-other-Windows-Apps.html)
+
 ## Custom List: Desktop Information
 
 The **Desktop Information** custom list returns a single row with details about the current desktop session. No configuration or connection properties are required.
