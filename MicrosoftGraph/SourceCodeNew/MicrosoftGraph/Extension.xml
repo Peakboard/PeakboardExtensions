@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
+	<Extensions>
+		<Extension ID="MicrosoftGraph"
+				   Path="MicrosoftGraph.dll"
+				   Version="1.1"
+				   Class="MicrosoftGraph.MicrosoftGraphExtension" />
+	</Extensions>
+</ExtensionCatalog>
