@@ -3,7 +3,7 @@
 	<Extensions>
 		<Extension ID="DesktopToolbox"
 				   Path="DesktopToolbox.dll"
-				   Version="1.0"
+				   Version="1.1"
 				   Class="DesktopToolbox.DesktopToolboxExtension" />
 	</Extensions>
 </ExtensionCatalog>

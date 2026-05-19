@@ -33,6 +33,30 @@ Opens a given URL in the default browser of the operating system.
 data.DesktopInformation.OpenURLInBrowser('https://www.peakboard.com')
 ```
 
+#### WriteTextFile
+
+Writes text content to a file on the local file system. The file is created if it does not exist and **overwritten** if it does. The content is written as UTF-8.
+
+| Parameter | Type   | Required | Description                                              |
+|-----------|--------|----------|----------------------------------------------------------|
+| fileName  | String | Yes      | Full path of the file including the folder (e.g. `C:\Temp\out.txt`) |
+| content   | String | Yes      | The text content to write                                |
+
+| Return | Type | Description |
+|--------|------|-------------|
+| result | String | `OK` on success, or the error message (e.g. folder does not exist, access denied) on failure |
+
+The function never throws back into Peakboard — any problem is returned as the `result` string, so check whether it equals `OK`.
+
+**Example usage in Peakboard script:**
+
+```lua
+local r = data.DesktopInformation.WriteTextFile('C:\\Temp\\out.txt', 'Hello world')
+if r ~= 'OK' then
+    -- handle error, r contains the message
+end
+```
+
 ## Installation
 
 1. Download `DesktopToolbox.zip` from the `Binary` folder.
@@ -42,3 +66,4 @@ data.DesktopInformation.OpenURLInBrowser('https://www.peakboard.com')
 ## Release Notes
 
 2026-03-11 Version 1.0 - Initial Release
+2026-05-18 Version 1.1 - Added `WriteTextFile` function

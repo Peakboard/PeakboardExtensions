@@ -1,5 +1,13 @@
 # Peakboard Extension: Microsoft Graph
 
+## Overview
+
+**English:** This extension provides access to Microsoft 365 / Microsoft Entra ID objects that are **not covered by Peakboard's built-in data sources**. While the standard Peakboard Office 365 connectors focus on a signed-in user's own data, this extension uses app-only authentication to reach organization-wide objects via Microsoft Graph — such as the full user directory, Microsoft 365 groups, and Microsoft Planner plans, buckets and tasks — and to write back to Planner.
+
+**Deutsch:** Diese Erweiterung ermöglicht den Zugriff auf Microsoft-365-/Microsoft-Entra-ID-Objekte, die **von den integrierten Datenquellen von Peakboard nicht abgedeckt werden**. Während sich die standardmäßigen Peakboard-Office-365-Konnektoren auf die Daten des angemeldeten Benutzers konzentrieren, verwendet diese Erweiterung eine App-only-Authentifizierung, um über Microsoft Graph auf organisationsweite Objekte zuzugreifen — etwa das vollständige Benutzerverzeichnis, Microsoft-365-Gruppen sowie Microsoft-Planner-Pläne, -Buckets und -Aufgaben — und um Daten in Planner zurückzuschreiben.
+
+---
+
 This extension connects Peakboard to [Microsoft Graph](https://learn.microsoft.com/en-us/graph/overview), the unified API surface for Microsoft 365 and Microsoft Entra ID (Azure AD). It ships custom lists for reading users and Microsoft 365 groups from your tenant, plus Microsoft Planner data (plans, buckets and tasks).
 
 The Planner data sources are designed to be chained: start with **Microsoft 365 Groups** to find the `GroupId`, then **Planner Plans** to find a `PlanId`, then **Planner Tasks** (and optionally **Planner Buckets**) to drive the dashboard.
@@ -143,24 +151,26 @@ In Peakboard, parse it with the JSON functions to iterate items, or just bind `c
 
 The Planner Tasks list also exposes two callable functions, invoked from a Peakboard button/script (not on data refresh). Both require the `Tasks.ReadWrite.All` application permission.
 
+Each function returns a **single** value named `result` (a string), so it works cleanly inside Peakboard Building Blocks. On failure the value starts with `ERROR:` followed by the detail; the full detail is also written to the extension log.
+
 #### `createTask`
 
-Creates a new Planner task via `POST /planner/tasks`.
+Creates a new Planner task via `POST /planner/tasks`. The task is always created in the plan given by **this list's `PlanId` property** — there is no `planId` input parameter.
 
 | Input | Required | Description |
 |-------|----------|-------------|
-| planId | No | Plan to create the task in. If left empty, the list's `PlanId` property is used |
 | title | **Yes** | Task title |
+| notes | No | Task description / notes. Set on the task *details* via a follow-up call after creation (see note below) |
 | bucketId | No | Bucket to place the task in |
 | dueDateTime | No | Due date, ISO 8601 (e.g. `2026-06-01T00:00:00Z`) |
 | assigneeIds | No | Comma-separated user GUIDs to assign |
 | priority | No | `1` urgent, `3` important, `5` medium, `9` low |
 
+> **`notes` behaviour**: the Planner API does not accept a description on `POST /planner/tasks`. When you pass `notes`, the extension creates the task first, then sets the description with a follow-up `GET + PATCH /planner/tasks/{id}/details` (ETag-guarded). Because the task already exists by then, a failure to set the notes does **not** fail the call — `result` still returns the new task ID and the notes problem is written to the extension log.
+
 | Return | Description |
 |--------|-------------|
-| success | `"true"` or `"false"` |
-| taskId | ID of the newly created task (empty on failure) |
-| message | `OK`, or the Graph error detail |
+| result | On success: the **ID of the newly created task**. On failure: `ERROR: <detail>` |
 
 #### `assignTaskToBucket`
 
@@ -173,12 +183,11 @@ Moves an existing task to another bucket via `PATCH /planner/tasks/{id}`.
 
 | Return | Description |
 |--------|-------------|
-| success | `"true"` or `"false"` |
-| message | `OK`, or the Graph error detail |
+| result | On success: `OK`. On failure: `ERROR: <detail>` |
 
-> Planner uses optimistic concurrency. `assignTaskToBucket` first does a `GET /planner/tasks/{id}` to read the current `@odata.etag`, then sends the `PATCH` with an `If-Match` header carrying that ETag. This is handled internally — callers just pass `taskId` and `bucketId`. If the task is modified by someone else between the GET and the PATCH, Graph returns `412 Precondition Failed` and `message` will say so; simply call the function again.
+> Planner uses optimistic concurrency. `assignTaskToBucket` first does a `GET /planner/tasks/{id}` to read the current `@odata.etag`, then sends the `PATCH` with an `If-Match` header carrying that ETag. This is handled internally — callers just pass `taskId` and `bucketId`. If the task is modified by someone else between the GET and the PATCH, Graph returns `412 Precondition Failed` and `result` will start with `ERROR:`; simply call the function again.
 
-> `success` is returned as the string `"true"` / `"false"` (Peakboard function string return). Compare against `"true"` in your dashboard logic.
+> To check success in a Building Block, test whether `result` does **not** start with `ERROR:` (e.g. `LEFT(result, 6) <> "ERROR:"`). For `createTask`, a successful `result` is directly the new task ID you can feed into other functions.
 
 ## Authentication
 

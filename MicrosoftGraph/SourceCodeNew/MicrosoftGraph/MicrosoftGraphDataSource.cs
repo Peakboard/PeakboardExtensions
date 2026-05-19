@@ -19,7 +19,7 @@ namespace MicrosoftGraph
                 ID = "MicrosoftGraph",
                 Name = "Microsoft Graph Extension",
                 Description = "Connect to the Microsoft Graph API to read data from your Microsoft 365 / Entra ID tenant.",
-                Version = "1.1",
+                Version = "1.3",
                 MinVersion = "1.0",
                 Author = "Patrick",
                 Company = "Peakboard GmbH",

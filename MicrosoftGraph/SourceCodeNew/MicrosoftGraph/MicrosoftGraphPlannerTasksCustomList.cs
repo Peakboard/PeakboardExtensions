@@ -66,11 +66,11 @@ namespace MicrosoftGraph
                     new CustomListFunctionDefinition
                     {
                         Name = "createTask",
-                        Description = "Creates a new Planner task. Requires the Tasks.ReadWrite.All application permission.",
+                        Description = "Creates a new Planner task in the plan set by this list's PlanId property. Requires the Tasks.ReadWrite.All application permission. Returns the new task ID, or a string starting with 'ERROR:' on failure.",
                         InputParameters = new CustomListFunctionInputParameterDefinitionCollection
                         {
-                            new CustomListFunctionInputParameterDefinition { Name = "planId", Description = "Plan to create the task in. If empty, the list's PlanId property is used.", Optional = true, Type = CustomListFunctionParameterTypes.String },
                             new CustomListFunctionInputParameterDefinition { Name = "title", Description = "Task title (required).", Optional = false, Type = CustomListFunctionParameterTypes.String },
+                            new CustomListFunctionInputParameterDefinition { Name = "notes", Description = "Optional task description / notes (set on the task details after creation).", Optional = true, Type = CustomListFunctionParameterTypes.String },
                             new CustomListFunctionInputParameterDefinition { Name = "bucketId", Description = "Optional bucket to place the task in.", Optional = true, Type = CustomListFunctionParameterTypes.String },
                             new CustomListFunctionInputParameterDefinition { Name = "dueDateTime", Description = "Optional due date as ISO 8601, e.g. 2026-06-01T00:00:00Z.", Optional = true, Type = CustomListFunctionParameterTypes.String },
                             new CustomListFunctionInputParameterDefinition { Name = "assigneeIds", Description = "Optional comma-separated user GUIDs to assign.", Optional = true, Type = CustomListFunctionParameterTypes.String },
@@ -78,15 +78,13 @@ namespace MicrosoftGraph
                         },
                         ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
                         {
-                            new CustomListFunctionReturnParameterDefinition { Name = "success", Type = CustomListFunctionParameterTypes.String },
-                            new CustomListFunctionReturnParameterDefinition { Name = "taskId", Type = CustomListFunctionParameterTypes.String },
-                            new CustomListFunctionReturnParameterDefinition { Name = "message", Type = CustomListFunctionParameterTypes.String },
+                            new CustomListFunctionReturnParameterDefinition { Name = "result", Type = CustomListFunctionParameterTypes.String },
                         }
                     },
                     new CustomListFunctionDefinition
                     {
                         Name = "assignTaskToBucket",
-                        Description = "Moves an existing Planner task to a different bucket. Requires the Tasks.ReadWrite.All application permission.",
+                        Description = "Moves an existing Planner task to a different bucket. Requires the Tasks.ReadWrite.All application permission. Returns 'OK', or a string starting with 'ERROR:' on failure.",
                         InputParameters = new CustomListFunctionInputParameterDefinitionCollection
                         {
                             new CustomListFunctionInputParameterDefinition { Name = "taskId", Description = "ID of the task to move (required).", Optional = false, Type = CustomListFunctionParameterTypes.String },
@@ -94,8 +92,7 @@ namespace MicrosoftGraph
                         },
                         ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
                         {
-                            new CustomListFunctionReturnParameterDefinition { Name = "success", Type = CustomListFunctionParameterTypes.String },
-                            new CustomListFunctionReturnParameterDefinition { Name = "message", Type = CustomListFunctionParameterTypes.String },
+                            new CustomListFunctionReturnParameterDefinition { Name = "result", Type = CustomListFunctionParameterTypes.String },
                         }
                     }
                 }
@@ -108,16 +105,16 @@ namespace MicrosoftGraph
 
             if (context.FunctionName.Equals("createTask", StringComparison.InvariantCultureIgnoreCase))
             {
-                var planId = Arg(context, 0);
-                if (string.IsNullOrWhiteSpace(planId))
-                    planId = data.Properties["PlanId"];
-                var title = Arg(context, 1);
+                // planId is always taken from the list's PlanId property, never a function arg.
+                var planId = data.Properties["PlanId"];
+                var title = Arg(context, 0);
+                var notes = Arg(context, 1);
                 var bucketId = Arg(context, 2);
                 var dueDateTime = Arg(context, 3);
                 var assigneeIds = Arg(context, 4);
                 var priority = Arg(context, 5);
 
-                CreateTask(data, planId, title, bucketId, dueDateTime, assigneeIds, priority, ret);
+                CreateTask(data, planId, title, notes, bucketId, dueDateTime, assigneeIds, priority, ret);
             }
             else if (context.FunctionName.Equals("assignTaskToBucket", StringComparison.InvariantCultureIgnoreCase))
             {
@@ -138,19 +135,19 @@ namespace MicrosoftGraph
             return context.Values[index]?.StringValue?.Trim() ?? string.Empty;
         }
 
-        private void CreateTask(CustomListData data, string planId, string title, string bucketId,
+        private void CreateTask(CustomListData data, string planId, string title, string notes, string bucketId,
             string dueDateTime, string assigneeIds, string priority, CustomListExecuteReturnContext ret)
         {
             try
             {
                 if (string.IsNullOrWhiteSpace(planId))
                 {
-                    ret.Add("false"); ret.Add(string.Empty); ret.Add("planId is required (pass it or set the list's PlanId property).");
+                    ret.Add("ERROR: the list's PlanId property is empty; set it to create tasks.");
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(title))
                 {
-                    ret.Add("false"); ret.Add(string.Empty); ret.Add("title is required.");
+                    ret.Add("ERROR: title is required.");
                     return;
                 }
 
@@ -193,19 +190,68 @@ namespace MicrosoftGraph
                 {
                     var newId = JObject.Parse(respBody)["id"]?.ToString() ?? string.Empty;
                     this.Log.Info($"Created Planner task '{title}' ({newId}) in plan {planId}.");
-                    ret.Add("true"); ret.Add(newId); ret.Add("OK");
+
+                    // The description ("notes") can't be set on POST /planner/tasks — it lives on
+                    // the task details sub-resource and needs a follow-up ETag PATCH. The task is
+                    // already created at this point, so a notes failure is logged but does NOT
+                    // turn the result into an error: we still return the new task ID.
+                    if (!string.IsNullOrWhiteSpace(notes) && !string.IsNullOrWhiteSpace(newId))
+                    {
+                        var notesError = SetTaskDescription(http, newId, notes);
+                        if (!string.IsNullOrEmpty(notesError))
+                            this.Log.Warning($"Task {newId} created, but setting notes failed: {notesError}");
+                    }
+
+                    ret.Add(newId);
                 }
                 else
                 {
                     this.Log.Warning($"createTask failed: HTTP {(int)resp.StatusCode}: {respBody}");
-                    ret.Add("false"); ret.Add(string.Empty);
-                    ret.Add($"Microsoft Graph returned {(int)resp.StatusCode} {resp.ReasonPhrase}: {respBody}");
+                    ret.Add($"ERROR: Microsoft Graph returned {(int)resp.StatusCode} {resp.ReasonPhrase}: {respBody}");
                 }
             }
             catch (Exception ex)
             {
                 this.Log.Error($"createTask threw: {ex.Message}");
-                ret.Add("false"); ret.Add(string.Empty); ret.Add(ex.Message);
+                ret.Add($"ERROR: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Sets a task's description ("notes"). The description lives on the task DETAILS
+        /// sub-resource and uses optimistic concurrency, so this does a GET to read the
+        /// details @odata.etag, then a PATCH with an If-Match header.
+        /// Returns an empty string on success, or a human-readable error string on failure.
+        /// </summary>
+        private string SetTaskDescription(HttpClient http, string taskId, string notes)
+        {
+            try
+            {
+                using var getResp = http.GetAsync($"planner/tasks/{taskId}/details").GetAwaiter().GetResult();
+                var getBody = getResp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                if (!getResp.IsSuccessStatusCode)
+                    return $"could not read task details: {(int)getResp.StatusCode} {getResp.ReasonPhrase}: {getBody}";
+
+                var etag = JObject.Parse(getBody)["@odata.etag"]?.ToString();
+                if (string.IsNullOrWhiteSpace(etag))
+                    return "task details did not return an ETag.";
+
+                using var patch = new HttpRequestMessage(new HttpMethod("PATCH"), $"planner/tasks/{taskId}/details");
+                patch.Headers.TryAddWithoutValidation("If-Match", etag);
+                var patchBody = new JObject { ["description"] = notes };
+                patch.Content = new StringContent(patchBody.ToString(Newtonsoft.Json.Formatting.None),
+                    System.Text.Encoding.UTF8, "application/json");
+
+                using var patchResp = http.SendAsync(patch).GetAwaiter().GetResult();
+                if (patchResp.IsSuccessStatusCode)
+                    return string.Empty;
+
+                var patchRespBody = patchResp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                return $"{(int)patchResp.StatusCode} {patchResp.ReasonPhrase}: {patchRespBody}";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
             }
         }
 
@@ -216,12 +262,12 @@ namespace MicrosoftGraph
             {
                 if (string.IsNullOrWhiteSpace(taskId))
                 {
-                    ret.Add("false"); ret.Add("taskId is required.");
+                    ret.Add("ERROR: taskId is required.");
                     return;
                 }
                 if (string.IsNullOrWhiteSpace(bucketId))
                 {
-                    ret.Add("false"); ret.Add("bucketId is required.");
+                    ret.Add("ERROR: bucketId is required.");
                     return;
                 }
 
@@ -234,15 +280,14 @@ namespace MicrosoftGraph
                 if (!getResp.IsSuccessStatusCode)
                 {
                     this.Log.Warning($"assignTaskToBucket: could not read task {taskId}: HTTP {(int)getResp.StatusCode}: {getBody}");
-                    ret.Add("false");
-                    ret.Add($"Could not read task {taskId}: {(int)getResp.StatusCode} {getResp.ReasonPhrase}: {getBody}");
+                    ret.Add($"ERROR: could not read task {taskId}: {(int)getResp.StatusCode} {getResp.ReasonPhrase}: {getBody}");
                     return;
                 }
 
                 var etag = JObject.Parse(getBody)["@odata.etag"]?.ToString();
                 if (string.IsNullOrWhiteSpace(etag))
                 {
-                    ret.Add("false"); ret.Add($"Task {taskId} did not return an ETag; cannot update.");
+                    ret.Add($"ERROR: task {taskId} did not return an ETag; cannot update.");
                     return;
                 }
 
@@ -259,19 +304,18 @@ namespace MicrosoftGraph
                 if (patchResp.IsSuccessStatusCode)
                 {
                     this.Log.Info($"Moved task {taskId} to bucket {bucketId}.");
-                    ret.Add("true"); ret.Add("OK");
+                    ret.Add("OK");
                 }
                 else
                 {
                     this.Log.Warning($"assignTaskToBucket failed: HTTP {(int)patchResp.StatusCode}: {patchRespBody}");
-                    ret.Add("false");
-                    ret.Add($"Microsoft Graph returned {(int)patchResp.StatusCode} {patchResp.ReasonPhrase}: {patchRespBody}");
+                    ret.Add($"ERROR: Microsoft Graph returned {(int)patchResp.StatusCode} {patchResp.ReasonPhrase}: {patchRespBody}");
                 }
             }
             catch (Exception ex)
             {
                 this.Log.Error($"assignTaskToBucket threw: {ex.Message}");
-                ret.Add("false"); ret.Add(ex.Message);
+                ret.Add($"ERROR: {ex.Message}");
             }
         }
 

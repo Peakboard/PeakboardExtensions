@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using Peakboard.ExtensionKit;
 
 namespace DesktopToolbox
@@ -30,6 +31,37 @@ namespace DesktopToolbox
                                 Type = CustomListFunctionParameterTypes.String,
                                 Optional = false,
                                 Description = "The URL to open in the default browser"
+                            },
+                        },
+                    },
+                    new CustomListFunctionDefinition
+                    {
+                        Name = "WriteTextFile",
+                        Description = "Writes the given content to a text file. Creates the file if it does not exist, overwrites it if it does. Returns \"OK\" on success, otherwise the error message.",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "fileName",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Optional = false,
+                                Description = "Full path of the file to write, including the folder (e.g. C:\\Temp\\out.txt)"
+                            },
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "content",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Optional = false,
+                                Description = "The text content to write to the file"
+                            },
+                        },
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+                        {
+                            new CustomListFunctionReturnParameterDefinition
+                            {
+                                Name = "result",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Description = "\"OK\" on success, or the error message on failure"
                             },
                         },
                     }
@@ -70,8 +102,37 @@ namespace DesktopToolbox
                     UseShellExecute = false
                 });
             }
+            else if (context.FunctionName.Equals("WriteTextFile", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var ret = new CustomListExecuteReturnContext();
+                ret.Add(WriteTextFile(context.Values[0].StringValue, context.Values[1].StringValue));
+                return ret;
+            }
 
             return new CustomListExecuteReturnContext();
+        }
+
+        /// <summary>
+        /// Writes <paramref name="content"/> to <paramref name="fileName"/> as UTF-8 text,
+        /// overwriting any existing file. Returns "OK" on success, or the error message
+        /// on failure (never throws back into Peakboard).
+        /// </summary>
+        private static string WriteTextFile(string fileName, string content)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    return "fileName is required.";
+                }
+
+                File.WriteAllText(fileName, content ?? string.Empty);
+                return "OK";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
     }
 }

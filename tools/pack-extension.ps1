@@ -20,10 +20,11 @@
     MicrosoftGraph\Binary\MicrosoftGraph.zip
 
 .PARAMETER Retries
-    How many attempts before giving up. Default 6.
+    How many attempts before giving up. Default 20.
 
 .PARAMETER DelaySeconds
-    Seconds to wait between attempts. Default 2.
+    Seconds to wait between attempts. Default 3 (so ~60s total budget, which
+    comfortably covers the Dropbox/AV lock window observed on freshly built DLLs).
 
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File tools\pack-extension.ps1 `
@@ -33,8 +34,8 @@
 param(
     [Parameter(Mandatory = $true)] [string] $BinDir,
     [Parameter(Mandatory = $true)] [string] $Destination,
-    [int] $Retries = 6,
-    [int] $DelaySeconds = 2
+    [int] $Retries = 20,
+    [int] $DelaySeconds = 3
 )
 
 $ErrorActionPreference = 'Stop'
