@@ -115,9 +115,11 @@ namespace DesktopToolbox
         /// <summary>
         /// Writes <paramref name="content"/> to <paramref name="fileName"/> as UTF-8 text,
         /// overwriting any existing file. Returns "OK" on success, or the error message
-        /// on failure (never throws back into Peakboard).
+        /// on failure (never throws back into Peakboard). The resolved absolute path is
+        /// written to the extension log, and Windows UAC file virtualization is detected
+        /// and reported so a redirected write is never silently mistaken for success.
         /// </summary>
-        private static string WriteTextFile(string fileName, string content)
+        private string WriteTextFile(string fileName, string content)
         {
             try
             {
@@ -126,12 +128,78 @@ namespace DesktopToolbox
                     return "fileName is required.";
                 }
 
-                File.WriteAllText(fileName, content ?? string.Empty);
+                // Resolve to an absolute path. A relative path (no drive/root) would be
+                // written relative to the Peakboard process's current directory, which is
+                // almost never where the caller is looking - this makes the location explicit.
+                var fullPath = Path.GetFullPath(fileName.Trim());
+                this.Log.Info($"WriteTextFile: requested '{fileName}', resolved to '{fullPath}'.");
+
+                var writtenAtUtc = DateTime.UtcNow;
+                File.WriteAllText(fullPath, content ?? string.Empty);
+
+                // Confirm the file is really on disk at the resolved path. If it is not,
+                // something removed it right after the write (e.g. antivirus) - report
+                // that instead of a misleading "OK".
+                if (!File.Exists(fullPath))
+                {
+                    this.Log.Warning($"WriteTextFile: write reported success but no file at '{fullPath}'.");
+                    return $"Write reported success but the file is not present at '{fullPath}'.";
+                }
+
+                // Detect Windows UAC file virtualization. A write to a folder the process
+                // user cannot actually write to (commonly anything under C:\) is silently
+                // redirected to %LOCALAPPDATA%\VirtualStore. The write "succeeds", but the
+                // file is NOT at fullPath for Explorer or any other process - which looks
+                // exactly like "returns OK but no file in the destination directory".
+                var virtualPath = GetVirtualStorePath(fullPath);
+                if (!string.IsNullOrEmpty(virtualPath) && File.Exists(virtualPath)
+                    && File.GetLastWriteTimeUtc(virtualPath) >= writtenAtUtc.AddSeconds(-2))
+                {
+                    this.Log.Warning($"WriteTextFile: Windows redirected the write (UAC virtualization) to '{virtualPath}'.");
+                    return $"Windows redirected the file to '{virtualPath}' because the folder " +
+                           $"'{Path.GetDirectoryName(fullPath)}' is not writable by the Peakboard process. " +
+                           "Use a user-writable folder (e.g. under the user profile or a folder you granted write access to).";
+                }
+
+                var bytes = new FileInfo(fullPath).Length;
+                this.Log.Info($"WriteTextFile: wrote {bytes} bytes to '{fullPath}'.");
                 return "OK";
             }
             catch (Exception ex)
             {
+                this.Log.Error($"WriteTextFile failed: {ex.Message}");
                 return ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Computes the %LOCALAPPDATA%\VirtualStore equivalent of an absolute local path,
+        /// used to detect UAC file virtualization redirection. Returns an empty string if
+        /// the path is not on a local drive (e.g. a UNC path), where virtualization never
+        /// applies.
+        /// </summary>
+        private static string GetVirtualStorePath(string fullPath)
+        {
+            try
+            {
+                var root = Path.GetPathRoot(fullPath); // e.g. "C:\"
+                if (string.IsNullOrEmpty(root) || root.Length < 2 || root[1] != ':')
+                {
+                    return string.Empty; // UNC or unexpected - virtualization does not apply
+                }
+
+                var relative = fullPath.Substring(root.Length); // e.g. "temp\MeineMeldungen.csv"
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                if (string.IsNullOrEmpty(localAppData))
+                {
+                    return string.Empty;
+                }
+
+                return Path.Combine(localAppData, "VirtualStore", relative);
+            }
+            catch
+            {
+                return string.Empty;
             }
         }
     }

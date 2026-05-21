@@ -48,6 +48,8 @@ Writes text content to a file on the local file system. The file is created if i
 
 The function never throws back into Peakboard — any problem is returned as the `result` string, so check whether it equals `OK`.
 
+> **Where does the file go?** The path is resolved to an **absolute** path before writing, and that resolved path is written to the extension log (e.g. `WriteTextFile: wrote 12 bytes to 'C:\Temp\out.txt'`). If you get `OK` but cannot find the file, check the log for the resolved path. Common reasons it differs from what you expect: a **relative path** is resolved against the Peakboard process working directory; the app runs on a **Peakboard Box** so the file is written on the Box, not your PC; or Windows redirected a write to a protected location (e.g. `C:\` root, `C:\Program Files`) into `%LOCALAPPDATA%\VirtualStore`. Always pass a full path to a writable folder such as `C:\Temp` or a user folder.
+
 **Example usage in Peakboard script:**
 
 ```lua
@@ -67,3 +69,5 @@ end
 
 2026-03-11 Version 1.0 - Initial Release
 2026-05-18 Version 1.1 - Added `WriteTextFile` function
+2026-05-18 Version 1.2 - `WriteTextFile` now resolves and logs the absolute write path and verifies the file after writing
+2026-05-18 Version 1.3 - `WriteTextFile` now detects Windows UAC file virtualization and reports the redirected location instead of a misleading "OK"

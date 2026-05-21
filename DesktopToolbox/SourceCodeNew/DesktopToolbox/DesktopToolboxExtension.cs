@@ -16,7 +16,7 @@ namespace DesktopToolbox
                 ID = "DesktopToolbox",
                 Name = "Desktop Toolbox",
                 Description = "Provides desktop session information and utility functions.",
-                Version = "1.1",
+                Version = "1.3",
                 MinVersion = "1.0",
                 Author = "Patrick",
                 Company = "Peakboard GmbH",
