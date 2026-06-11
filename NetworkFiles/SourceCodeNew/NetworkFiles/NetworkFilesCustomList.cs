@@ -61,6 +61,8 @@ internal class NetworkFilesCustomList : CustomListBase
         data.Properties.TryGetValue("CheckSubfolders", out var checkSubfolders);
         data.Properties.TryGetValue("AddFolders", out var addFolders);
 
+        folder = folder?.TrimEnd('/', '\\');
+
         var includeSubfolders = string.Equals(checkSubfolders, "True", StringComparison.OrdinalIgnoreCase);
         var includeFolders = string.Equals(addFolders, "True", StringComparison.OrdinalIgnoreCase);
 
