@@ -47,9 +47,10 @@ namespace MySql
                     return Convert.ToBoolean(value);
                 if (IsNumericType(type))
                     return Convert.ToDouble(value);
-                if (type == typeof(DateTime))
-                    return Convert.ToDateTime(value);
 
+                // DateTime (and any other type) is exposed as a String column in
+                // GetColumnsOverride, so it must be returned as a string here.
+                // Returning a DateTime object breaks PipeMessage serialization.
                 return value.ToString();
             }
             catch
@@ -66,9 +67,8 @@ namespace MySql
                 return false;
             if (IsNumericType(type))
                 return 0d;
-            if (type == typeof(DateTime))
-                return DateTime.MinValue;
 
+            // DateTime maps to a String column, so a missing value is an empty string.
             return string.Empty;
         }
     }

@@ -16,7 +16,7 @@ namespace PeakboardExtensionMySql
                 ID = "MySql", // Must be unqiue over all extensions, so may use a namespace notation
                 Name = "MySql Extension",
                 Description = "This is an Extension for accessing MySql data",
-                Version = "1.0",
+                Version = "1.1",
                 Author = "Peakboard Team",
                 Company = "Peakboard GmbH",
                 Copyright = "Copyright © 2020",
