@@ -2,7 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
 	<Extensions>
 		<Extension ID="GettKeyConfigExtension"
-				   Version="3.0"
+				   Version="4.0"
 				   Path="GettKeyConfigExtension.dll"
 				   Class="GettKeyConfigExtension.GettKeyConfigExtension" />
 	</Extensions>
