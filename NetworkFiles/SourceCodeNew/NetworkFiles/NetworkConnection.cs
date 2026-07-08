@@ -6,68 +6,107 @@ using System.Text.RegularExpressions;
 
 namespace NetworkFiles;
 
-public class NetworkConnection : IDisposable
+public sealed class NetworkConnection : IDisposable
 {
+    private const int NO_ERROR = 0;
+    private const int ERROR_ACCESS_DENIED = 5;
+    private const int ERROR_BAD_NET_NAME = 67;
+    private const int ERROR_BAD_NETPATH = 53;
+    private const int ERROR_SESSION_CREDENTIAL_CONFLICT = 1219;
+    private const int ERROR_LOGON_FAILURE = 1326;
+    private const int ERROR_NTLM_BLOCKED = 1937;
+
     public string NetworkName { get; }
+
+    private string? _connectedAnchor;
 
     public NetworkConnection(string networkName, NetworkCredential credentials)
     {
-        var originalNetworkName = networkName;
+        if (string.IsNullOrWhiteSpace(networkName))
+            throw new ArgumentException("UNC path must not be empty.", nameof(networkName));
 
-        // Try it first with the ip of the dns
-        // Here we get a error if the designer (windows desktop) user is an other user as the credentials
-        // this does not happen if we change the dns to ip
-        for (var i = 0; i < 2; i++)
+        NetworkName = networkName.TrimEnd('/', '\\');
+
+        var server = ExtractServer(NetworkName)
+            ?? throw new ArgumentException($"'{networkName}' is not a valid UNC path (\\\\server\\share\\...).", nameof(networkName));
+
+        var shareRoot = ExtractShareRoot(NetworkName);
+
+        var userName = string.IsNullOrEmpty(credentials.Domain)
+            ? credentials.UserName
+            : $@"{credentials.Domain}\{credentials.UserName}";
+
+        var anchors = shareRoot is not null
+            ? new[] { $@"\\{server}\IPC$", shareRoot }
+            : new[] { $@"\\{server}\IPC$" };
+
+        int lastError = NO_ERROR;
+
+        foreach (var anchor in anchors)
         {
-            // first try it with the ip
-            if (i == 0)
+            var isIpc = anchor.EndsWith(@"\IPC$", StringComparison.OrdinalIgnoreCase);
+
+            var netResource = new NetResource
             {
-                var rgx = new Regex(@"^\\\\(.*?)\\");
-                var dns = rgx.Match(networkName).Value;
-                if (!string.IsNullOrEmpty(dns))
-                {
-                    dns = dns.Trim('\\');
-                    var ip = Dns.GetHostAddresses(dns).Length > 0 ? Dns.GetHostAddresses(dns)[0].ToString() : null;
+                Scope = ResourceScope.GlobalNetwork,
+                ResourceType = isIpc ? ResourceType.Any : ResourceType.Disk,
+                DisplayType = ResourceDisplaytype.Share,
+                RemoteName = anchor
+            };
 
-                    if (!string.IsNullOrEmpty(ip))
-                    {
-                        networkName = Regex.Replace(networkName, @"^\\\\.*?\\", $@"\\{ip}\");
-                    }
-                }
-            }
-            // if it did now worked try it with the dns (which mostly will fail then as well)
-            else
+            var result = WNetAddConnection2(netResource, credentials.Password, userName, 0);
+
+            switch (result)
             {
-                networkName = originalNetworkName;
+                case NO_ERROR:
+                    _connectedAnchor = anchor;
+                    return;
+
+                case ERROR_SESSION_CREDENTIAL_CONFLICT:
+                    _connectedAnchor = null;
+                    return;
+
+                case ERROR_LOGON_FAILURE:
+                    throw new UnauthorizedAccessException(
+                        $"Invalid credentials for user '{userName}' on server '{server}'.");
+
+                case ERROR_NTLM_BLOCKED:
+                    throw new UnauthorizedAccessException(
+                        $"NTLM authentication is disabled on '{server}' or by group policy, " +
+                        $"and Kerberos requires a hostname (SPN). " +
+                        $"Use the server's hostname/FQDN in 'UNCFolder' instead of an IP address " +
+                        $"(e.g. \\\\fileserver.domain.local\\share\\... instead of \\\\{server}\\...).");
+
+                case ERROR_ACCESS_DENIED:
+                    lastError = result;
+                    continue;
+
+                case ERROR_BAD_NETPATH:
+                case ERROR_BAD_NET_NAME:
+                    lastError = result;
+                    continue; // try next anchor
+
+                default:
+                    lastError = result;
+                    continue;
             }
-
-            NetworkName = networkName;
-
-            var netResource = new NetResource { Scope = ResourceScope.GlobalNetwork, ResourceType = ResourceType.Disk, DisplayType = ResourceDisplaytype.Share, RemoteName = networkName };
-
-            var userName = string.IsNullOrEmpty(credentials.Domain)
-                ? credentials.UserName
-                : $@"{credentials.Domain}\{credentials.UserName}";
-
-            var result = WNetAddConnection2(
-                netResource,
-                credentials.Password,
-                userName,
-                0);
-
-            // try it with the original name
-            if (result != 0 && i == 0 && !networkName.Equals(originalNetworkName, StringComparison.InvariantCulture))
-            {
-                continue;
-            }
-
-            if (result != 0)
-            {
-                throw new Win32Exception(result);
-            }
-
-            return;
         }
+
+        throw new Win32Exception(lastError == NO_ERROR ? ERROR_BAD_NETPATH : lastError,
+            $"Could not establish an SMB session to server '{server}' " +
+            $"(tried: {string.Join(", ", anchors)}). Win32 error: {lastError}.");
+    }
+
+    private static string? ExtractServer(string uncPath)
+    {
+        var m = Regex.Match(uncPath, @"^\\\\([^\\]+)");
+        return m.Success ? m.Groups[1].Value : null;
+    }
+
+    private static string? ExtractShareRoot(string uncPath)
+    {
+        var m = Regex.Match(uncPath, @"^(\\\\[^\\]+\\[^\\]+)");
+        return m.Success ? m.Groups[1].Value : null;
     }
 
     ~NetworkConnection()
@@ -81,18 +120,22 @@ public class NetworkConnection : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
-        _ = WNetCancelConnection2(NetworkName, 0, true);
+        if (_connectedAnchor is not null)
+        {
+            _ = WNetCancelConnection2(_connectedAnchor, 0, false);
+            _connectedAnchor = null;
+        }
     }
 
-#pragma warning disable CA2101 // This is not working with CharSet Unicode
+#pragma warning disable CA2101 
     [DllImport("mpr.dll", CharSet = CharSet.Ansi)]
     private static extern int WNetAddConnection2(NetResource netResource, string password, string username, int flags);
 
     [DllImport("mpr.dll", CharSet = CharSet.Ansi)]
     private static extern int WNetCancelConnection2(string name, int flags, bool force);
-#pragma warning restore CA2101  // This is not working with CharSet Unicode
+#pragma warning restore CA2101
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -102,10 +145,10 @@ public class NetResource
     public ResourceType ResourceType;
     public ResourceDisplaytype DisplayType;
     public int Usage;
-    public string LocalName;
-    public string RemoteName;
-    public string Comment;
-    public string Provider;
+    public string? LocalName;
+    public string? RemoteName;
+    public string? Comment;
+    public string? Provider;
 }
 
 public enum ResourceScope

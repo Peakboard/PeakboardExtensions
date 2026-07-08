@@ -1,4 +1,3 @@
-using System;
 using Peakboard.ExtensionKit;
 
 namespace NetworkFiles;
@@ -12,10 +11,10 @@ public class NetworkFilesExtension : ExtensionBase
         {
             ID = "NetworkFiles",
             Name = "Network files",
-            Version = "1.0",
+            Version = "1.2",
             Author = "Peakboard GmbH",
             Company = "Peakboard GmbH",
-            Description = "Reads all files of an unc path folder"
+            Description = "Reads all files of an UNC path folder (SMB session via IPC$/share root)"
         };
     }
 

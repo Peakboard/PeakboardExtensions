@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Net;
 using Peakboard.ExtensionKit;
 
@@ -10,17 +11,18 @@ internal class NetworkFilesCustomList : CustomListBase
     {
         return new CustomListDefinition
         {
-            ID = $"NetworkFiles",
+            ID = "NetworkFiles",
             Name = "Network files",
             Description = "List all files of a folder",
             PropertyInputPossible = true,
-            PropertyInputDefaults = {
-                new CustomListPropertyDefinition(){ Name = "Domain", Value = "domain"},
-                new CustomListPropertyDefinition(){ Name = "User", Value = "johndoe"},
-                new CustomListPropertyDefinition(){ Name = "Password", TypeDefinition = new CustomListPropertyStringTypeDefinition() { Masked = true } },
-                new CustomListPropertyDefinition(){ Name = "UNCFolder", Value = @"\\server\folder"},
-                new CustomListPropertyDefinition(){ Name = "CheckSubfolders", Value = "False", TypeDefinition = new CustomListPropertyBooleanTypeDefinition()},
-                new CustomListPropertyDefinition(){ Name = "AddFolders", Value = "False", TypeDefinition = new CustomListPropertyBooleanTypeDefinition()}
+            PropertyInputDefaults =
+            {
+                new CustomListPropertyDefinition { Name = "Domain", Value = "domain" },
+                new CustomListPropertyDefinition { Name = "User", Value = "johndoe" },
+                new CustomListPropertyDefinition { Name = "Password", TypeDefinition = new CustomListPropertyStringTypeDefinition { Masked = true } },
+                new CustomListPropertyDefinition { Name = "UNCFolder", Value = @"\\server\folder" },
+                new CustomListPropertyDefinition { Name = "CheckSubfolders", Value = "False", TypeDefinition = new CustomListPropertyBooleanTypeDefinition() },
+                new CustomListPropertyDefinition { Name = "AddFolders", Value = "False", TypeDefinition = new CustomListPropertyBooleanTypeDefinition() }
             }
         };
     }
@@ -28,8 +30,8 @@ internal class NetworkFilesCustomList : CustomListBase
     protected override CustomListColumnCollection GetColumnsOverride(CustomListData data)
     {
         data.Properties.TryGetValue("AddFolders", out var addFolders);
-        
-        if (addFolders == "True")
+
+        if (string.Equals(addFolders, "True", StringComparison.OrdinalIgnoreCase))
         {
             return new CustomListColumnCollection
             {
@@ -39,15 +41,13 @@ internal class NetworkFilesCustomList : CustomListBase
                 new CustomListColumn("IsFolder", CustomListColumnTypes.Boolean),
             };
         }
-        else
+
+        return new CustomListColumnCollection
         {
-            return new CustomListColumnCollection
-            {
-                new CustomListColumn("Path", CustomListColumnTypes.String),
-                new CustomListColumn("Name", CustomListColumnTypes.String),
-                new CustomListColumn("LastModified", CustomListColumnTypes.String),
-            };
-        }
+            new CustomListColumn("Path", CustomListColumnTypes.String),
+            new CustomListColumn("Name", CustomListColumnTypes.String),
+            new CustomListColumn("LastModified", CustomListColumnTypes.String),
+        };
     }
 
     protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
@@ -63,6 +63,9 @@ internal class NetworkFilesCustomList : CustomListBase
 
         folder = folder?.TrimEnd('/', '\\');
 
+        if (string.IsNullOrWhiteSpace(folder))
+            throw new InvalidOperationException("Property 'UNCFolder' must not be empty.");
+
         var includeSubfolders = string.Equals(checkSubfolders, "True", StringComparison.OrdinalIgnoreCase);
         var includeFolders = string.Equals(addFolders, "True", StringComparison.OrdinalIgnoreCase);
 
@@ -71,27 +74,45 @@ internal class NetworkFilesCustomList : CustomListBase
         using (var nc = new NetworkConnection(folder, credentials))
         {
             var root = nc.NetworkName.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            AddFolderContent(items, root, includeSubfolders, includeFolders);
+
+            try
+            {
+                AddFolderContent(items, root, includeSubfolders, includeFolders);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                throw new UnauthorizedAccessException(
+                    $"SMB session to the server was established, but access to '{root}' was denied. " +
+                    $"Check NTFS 'List folder contents'/'Read' permissions for the configured user. ({ex.Message})", ex);
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                throw new DirectoryNotFoundException(
+                    $"SMB session to the server was established, but the folder '{root}' was not found. " +
+                    $"Check the UNCFolder path for typos. ({ex.Message})", ex);
+            }
+            catch (IOException ex) when (ex is not FileNotFoundException)
+            {
+                throw new IOException(
+                    $"SMB session to the server was established, but enumerating '{root}' failed. ({ex.Message})", ex);
+            }
         }
 
         return items;
     }
 
-    private void AddFolderContent(CustomListObjectElementCollection items, string folderPath, bool includeSubfolders, bool includeFolders)
+    private static void AddFolderContent(CustomListObjectElementCollection items, string folderPath, bool includeSubfolders, bool includeFolders)
     {
         if (includeFolders)
         {
             var folderName = Path.GetFileName(folderPath);
-
             var obj = new CustomListObjectElement
-        {
-            { "Path", folderPath },
-            { "Name", folderName },
-            { "LastModified", string.Empty }
-        };
-
+            {
+                { "Path", folderPath },
+                { "Name", folderName },
+                { "LastModified", string.Empty }
+            };
             obj.Add("IsFolder", true);
-
             items.Add(obj);
         }
 
@@ -106,7 +127,6 @@ internal class NetworkFilesCustomList : CustomListBase
         foreach (var file in Directory.GetFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
         {
             var modified = File.GetLastWriteTime(file);
-
             var obj = new CustomListObjectElement
             {
                 { "Path", file },

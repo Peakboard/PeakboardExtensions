@@ -2,7 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
   <Extensions>
     <Extension ID="NetworkFiles"
-               Version="1.0"
+               Version="1.2"
                Path="NetworkFiles.dll"
                Class="NetworkFiles.NetworkFilesExtension" />
   </Extensions>
