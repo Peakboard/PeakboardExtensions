@@ -137,6 +137,45 @@ namespace DesktopToolbox
                                               "status reverts to \"idle\" until a new dialog is started."
                             },
                         },
+                    },
+                    new CustomListFunctionDefinition
+                    {
+                        Name = "GetTextFromClipboard",
+                        Description = "Returns the current text content of the Windows clipboard. Returns an empty string if the clipboard is empty or does not contain text.",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection(),
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+                        {
+                            new CustomListFunctionReturnParameterDefinition
+                            {
+                                Name = "result",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Description = "The clipboard text, or an empty string if the clipboard is empty or holds no text."
+                            },
+                        },
+                    },
+                    new CustomListFunctionDefinition
+                    {
+                        Name = "SetTextToClipboard",
+                        Description = "Writes the given text to the Windows clipboard, replacing its current content. Returns \"OK\" on success, otherwise the error message.",
+                        InputParameters = new CustomListFunctionInputParameterDefinitionCollection
+                        {
+                            new CustomListFunctionInputParameterDefinition
+                            {
+                                Name = "text",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Optional = false,
+                                Description = "The text to place on the clipboard."
+                            },
+                        },
+                        ReturnParameters = new CustomListFunctionReturnParameterDefinitionCollection
+                        {
+                            new CustomListFunctionReturnParameterDefinition
+                            {
+                                Name = "result",
+                                Type = CustomListFunctionParameterTypes.String,
+                                Description = "\"OK\" on success, or the error message on failure."
+                            },
+                        },
                     }
                 }
             };
@@ -195,6 +234,18 @@ namespace DesktopToolbox
 
                 var ret = new CustomListExecuteReturnContext();
                 ret.Add(json);
+                return ret;
+            }
+            else if (context.FunctionName.Equals("GetTextFromClipboard", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var ret = new CustomListExecuteReturnContext();
+                ret.Add(GetTextFromClipboard());
+                return ret;
+            }
+            else if (context.FunctionName.Equals("SetTextToClipboard", StringComparison.InvariantCultureIgnoreCase))
+            {
+                var ret = new CustomListExecuteReturnContext();
+                ret.Add(SetTextToClipboard(context.Values[0].StringValue));
                 return ret;
             }
 
@@ -450,6 +501,208 @@ namespace DesktopToolbox
         }
 
         /// <summary>
+        /// Returns the current Windows clipboard text (CF_UNICODETEXT), or an empty string if the
+        /// clipboard is empty or holds no text. Clipboard access must happen on an STA thread, so
+        /// the actual work runs on a short-lived STA thread (the Peakboard host thread is not
+        /// guaranteed to be STA). Never throws back into Peakboard - problems are logged and result
+        /// in an empty string.
+        /// </summary>
+        private string GetTextFromClipboard()
+        {
+            try
+            {
+                return RunOnStaThread(ReadClipboardText);
+            }
+            catch (Exception ex)
+            {
+                this.Log.Error($"GetTextFromClipboard failed: {ex.Message}");
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Writes <paramref name="text"/> to the Windows clipboard (CF_UNICODETEXT), replacing its
+        /// current content. Returns "OK" on success or the error message on failure (never throws
+        /// back into Peakboard). Runs on a short-lived STA thread as required for clipboard access.
+        /// </summary>
+        private string SetTextToClipboard(string text)
+        {
+            try
+            {
+                return RunOnStaThread(() => WriteClipboardText(text ?? string.Empty));
+            }
+            catch (Exception ex)
+            {
+                this.Log.Error($"SetTextToClipboard failed: {ex.Message}");
+                return ex.Message;
+            }
+        }
+
+        /// <summary>
+        /// Reads CF_UNICODETEXT off the clipboard using the Win32 clipboard API directly (no
+        /// System.Windows.Forms dependency, matching the rest of this file). Retries OpenClipboard a
+        /// few times because another process may briefly hold the clipboard open.
+        /// </summary>
+        private string ReadClipboardText()
+        {
+            if (!OpenClipboardWithRetry())
+            {
+                this.Log.Warning("ReadClipboardText: could not open the clipboard.");
+                return string.Empty;
+            }
+
+            try
+            {
+                if (!IsClipboardFormatAvailable(CfUnicodeText))
+                {
+                    return string.Empty;
+                }
+
+                var handle = GetClipboardData(CfUnicodeText);
+                if (handle == IntPtr.Zero)
+                {
+                    return string.Empty;
+                }
+
+                var pointer = GlobalLock(handle);
+                if (pointer == IntPtr.Zero)
+                {
+                    return string.Empty;
+                }
+
+                try
+                {
+                    return Marshal.PtrToStringUni(pointer) ?? string.Empty;
+                }
+                finally
+                {
+                    GlobalUnlock(handle);
+                }
+            }
+            finally
+            {
+                CloseClipboard();
+            }
+        }
+
+        /// <summary>
+        /// Writes <paramref name="text"/> to the clipboard as CF_UNICODETEXT. On success the global
+        /// memory block is owned by the system (it must not be freed here); on failure the block is
+        /// freed. Returns "OK" or an error message.
+        /// </summary>
+        private string WriteClipboardText(string text)
+        {
+            if (!OpenClipboardWithRetry())
+            {
+                return "Could not open the clipboard (it may be in use by another application).";
+            }
+
+            var hGlobal = IntPtr.Zero;
+            var ownershipTransferred = false;
+            try
+            {
+                if (!EmptyClipboard())
+                {
+                    return "Could not clear the clipboard.";
+                }
+
+                // Include the terminating NUL character in the allocated size.
+                var bytes = (text.Length + 1) * sizeof(char);
+                hGlobal = GlobalAlloc(GMemMoveable, (UIntPtr)bytes);
+                if (hGlobal == IntPtr.Zero)
+                {
+                    return "Could not allocate clipboard memory.";
+                }
+
+                var target = GlobalLock(hGlobal);
+                if (target == IntPtr.Zero)
+                {
+                    return "Could not lock clipboard memory.";
+                }
+
+                try
+                {
+                    // Copy the string plus its terminating NUL into the global block.
+                    Marshal.Copy(text.ToCharArray(), 0, target, text.Length);
+                    Marshal.WriteInt16(target, text.Length * sizeof(char), 0);
+                }
+                finally
+                {
+                    GlobalUnlock(hGlobal);
+                }
+
+                if (SetClipboardData(CfUnicodeText, hGlobal) == IntPtr.Zero)
+                {
+                    return "Could not set the clipboard data.";
+                }
+
+                // The system now owns the memory - it must not be freed below.
+                ownershipTransferred = true;
+                return "OK";
+            }
+            finally
+            {
+                if (hGlobal != IntPtr.Zero && !ownershipTransferred)
+                {
+                    GlobalFree(hGlobal);
+                }
+                CloseClipboard();
+            }
+        }
+
+        /// <summary>
+        /// Tries to open the clipboard, retrying briefly: OpenClipboard fails while another process
+        /// has it open, which is common and transient.
+        /// </summary>
+        private static bool OpenClipboardWithRetry()
+        {
+            for (var attempt = 0; attempt < 10; attempt++)
+            {
+                if (OpenClipboard(IntPtr.Zero))
+                {
+                    return true;
+                }
+                Thread.Sleep(20);
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Runs <paramref name="func"/> on a dedicated STA thread and returns its result. Clipboard
+        /// APIs require the calling thread to be STA, and the Peakboard host thread is not guaranteed
+        /// to be one - so the work is marshalled onto a fresh STA thread here.
+        /// </summary>
+        private static T RunOnStaThread<T>(Func<T> func)
+        {
+            T result = default!;
+            Exception? captured = null;
+
+            var thread = new Thread(() =>
+            {
+                try
+                {
+                    result = func();
+                }
+                catch (Exception ex)
+                {
+                    captured = ex;
+                }
+            });
+#pragma warning disable CA1416 // clipboard/STA is Windows-only, and this whole extension is Windows-only
+            thread.SetApartmentState(ApartmentState.STA);
+#pragma warning restore CA1416
+            thread.IsBackground = true;
+            thread.Start();
+            thread.Join();
+
+            if (captured != null)
+            {
+                throw captured;
+            }
+            return result;
+        }
+
+        /// <summary>
         /// Builds the { "status": ..., "fileName": ..., "fileNameOnly": ..., "base64": ..., "error": ... }
         /// JSON payload shared by OpenFileAsBase64Start/Result. Written by hand (rather than via a
         /// serializer) so this stays a single self-contained method with no extra dependency
@@ -600,5 +853,40 @@ namespace DesktopToolbox
 
         [DllImport("user32.dll")]
         private static extern bool DestroyWindow(IntPtr hWnd);
+
+        // -- Win32 clipboard interop ---------------------------------------------------------
+
+        private const uint CfUnicodeText = 13;
+        private const uint GMemMoveable = 0x0002;
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool OpenClipboard(IntPtr hWndNewOwner);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool CloseClipboard();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool EmptyClipboard();
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern bool IsClipboardFormatAvailable(uint format);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr GetClipboardData(uint uFormat);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        private static extern IntPtr SetClipboardData(uint uFormat, IntPtr hMem);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GlobalAlloc(uint uFlags, UIntPtr dwBytes);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GlobalFree(IntPtr hMem);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr GlobalLock(IntPtr hMem);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool GlobalUnlock(IntPtr hMem);
     }
 }

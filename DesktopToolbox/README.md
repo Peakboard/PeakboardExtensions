@@ -167,6 +167,46 @@ A Peakboard Hub file list data source on `/Uploads` can then be used to display 
 
 > **Large files:** the entire file content travels through the script engine as one Base64 string (roughly 4/3 of the file size). This works fine for typical documents and images; for very large files consider whether passing the `fileName` to a different mechanism is more appropriate.
 
+#### GetTextFromClipboard
+
+Returns the current text content of the Windows clipboard. Takes no parameters.
+
+| Return | Type | Description |
+|--------|------|-------------|
+| result | String | The clipboard text, or an empty string if the clipboard is empty or does not contain text |
+
+Clipboard access happens on the machine where the Peakboard app runs (e.g. a Peakboard Box), not on the Designer PC. The function never throws back into Peakboard — on any problem it is logged and an empty string is returned.
+
+**Example usage in Peakboard script:**
+
+```lua
+local text = data.DesktopInformation.GetTextFromClipboard()
+peakboard.log('Clipboard: ' .. text)
+```
+
+#### SetTextToClipboard
+
+Writes text to the Windows clipboard, **replacing** its current content.
+
+| Parameter | Type   | Required | Description                     |
+|-----------|--------|----------|---------------------------------|
+| text      | String | Yes      | The text to place on the clipboard |
+
+| Return | Type | Description |
+|--------|------|-------------|
+| result | String | `OK` on success, or the error message (e.g. clipboard in use by another application) on failure |
+
+The function never throws back into Peakboard — check whether `result` equals `OK`.
+
+**Example usage in Peakboard script:**
+
+```lua
+local r = data.DesktopInformation.SetTextToClipboard('Hello world')
+if r ~= 'OK' then
+    -- handle error, r contains the message
+end
+```
+
 ## Installation
 
 1. Download `DesktopToolbox.zip` from the `Binary` folder.
@@ -180,3 +220,4 @@ A Peakboard Hub file list data source on `/Uploads` can then be used to display 
 2026-05-18 Version 1.2 - `WriteTextFile` now resolves and logs the absolute write path and verifies the file after writing
 2026-05-18 Version 1.3 - `WriteTextFile` now detects Windows UAC file virtualization and reports the redirected location instead of a misleading "OK"
 2026-07-03 Version 1.4 - Added `OpenFileAsBase64Start` / `OpenFileAsBase64Result`: file selection via the Windows Explorer dialog with optional extension filter, returning file path, name and content as Base64 in a JSON result. The dialog always opens in the foreground; the two-step start/poll design avoids the runtime's function call timeout.
+2026-07-15 Version 1.5 - Added `GetTextFromClipboard` and `SetTextToClipboard` for reading and writing the Windows clipboard text.
