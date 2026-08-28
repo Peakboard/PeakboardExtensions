@@ -12,6 +12,7 @@ namespace LocalAI
     /// complete.
     /// </summary>
     [Serializable]
+    [CustomListIcon("LocalAI.LocalAI.png")]
     public class ChatCustomList : CustomListBase
     {
         protected override CustomListDefinition GetDefinitionOverride()

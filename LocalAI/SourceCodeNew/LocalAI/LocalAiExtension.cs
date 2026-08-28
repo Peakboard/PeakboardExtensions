@@ -3,6 +3,7 @@ using Peakboard.ExtensionKit;
 
 namespace LocalAI
 {
+    [ExtensionIcon("LocalAI.LocalAI.png")]
     public class LocalAiExtension : ExtensionBase
     {
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -44,7 +45,7 @@ namespace LocalAI
                 Name = "Local AI",
                 Description = "Runs a small language model on the device itself. "
                             + "No cloud, no API key, no data leaves the machine.",
-                Version = "1.0",
+                Version = "1.1",
                 MinVersion = "1.0",
                 Author = "Peakboard",
                 Company = "Peakboard GmbH",
