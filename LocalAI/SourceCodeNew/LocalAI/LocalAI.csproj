@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>warnings</Nullable>
+		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<Platforms>x64</Platforms>
+		<PlatformTarget>x64</PlatformTarget>
+		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
+		<SelfContained>false</SelfContained>
+		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+		<AssemblyName>LocalAI</AssemblyName>
+		<RootNamespace>LocalAI</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Peakboard.ExtensionKit" Version="4.0.1">
+			<Private>false</Private>
+			<ExcludeAssets>runtime</ExcludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<!-- ONNX Runtime GenAI, CPU only. Everything here is MIT.
+
+	     There is a DirectML flavour of this package for GPU inference, but it
+	     pulls in Microsoft.AI.DirectML, which is not MIT - it carries a Microsoft
+	     EULA limiting use to Windows and Xbox. It is also useless on a Peakboard
+	     Box: DirectML returns numerically wrong output on the Box's Gen11
+	     integrated GPU. CPU it is. -->
+	<ItemGroup>
+		<PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.14.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="Extension.xml">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="NOTICE.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="Qwen3-0.6B-LICENSE.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Remove="LocalAI.png" />
+		<EmbeddedResource Include="LocalAI.png" />
+	</ItemGroup>
+
+	<!-- .lib files are link-time import libraries for the native ONNX DLLs.
+	     Nothing needs them at runtime, and tools\pack-extension.ps1 zips whatever
+	     is in the output folder, so drop them here rather than shipping dead weight. -->
+	<Target Name="RemoveImportLibs" AfterTargets="Build">
+		<ItemGroup>
+			<_ImportLibs Include="$(OutDir)*.lib" />
+		</ItemGroup>
+		<Delete Files="@(_ImportLibs)" />
+	</Target>
+
+</Project>

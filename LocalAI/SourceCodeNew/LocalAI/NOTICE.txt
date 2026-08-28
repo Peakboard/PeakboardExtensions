@@ -1,0 +1,66 @@
+NOTICE
+======
+
+This product includes a machine learning model and third-party software.
+This file, and the licence texts beside it, must travel with any distribution
+of the extension or of the model folder.
+
+
+1. Language model
+-----------------
+
+    Qwen3-0.6B
+    Copyright (c) Alibaba Cloud / the Qwen team
+    Licensed under the Apache License, Version 2.0
+    https://huggingface.co/Qwen/Qwen3-0.6B
+
+    Full licence text: Qwen3-0.6B-LICENSE.txt (beside this file).
+
+    MODIFICATIONS. The Apache 2.0 licence requires that changes be stated. The
+    weights distributed with this extension are not the originals as published:
+
+      - converted from the original safetensors to ONNX, using the model builder
+        from onnxruntime-genai (`onnxruntime_genai.models.builder`)
+      - stored at fp16 precision
+      - packaged with a genai_config.json describing the decoder inputs/outputs
+        and the generation defaults
+
+    No retraining, fine-tuning or distillation was performed. The model's
+    behaviour is that of the published Qwen3-0.6B, subject only to fp16 rounding.
+
+
+2. Inference runtime
+--------------------
+
+    All components below are MIT licensed, Copyright (c) Microsoft Corporation
+    and the .NET Foundation.
+
+      ONNX Runtime                        https://github.com/microsoft/onnxruntime
+      ONNX Runtime GenAI                  https://github.com/microsoft/onnxruntime-genai
+      System.Numerics.Tensors             https://dot.net/
+      Microsoft.Extensions.AI.Abstractions https://dot.net/
+      C#/WinRT (WinRT.Runtime)            https://github.com/microsoft/CsWinRT
+
+    Microsoft.Windows.SDK.NET is redistributed under the Windows SDK licence
+    terms: https://aka.ms/WinSDKLicenseURL
+
+
+3. Not shipped by default: DirectML
+-----------------------------------
+
+    The default build (Backend=cpu) contains no DirectML.
+
+    Building with `-p:Backend=dml` adds Microsoft.AI.DirectML, which is NOT MIT.
+    It carries the MICROSOFT SOFTWARE LICENSE TERMS for DirectX Machine Learning,
+    which restrict use to Windows and Xbox and include a binding arbitration
+    clause. That flavour should not be distributed without a legal review.
+
+    It is also of no use on a Peakboard Box: DirectML returns numerically wrong
+    output on the Box's Gen11 integrated GPU. See bench/RESULTS.md.
+
+
+4. Peakboard components
+-----------------------
+
+    Peakboard.ExtensionKit is Peakboard's own and is not redistributed here under
+    any third-party terms.

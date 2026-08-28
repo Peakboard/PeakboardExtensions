@@ -84,6 +84,7 @@ For more details on how extensions work and how to build your own, see:
 | Extension | Description |
 |-----------|-------------|
 | [GPT](GPT/) | OpenAI GPT API integration for AI-powered data |
+| [LocalAI](LocalAI/) | Runs a small language model on the device itself - no cloud, no API key |
 | [Python](Python/) | Execute Python scripts that produce tabular data |
 
 ### Utilities
