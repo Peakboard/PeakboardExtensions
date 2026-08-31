@@ -1,66 +1,82 @@
 NOTICE
 ======
 
-This product includes a machine learning model and third-party software.
-This file, and the licence texts beside it, must travel with any distribution
-of the extension or of the model folder.
+This product includes third-party software. This file, and the licence texts
+beside it, must travel with any distribution of the extension.
+
+No model weights are shipped with this extension. Section 1 is the notice you
+will need to satisfy once you add some, not a description of this package.
 
 
-1. Language model
------------------
+1. Language model - NOT INCLUDED
+--------------------------------
 
-    Qwen3-0.6B
-    Copyright (c) Alibaba Cloud / the Qwen team
-    Licensed under the Apache License, Version 2.0
-    https://huggingface.co/Qwen/Qwen3-0.6B
+    The extension ships no weights. You point ModelPath at a model folder you
+    obtain or build yourself (see README, "Getting a model"), and that model
+    carries its own licence, separate from this extension's.
 
-    Full licence text: Qwen3-0.6B-LICENSE.txt (beside this file).
+    Qwen3-0.6B-LICENSE.txt beside this file is the Apache 2.0 text for the model
+    the extension was developed against:
 
-    MODIFICATIONS. The Apache 2.0 licence requires that changes be stated. The
-    weights distributed with this extension are not the originals as published:
+      Qwen3-0.6B
+      Copyright (c) Alibaba Cloud / the Qwen team
+      Licensed under the Apache License, Version 2.0
+      https://huggingface.co/Qwen/Qwen3-0.6B
+
+    It is included as a starting point. If you ship a different model - a larger
+    Qwen, or Llama, Phi, Gemma, Mistral - replace it: Gemma and Llama in
+    particular have their own terms and are not Apache 2.0.
+
+    MODIFICATIONS. Apache 2.0 requires that changes be stated, and converting
+    weights to ONNX counts as a change. If you distribute a converted model
+    alongside this extension, a statement of this shape is what is wanted:
 
       - converted from the original safetensors to ONNX, using the model builder
         from onnxruntime-genai (`onnxruntime_genai.models.builder`)
-      - stored at fp16 precision
+      - stored at <fp16 / int4> precision
       - packaged with a genai_config.json describing the decoder inputs/outputs
         and the generation defaults
+      - no retraining, fine-tuning or distillation; behaviour is that of the
+        published model subject only to conversion rounding
 
-    No retraining, fine-tuning or distillation was performed. The model's
-    behaviour is that of the published Qwen3-0.6B, subject only to fp16 rounding.
+    Adjust it to what you actually did.
 
 
 2. Inference runtime
 --------------------
 
-    All components below are MIT licensed, Copyright (c) Microsoft Corporation
-    and the .NET Foundation.
+    Shipped in this package. All MIT licensed, Copyright (c) Microsoft
+    Corporation and the .NET Foundation.
 
-      ONNX Runtime                        https://github.com/microsoft/onnxruntime
-      ONNX Runtime GenAI                  https://github.com/microsoft/onnxruntime-genai
-      System.Numerics.Tensors             https://dot.net/
+      ONNX Runtime                         https://github.com/microsoft/onnxruntime
+      ONNX Runtime GenAI                   https://github.com/microsoft/onnxruntime-genai
+      System.Numerics.Tensors              https://dot.net/
       Microsoft.Extensions.AI.Abstractions https://dot.net/
-      C#/WinRT (WinRT.Runtime)            https://github.com/microsoft/CsWinRT
 
-    Microsoft.Windows.SDK.NET is redistributed under the Windows SDK licence
-    terms: https://aka.ms/WinSDKLicenseURL
+    Nothing here is under the Windows SDK licence. The project targets plain
+    `net8.0` rather than `net8.0-windows`, which is what keeps the Windows SDK
+    projection - and C#/WinRT with it - out of the package entirely.
 
 
-3. Not shipped by default: DirectML
------------------------------------
+3. Not shipped: DirectML
+------------------------
 
-    The default build (Backend=cpu) contains no DirectML.
+    This build contains no DirectML and is CPU-only.
 
-    Building with `-p:Backend=dml` adds Microsoft.AI.DirectML, which is NOT MIT.
-    It carries the MICROSOFT SOFTWARE LICENSE TERMS for DirectX Machine Learning,
-    which restrict use to Windows and Xbox and include a binding arbitration
-    clause. That flavour should not be distributed without a legal review.
+    Swapping the package reference from Microsoft.ML.OnnxRuntimeGenAI to
+    Microsoft.ML.OnnxRuntimeGenAI.DirectML adds Microsoft.AI.DirectML, which is
+    NOT MIT. It carries the MICROSOFT SOFTWARE LICENSE TERMS for DirectX Machine
+    Learning, which restrict use to Windows and Xbox and include a binding
+    arbitration clause. That flavour should not be distributed without a legal
+    review.
 
     It is also of no use on a Peakboard Box: DirectML returns numerically wrong
-    output on the Box's Gen11 integrated GPU. See bench/RESULTS.md.
+    output on the Box's Gen11 integrated GPU. See the README, "Why CPU only".
 
 
 4. Peakboard components
 -----------------------
 
     Peakboard.ExtensionKit is Peakboard's own and is not redistributed here under
-    any third-party terms.
+    any third-party terms. The project references it with Private=false so it is
+    not copied into the package.
