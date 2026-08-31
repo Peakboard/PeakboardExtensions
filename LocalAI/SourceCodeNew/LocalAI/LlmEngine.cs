@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using Microsoft.ML.OnnxRuntimeGenAI;
 
 namespace LocalAI
@@ -21,6 +22,15 @@ namespace LocalAI
         private static Tokenizer _tokenizer;
         private static string _loadedPath;
         private static string _loadedDevice;
+        private static int _contextLength;
+
+        /// <summary>
+        /// Where to send a failure that happens on the generation thread. The data
+        /// source wires this to the Peakboard log; without it a background failure
+        /// only ever reaches the Error column, and a board that does not bind that
+        /// column shows nothing at all.
+        /// </summary>
+        public static Action<string> ErrorSink;
 
         private static Thread _worker;
         private static volatile bool _cancel;
@@ -39,6 +49,7 @@ namespace LocalAI
         public static string Error => _error;
         public static bool Busy => _busy;
         public static bool Loaded => _model != null;
+        public static int ContextLength => _contextLength;
         public static long PromptTokens => Interlocked.Read(ref _promptTokens);
         public static long Generated => Interlocked.Read(ref _generated);
         public static double TtftMs => _ttftMs;
@@ -49,7 +60,8 @@ namespace LocalAI
         /// Returns "busy" if a generation is already running.
         /// </summary>
         public static string Ask(string prompt, string modelPath, string device,
-                                 string systemPrompt, int maxNewTokens, bool thinking)
+                                 string systemPrompt, int maxNewTokens, bool thinking,
+                                 int maxPromptTokens)
         {
             if (_busy) return "busy";
             if (string.IsNullOrWhiteSpace(prompt)) return "empty prompt";
@@ -66,7 +78,8 @@ namespace LocalAI
             _status = "thinking";
 
             _worker = new Thread(() =>
-                Generate(prompt, modelPath, device, systemPrompt, maxNewTokens, thinking))
+                Generate(prompt, modelPath, device, systemPrompt, maxNewTokens, thinking,
+                         maxPromptTokens))
             {
                 IsBackground = true,
                 Name = "LocalAI.Generate",
@@ -96,6 +109,7 @@ namespace LocalAI
                 _model = null;
                 _loadedPath = null;
                 _loadedDevice = null;
+                _contextLength = 0;
                 _status = "idle";
             }
         }
@@ -144,6 +158,7 @@ namespace LocalAI
 
                 _model = new Model(config);
                 _tokenizer = new Tokenizer(_model);
+                _contextLength = ReadContextLength(modelPath);
                 _loadedPath = modelPath;
                 _loadedDevice = device;
                 _status = "ready";
@@ -151,7 +166,8 @@ namespace LocalAI
         }
 
         private static void Generate(string prompt, string modelPath, string device,
-                                     string systemPrompt, int maxNewTokens, bool thinking)
+                                     string systemPrompt, int maxNewTokens, bool thinking,
+                                     int maxPromptTokens)
         {
             try
             {
@@ -164,8 +180,43 @@ namespace LocalAI
                 int nPrompt = seq[0].Length;
                 Interlocked.Exchange(ref _promptTokens, nPrompt);
 
+                // Two different walls, and the runtime's own message for either one is
+                // unreadable on a dashboard. Check both here while the numbers still
+                // mean something.
+                //
+                // The first is the model's context window - a hard limit, and the
+                // cheap one to explain. The second is attention memory, which grows
+                // with the SQUARE of the prompt: ONNX Runtime's CPU
+                // GroupQueryAttention materialises the whole score matrix, so a
+                // 37k-token prompt asks for 163 GiB in one allocation and dies inside
+                // layer 0 with a bfc_arena message naming no cause. Long before that
+                // it is simply too slow to be useful - measured on a Ryzen 7840U with
+                // Qwen3-4B int4, a 4k-token prompt costs ~10 GB and 130 s of prefill.
+                if (maxPromptTokens > 0 && nPrompt > maxPromptTokens)
+                    throw new InvalidOperationException(string.Format(
+                        "Prompt is {0:N0} tokens; MaxPromptTokens is {1:N0}. On CPU the " +
+                        "attention buffer grows with the square of the prompt and the time " +
+                        "not far behind, so large prompts stop being usable well before the " +
+                        "model's context limit. Send fewer rows, summarise them first, or " +
+                        "raise MaxPromptTokens if you have the memory and the patience.",
+                        nPrompt, maxPromptTokens));
+
+                int budget = maxNewTokens;
+                if (_contextLength > 0)
+                {
+                    if (nPrompt >= _contextLength)
+                        throw new InvalidOperationException(string.Format(
+                            "Prompt is {0:N0} tokens; this model's context is {1:N0}. " +
+                            "Nothing can be generated. Send fewer rows.",
+                            nPrompt, _contextLength));
+
+                    // Trim the answer rather than fail: the prompt fits, only the
+                    // requested answer length does not.
+                    budget = Math.Min(maxNewTokens, _contextLength - nPrompt);
+                }
+
                 using var gp = new GeneratorParams(_model);
-                gp.SetSearchOption("max_length", nPrompt + maxNewTokens);
+                gp.SetSearchOption("max_length", nPrompt + budget);
                 gp.SetSearchOption("do_sample", true);
                 gp.SetSearchOption("temperature", 0.7);
                 gp.SetSearchOption("top_p", 0.9);
@@ -180,7 +231,7 @@ namespace LocalAI
                 bool first = true;
                 int n = 0;
 
-                while (!gen.IsDone() && !_cancel && n < maxNewTokens)
+                while (!gen.IsDone() && !_cancel && n < budget)
                 {
                     gen.GenerateNextToken();
 
@@ -215,8 +266,14 @@ namespace LocalAI
             }
             catch (Exception ex)
             {
-                _error = ex.GetType().Name + ": " + ex.Message;
+                // An InvalidOperationException here is one of our own guards above and
+                // already reads as a sentence; anything else is the runtime's and
+                // needs its type to be identifiable.
+                _error = ex is InvalidOperationException
+                    ? ex.Message
+                    : ex.GetType().Name + ": " + ex.Message;
                 _status = "error";
+                try { ErrorSink?.Invoke(_error); } catch { /* logging must not mask this */ }
             }
             finally
             {
@@ -269,6 +326,25 @@ namespace LocalAI
                 open = s.IndexOf("<think>", StringComparison.Ordinal);
             }
             return s.TrimStart();
+        }
+
+        /// <summary>
+        /// The model's context window, from genai_config.json. Returns 0 if it cannot
+        /// be read - a missing limit must not stop a model that would otherwise run.
+        /// </summary>
+        private static int ReadContextLength(string modelPath)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(
+                    File.ReadAllText(Path.Combine(modelPath, "genai_config.json")));
+                if (doc.RootElement.TryGetProperty("model", out var m) &&
+                    m.TryGetProperty("context_length", out var c) &&
+                    c.TryGetInt32(out var n))
+                    return n;
+            }
+            catch { /* fall through */ }
+            return 0;
         }
 
         private static string JsonString(string s)

@@ -28,33 +28,60 @@ namespace LocalAI
                     new CustomListPropertyDefinition
                     {
                         // Folder holding an ONNX Runtime GenAI model; must contain
-                        // genai_config.json. The README explains how to build one.
+                        // genai_config.json. The README explains how to get one.
                         Name = "ModelPath",
                         Value = @"C:\LocalAI\models\qwen3-0.6b",
                     },
                     new CustomListPropertyDefinition
                     {
-                        // The published build is CPU-only.
+                        // The published build is CPU-only; "dml" only resolves in a
+                        // rebuild against the DirectML flavour of the GenAI package,
+                        // and LlmEngine says so rather than failing obscurely.
                         Name = "Device",
                         Value = "cpu",
+                        TypeDefinition = new CustomListPropertyStringTypeDefinition
+                        {
+                            SelectableValues = new[] { "cpu", "dml" },
+                        },
                     },
                     new CustomListPropertyDefinition
                     {
                         // Standing instruction given before every question.
                         Name = "SystemPrompt",
                         Value = "You are a helpful assistant. Answer briefly.",
+                        TypeDefinition = new CustomListPropertyStringTypeDefinition
+                        {
+                            MultiLine = true,
+                        },
                     },
                     new CustomListPropertyDefinition
                     {
                         // Upper bound on answer length. Every token costs time on a CPU.
                         Name = "MaxNewTokens",
                         Value = "128",
+                        TypeDefinition = new CustomListPropertyNumberTypeDefinition
+                        {
+                            Integer = true, Minimum = 1, Maximum = 8192,
+                        },
+                    },
+                    new CustomListPropertyDefinition
+                    {
+                        // Refuses an oversized prompt before ONNX Runtime tries to
+                        // allocate a quadratic attention buffer and dies with a
+                        // message nobody can act on. 0 disables the check.
+                        Name = "MaxPromptTokens",
+                        Value = "2048",
+                        TypeDefinition = new CustomListPropertyNumberTypeDefinition
+                        {
+                            Integer = true, Minimum = 0, Maximum = 131072,
+                        },
                     },
                     new CustomListPropertyDefinition
                     {
                         // true lets a reasoning model think out loud. Slow; off by default.
                         Name = "Thinking",
                         Value = "false",
+                        TypeDefinition = new CustomListPropertyBooleanTypeDefinition(),
                     },
                 },
                 Functions =
@@ -76,36 +103,27 @@ namespace LocalAI
                         {
                             new CustomListFunctionReturnParameterDefinition
                             {
-                                Name = "Status",
+                                Name = "Started",
                                 Type = CustomListFunctionParameterTypes.String,
+                                Description = "\"started\", or why nothing was started: " +
+                                              "\"busy\" if a generation is already running, " +
+                                              "or \"empty prompt\".",
                             },
                         },
                     },
+                    // Cancel and Reset declare no return value: they always succeed,
+                    // so a returned constant told the caller nothing. Watch Status
+                    // instead. Ask keeps its return because it genuinely varies -
+                    // "busy" means the call did nothing at all.
                     new CustomListFunctionDefinition
                     {
                         Name = "Cancel",
                         Description = "Stop the generation in progress.",
-                        ReturnParameters =
-                        {
-                            new CustomListFunctionReturnParameterDefinition
-                            {
-                                Name = "Status",
-                                Type = CustomListFunctionParameterTypes.String,
-                            },
-                        },
                     },
                     new CustomListFunctionDefinition
                     {
                         Name = "Reset",
                         Description = "Clear the current answer.",
-                        ReturnParameters =
-                        {
-                            new CustomListFunctionReturnParameterDefinition
-                            {
-                                Name = "Status",
-                                Type = CustomListFunctionParameterTypes.String,
-                            },
-                        },
                     },
                 },
             };
@@ -177,38 +195,54 @@ namespace LocalAI
                         var device = (data.Properties["Device"] ?? "cpu").Trim();
                         var system = data.Properties["SystemPrompt"] ?? "";
                         var thinking = ParseBool(data.Properties["Thinking"], false);
+                        var maxTokens = ParseInt(data.Properties["MaxNewTokens"], 128, 1);
+                        var maxPrompt = ParseInt(data.Properties["MaxPromptTokens"], 2048, 0);
 
-                        if (!int.TryParse(data.Properties["MaxNewTokens"], NumberStyles.Integer,
-                                          CultureInfo.InvariantCulture, out var maxTokens) || maxTokens <= 0)
-                            maxTokens = 128;
+                        // Generation runs on a background thread, so a failure there
+                        // cannot be caught here. Route it to the log as well as the
+                        // Error column - a board that does not bind Error would
+                        // otherwise just sit at status "error" with nothing to go on.
+                        LlmEngine.ErrorSink = m => Log?.Error("LocalAI: " + m);
 
-                        Log?.Info($"LocalAI Ask: {prompt.Length} chars, device={device}, max={maxTokens}");
-                        ret.Add(LlmEngine.Ask(prompt, modelPath, device, system, maxTokens, thinking));
+                        Log?.Info($"LocalAI Ask: {prompt.Length} chars, device={device}, " +
+                                  $"maxNew={maxTokens}, maxPrompt={maxPrompt}");
+                        ret.Add(LlmEngine.Ask(prompt, modelPath, device, system,
+                                              maxTokens, thinking, maxPrompt));
                         break;
                     }
 
+                    // Neither declares a return parameter, so neither adds one.
                     case "Cancel":
                         LlmEngine.Cancel();
-                        ret.Add("cancelled");
                         break;
 
                     case "Reset":
                         LlmEngine.Reset();
-                        ret.Add("reset");
                         break;
 
                     default:
-                        ret.Add("unknown function: " + context.FunctionName);
+                        Log?.Error("LocalAI: unknown function " + context.FunctionName);
                         break;
                 }
             }
             catch (Exception ex)
             {
                 Log?.Error($"LocalAI {context.FunctionName} failed: {ex.Message}");
-                ret.Add("error: " + ex.Message);
+                if (context.FunctionName == "Ask") ret.Add("error: " + ex.Message);
             }
 
             return ret;
+        }
+
+        /// <summary>
+        /// A typed property still arrives as a string, and an empty box must not turn
+        /// into a zero-token answer or a zero-token prompt limit.
+        /// </summary>
+        private static int ParseInt(string s, int fallback, int minimum)
+        {
+            if (!int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
+                return fallback;
+            return n < minimum ? fallback : n;
         }
 
         private static bool ParseBool(string s, bool fallback)

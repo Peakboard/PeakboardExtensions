@@ -3,7 +3,7 @@
 	<Extensions>
 		<Extension ID="LocalAI"
 				   Path="LocalAI.dll"
-				   Version="1.1"
+				   Version="1.2"
 				   Class="LocalAI.LocalAiExtension" />
 	</Extensions>
 </ExtensionCatalog>
