@@ -2,7 +2,7 @@
 <ExtensionCatalog xmlns="http://schemas.theobald-software.com/pbmx/2020/extensions">
     <Extensions>
         <Extension ID="MySql"
-                   Version="1.0"
+                   Version="1.5"
                    Path="MySql.dll"
                    Class="MySql.MySqlExtension" />
     </Extensions>
