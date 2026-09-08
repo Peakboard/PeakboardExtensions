@@ -287,7 +287,7 @@ Designer preview.
 ## Building from source
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File Build.ps1
+powershell -ExecutionPolicy Bypass -File SourceCodeNew\Build.ps1
 ```
 
 That builds the project and writes `Binary\ObjectDetection.zip`. It refuses to

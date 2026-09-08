@@ -5,7 +5,10 @@
 # silently drop the PretrainedModels subfolder and ship an extension with no
 # model, and the licence gate below has to run over the staged models.
 #
-#   powershell -ExecutionPolicy Bypass -File Build.ps1
+# Lives under SourceCodeNew alongside the other extensions' build scripts, so it
+# reads as a build tool rather than part of the deliverable.
+#
+#   powershell -ExecutionPolicy Bypass -File SourceCodeNew\Build.ps1
 
 param(
     [string]$Configuration = "Release",
@@ -14,8 +17,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$root = $PSScriptRoot
-$project = "$root\SourceCodeNew\ObjectDetection"
+$root = Split-Path -Parent $PSScriptRoot      # the extension folder
+$project = "$PSScriptRoot\ObjectDetection"
 $destination = "$root\Binary\ObjectDetection.zip"
 
 Write-Host "Building ObjectDetection..." -ForegroundColor Cyan
