@@ -29,7 +29,7 @@ One row, carrying the current answer and how the generation is going.
 | `Device` | list | `cpu` | `cpu` or `dml`. The published build is CPU-only and `dml` will refuse with a message saying so. See [DirectML](#why-cpu-only). |
 | `SystemPrompt` | text, multi-line | `You are a helpful assistant. Answer briefly.` | Standing instruction sent before every question. |
 | `MaxNewTokens` | number | `128` | Upper bound on answer length. Every token costs time. Trimmed automatically if the prompt leaves less room than this in the context window. |
-| `MaxPromptTokens` | number | `2048` | Refuses a prompt longer than this. **Read [Prompt length](#prompt-length-is-the-real-limit) before raising it** — this guard is what stands between a large data source and a 160 GB memory request. `0` disables it. |
+| `MaxPromptTokens` | number | `2048` | Refuses a prompt longer than this. `0` disables it — but not the memory check below it, which cannot be turned off from a board. See [Prompt length](#prompt-length-is-the-real-limit). |
 | `Thinking` | checkbox | `false` | `true` lets a reasoning model think out loud. Slow — see below. |
 
 ### Columns
@@ -245,10 +245,64 @@ the prompt being too long. Go past 40,960 instead and you get
 `max_length (55160) cannot be greater than model context_length (40960)`, which at
 least names the problem.
 
-**`MaxPromptTokens` (default 2048) refuses the prompt before either of those
-happens**, with a message that says what to do about it. Raise it if you have the
-memory and the patience; the numbers above are what you are buying. Set it to `0`
-only if you want the runtime's errors instead.
+### What the extension does about it
+
+Two checks, and the difference between them matters.
+
+**`MaxPromptTokens` (default 2048) is your policy.** It refuses anything longer,
+before ONNX Runtime is asked for a byte. Raise it, lower it, or set it to `0` to
+turn it off.
+
+**The memory check is physics, and a board cannot turn it off.** Before
+generating, the extension works out what the prompt will actually cost on *this*
+machine and compares it against free physical memory:
+
+```
+attention scores = num_attention_heads x tokens^2 x 4 bytes
+KV cache         = 2 x layers x kv_heads x head_size x (prompt + answer) x 4 bytes
+```
+
+Those two are read from the model's own `genai_config.json`, so the answer is
+specific to the model you loaded, and the first is the allocation the runtime
+literally asks for — predicted against the observed 163 GB failure, it was 0.35%
+out. If the total will not fit, you get a sentence instead of a crash:
+
+> Prompt is 36,882 tokens, which needs about 345 GB; only 7.6 GB is free on this
+> machine. Attention memory grows with the SQUARE of the prompt, so the real
+> ceiling sits far below the model's 40,960-token context window. About 4,604
+> tokens fit here right now. Send fewer rows, or summarise them before asking.
+
+**"About N tokens fit here right now" is the number to design against.** It is
+the point of the check: before 1.3, raising `MaxPromptTokens` to 40,000 sailed
+straight past the guard into the allocation failure, and the only way to find the
+real limit was to keep crashing the runtime until you bracketed it.
+
+It is a *current* number, not a fixed one — it moves with free memory, so a Box
+running a heavy dashboard has less room than the same Box idle. Leave margin.
+`MaxPromptTokens` is also reported against it: exceed your own policy limit and
+the message names the machine ceiling too, so you know how far the knob can go.
+
+The estimate is deliberately conservative near the ceiling. Refusing a prompt
+that would have just fitted costs you one sentence naming the limit; allowing one
+that does not costs the runtime.
+
+### On a Peakboard Box, the ceiling is lower than the default
+
+Measured on a Box (Celeron N5105, 7.82 GB) with Qwen3-0.6B fp16 loaded: **780 MB
+of physical memory free, and a ceiling of about 1,200 tokens.**
+
+That is below the `MaxPromptTokens` default of 2,048. On a Box, between roughly
+1,200 and 2,048 tokens it is the memory check rather than your own limit that
+refuses the prompt — which is the check doing its job, but it means **2,048 is not
+a safe number on Box hardware and should not be read as one.** The same laptop
+figure is 4,604.
+
+No single default can be right for both, which is the whole reason the ceiling is
+computed rather than configured. Treat `MaxPromptTokens` as a policy you set below
+the machine's ceiling, not as the thing that keeps you safe.
+
+**Design for a few hundred tokens on a Box.** That is four or five machine
+readings and a question, which is the shape this extension is good at anyway.
 
 If you have more data than fits, the answer is not a bigger limit. A 4,000-token
 prompt is over two minutes of staring at a dashboard and an 8,000-token one is
@@ -335,6 +389,39 @@ powershell -ExecutionPolicy Bypass -File ../../../tools/pack-extension.ps1 `
 The model folder must exist on whichever machine runs the board — the Designer PC
 for a preview, the Box for a deployed dashboard. It is not carried inside the
 `.pbmx`.
+
+Nothing else has to be installed. In particular you do **not** need to install a
+Visual C++ redistributable — see below.
+
+## Why the package contains Microsoft C++ DLLs
+
+`msvcp140.dll`, `msvcp140_1.dll`, `vcruntime140.dll` and `vcruntime140_1.dll` ship
+inside the ZIP, and they are there on purpose.
+
+ONNX Runtime is C++ and links to the Microsoft Visual C++ runtime dynamically. That
+runtime is normally installed once per machine — and **a Peakboard Box does not have
+it.** A developer PC almost always does, because Visual Studio and many ordinary
+applications install it, which is exactly why this went unnoticed through two
+releases: it worked for everyone who tested it and failed on the appliance.
+
+Without these files a Box fails on the first `Ask` with
+
+```
+DllNotFoundException: Unable to load DLL '...\Extensions\LocalAI\onnxruntime-genai.dll'
+or one of its dependencies: The specified module could not be found. (0x8007007E)
+```
+
+and on a machine with an out-of-date runtime with `0x8007045A`, *"DLL initialization
+routine failed"* — neither of which names the cause.
+
+A copy of the runtime beside the native DLLs takes precedence over the machine's own,
+so shipping a current one fixes both cases and asks nothing of the user. It costs
+about 900 KB. These four files are the only dependencies that do not ship with
+Windows.
+
+**If you rebuild this extension, keep them.** Refresh them from a current Visual C++
+redistributable rather than deleting them; the runtime is backward compatible, so a
+newer copy is safe and an older one is not.
 
 ## Licences
 

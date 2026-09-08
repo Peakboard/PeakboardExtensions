@@ -50,6 +50,31 @@
 		<EmbeddedResource Include="LocalAI.png" />
 	</ItemGroup>
 
+	<!-- The Visual C++ runtime, shipped inside the package.
+
+	     onnxruntime.dll and onnxruntime-genai.dll import MSVCP140/VCRUNTIME140
+	     dynamically, so they need whatever copy the host process resolves. That
+	     host is Peakboard.ExtensionKit.Process64.exe, which bundles none of its
+	     own and therefore takes System32's. A developer PC has a current one; a
+	     Peakboard Box ships 14.24 and never updates, and ONNX Runtime 1.23 fails
+	     against it with 0x8007045A, "DLL initialization routine failed" - a
+	     message that names neither this DLL nor the cause.
+
+	     A copy beside the native DLLs wins over System32, so shipping a current
+	     one fixes it with nothing asked of the customer. Verified both ways on
+	     PB10424: bundling a 14.25 copy reproduces the customer failure on a Box
+	     that has a good system runtime, and bundling 14.51 answers normally at
+	     unchanged speed. See _platform/ERRATA.md entry 87.
+
+	     Keep these current. They are backward compatible, so a newer copy serves
+	     anything else in the host process too, but an older one would not. -->
+	<ItemGroup>
+		<None Include="vcruntime\*.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>%(Filename)%(Extension)</Link>
+		</None>
+	</ItemGroup>
+
 	<!-- .lib files are link-time import libraries for the native ONNX DLLs.
 	     Nothing needs them at runtime, and tools\pack-extension.ps1 zips whatever
 	     is in the output folder, so drop them here rather than shipping dead weight. -->

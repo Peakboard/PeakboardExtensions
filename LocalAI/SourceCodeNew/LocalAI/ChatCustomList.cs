@@ -21,7 +21,12 @@ namespace LocalAI
             {
                 ID = "LocalAiChat",
                 Name = "Local AI",
-                Description = "Ask a locally running language model a question and stream the answer back.",
+                Description = "Ask a locally running language model a question and stream "
+                            + "the answer back. Keep prompts short: attention memory grows with the "
+                            + "SQUARE of the prompt length, so the practical ceiling is far below "
+                            + "the model's advertised context window - a prompt well inside a "
+                            + "40,960-token context can still ask for 163 GB. MaxPromptTokens and "
+                            + "a memory check refuse before that happens.",
                 PropertyInputPossible = true,
                 PropertyInputDefaults =
                 {
@@ -66,9 +71,14 @@ namespace LocalAI
                     },
                     new CustomListPropertyDefinition
                     {
-                        // Refuses an oversized prompt before ONNX Runtime tries to
-                        // allocate a quadratic attention buffer and dies with a
-                        // message nobody can act on. 0 disables the check.
+                        // A policy cap on prompt length. 0 disables it.
+                        //
+                        // This is NOT what stops the runtime dying: raise it to 40,000
+                        // and a 36,882-token prompt used to sail through into a 163 GB
+                        // allocation failure. LlmEngine's memory check is the guard
+                        // that cannot be configured away; this one exists so a board
+                        // can hold a tighter line than the machine's own ceiling, and
+                        // so the refusal names a number the author chose.
                         Name = "MaxPromptTokens",
                         Value = "2048",
                         TypeDefinition = new CustomListPropertyNumberTypeDefinition
@@ -198,12 +208,6 @@ namespace LocalAI
                         var maxTokens = ParseInt(data.Properties["MaxNewTokens"], 128, 1);
                         var maxPrompt = ParseInt(data.Properties["MaxPromptTokens"], 2048, 0);
 
-                        // Generation runs on a background thread, so a failure there
-                        // cannot be caught here. Route it to the log as well as the
-                        // Error column - a board that does not bind Error would
-                        // otherwise just sit at status "error" with nothing to go on.
-                        LlmEngine.ErrorSink = m => Log?.Error("LocalAI: " + m);
-
                         Log?.Info($"LocalAI Ask: {prompt.Length} chars, device={device}, " +
                                   $"maxNew={maxTokens}, maxPrompt={maxPrompt}");
                         ret.Add(LlmEngine.Ask(prompt, modelPath, device, system,
@@ -221,13 +225,18 @@ namespace LocalAI
                         break;
 
                     default:
-                        Log?.Error("LocalAI: unknown function " + context.FunctionName);
+                        LlmEngine.ReportError("Unknown function: " + context.FunctionName);
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Log?.Error($"LocalAI {context.FunctionName} failed: {ex.Message}");
+                // A failure is reported ONCE, in the Error column. It is not also
+                // written to the Peakboard log: the board already carries it, and a
+                // reviewer running 1.2 got every failure twice - once on the board
+                // and again in the Box's log. Nothing here writes an error anywhere
+                // else, and that is the contract, not an oversight.
+                LlmEngine.ReportError($"{context.FunctionName} failed: {ex.Message}");
                 if (context.FunctionName == "Ask") ret.Add("error: " + ex.Message);
             }
 

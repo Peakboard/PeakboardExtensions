@@ -58,7 +58,39 @@ will need to satisfy once you add some, not a description of this package.
     projection - and C#/WinRT with it - out of the package entirely.
 
 
-3. Not shipped: DirectML
+3. Microsoft Visual C++ runtime
+-------------------------------
+
+    Shipped in this package:
+
+      msvcp140.dll      msvcp140_1.dll
+      vcruntime140.dll  vcruntime140_1.dll
+
+    Copyright (c) Microsoft Corporation. These are the redistributable files of
+    the Microsoft Visual C++ Runtime, deployed application-locally beside the
+    ONNX Runtime binaries that import them.
+
+    WHY THEY ARE HERE. onnxruntime.dll and onnxruntime-genai.dll link to this
+    runtime dynamically. The process that hosts Peakboard extensions ships none
+    of its own, so without these it uses whatever is installed on the machine.
+    A Peakboard Box ships a 2019-era version that ONNX Runtime 1.23 cannot load,
+    failing with 0x8007045A - a message naming neither the DLL nor the cause.
+    A copy beside the binaries takes precedence, so shipping a current one makes
+    the extension work on an unmodified Box.
+
+    REDISTRIBUTION. These files are on Microsoft's redistributable list and are
+    covered by the licence terms of the Visual Studio installation they were
+    taken from, which permit application-local redistribution with a program
+    that uses them. Anyone repackaging this extension commercially should
+    confirm those terms against their own Visual Studio licence rather than rely
+    on this note.
+
+    VERSION. 14.51.36247.0. Keep it current when rebuilding: the runtime is
+    backward compatible, so a newer copy also serves anything else loaded into
+    the same host process, but an older one would not.
+
+
+4. Not shipped: DirectML
 ------------------------
 
     This build contains no DirectML and is CPU-only.
@@ -74,7 +106,7 @@ will need to satisfy once you add some, not a description of this package.
     output on the Box's Gen11 integrated GPU. See the README, "Why CPU only".
 
 
-4. Peakboard components
+5. Peakboard components
 -----------------------
 
     Peakboard.ExtensionKit is Peakboard's own and is not redistributed here under
