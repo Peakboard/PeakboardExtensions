@@ -142,5 +142,14 @@ classic `using (...)` blocks where `SourceCodeNew/` uses `using var`.
     `1.1`; both now say `1.5`.
   - The Framework project builds without a system-wide targeting pack, and both
     binaries were rebuilt from source for this release.
+  - **Two unused dependencies removed from the Framework build**: legacy
+    `BouncyCastle` 1.8.9 and `SSH.NET` 2025.0.0. Neither was referenced by
+    anything — `MySql.Data` 9.x binds to `BouncyCastle.Cryptography` 2.x, and
+    nothing uses SSH tunnelling — but both were shipped inside
+    `MySQLExtension.zip` and both carried known advisories (three moderate, one
+    high). They were flattened leftovers from `packages.config`, which records
+    the whole resolved graph as a flat list, so the migration to
+    `PackageReference` carried them across. `msbuild -t:restore` now reports no
+    vulnerabilities, and the ZIP is ~1 MB smaller.
 - 2026-06-13 v1.1 — Fixed a crash ("Failed to serialize PipeMessage value") that occurred when a query returned date/time columns or NULL dates.
 - 2020-10-12 Initial Release
