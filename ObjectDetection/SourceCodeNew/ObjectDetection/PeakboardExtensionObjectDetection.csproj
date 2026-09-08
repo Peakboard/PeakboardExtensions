@@ -1,0 +1,91 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Plain net8.0, not net8.0-windows. The Windows TFM pulls in the Windows
+         SDK projection and C#/WinRT with it: Microsoft.Windows.SDK.NET.dll is
+         23.6 MB and WinRT.Runtime.dll another 0.5 MB, none of which this
+         extension uses. Same reasoning as the LocalAI extension. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <AssemblyName>PeakboardExtensionObjectDetection</AssemblyName>
+    <RootNamespace>PeakboardExtensionObjectDetection</RootNamespace>
+    <LangVersion>latest</LangVersion>
+
+    <!-- No debug directory in the shipped assembly. Without this the compiler
+         embeds the building machine's intermediate path, e.g.
+         C:\Users\<name>\...\obj\Release\net8.0\win-x64\, into the DLL - which
+         then travels inside the package and the example board into a public
+         repository. The .pdb is not shipped either way. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private=false with ExcludeAssets=runtime keeps Peakboard's own assembly
+         out of the package. It was previously redistributed. -->
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.1">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.17.1" />
+    <PackageReference Include="OpenCvSharp4" Version="4.9.0.20240103" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.9.0.20240103" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="NOTICE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="LibreYOLO-LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="ObjectDetection.png" />
+    <EmbeddedResource Include="ObjectDetection.png" />
+  </ItemGroup>
+
+  <!-- The Visual C++ runtime, shipped in the package.
+
+       onnxruntime.dll imports MSVCP140.dll, VCRUNTIME140.dll and
+       VCRUNTIME140_1.dll. Extensions run in Peakboard.ExtensionKit.Process64.exe,
+       which bundles no C++ runtime and resolves one from System32 - and a stock
+       Peakboard Box has none installed at all. Without these the extension fails
+       on the appliance with 0x8007007E while working on every developer PC,
+       because a PC has a recent redistributable and a Box does not.
+
+       A copy beside the DLL wins over System32, which is what makes this work.
+       Same four files, same version, as the LocalAI extension ships.
+       See _platform ERRATA 87. -->
+  <ItemGroup>
+    <None Include="vcruntime\*.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>%(Filename)%(Extension)</Link>
+    </None>
+  </ItemGroup>
+
+  <!-- .lib files are link-time import libraries for the native ONNX DLLs.
+       Nothing needs them at runtime and the packer zips whatever is in the
+       output folder, so drop them rather than shipping dead weight. -->
+  <Target Name="RemoveImportLibs" AfterTargets="Build">
+    <ItemGroup>
+      <_ImportLibs Include="$(OutDir)*.lib" />
+    </ItemGroup>
+    <Delete Files="@(_ImportLibs)" />
+  </Target>
+
+</Project>

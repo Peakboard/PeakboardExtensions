@@ -1,0 +1,146 @@
+NOTICE
+======
+
+This product includes third-party software. This file, and the licence texts
+beside it, must travel with any distribution of the extension.
+
+Everything in the shipped package is MIT or Apache 2.0, with ONE exception:
+the FFmpeg video-I/O DLL is LGPL. See section 3, which is the section to read
+before this package goes to a customer.
+
+
+1. Object detection model - SHIPPED
+-----------------------------------
+
+    PretrainedModels/yolov9t.onnx          8.3 MB
+    PretrainedModels/coco_classes.txt
+
+      YOLOv9-t, exported to ONNX by LibreYOLO
+      MIT licence, code and weights
+      https://github.com/libre-yolo/libreyolo
+      Upstream architecture: MultimediaTechLab/YOLO
+
+    LibreYOLO-LICENSE.txt beside this file is the MIT text.
+
+    THIS IS DELIBERATELY NOT AN ULTRALYTICS MODEL. Ultralytics YOLOv5/v8/v11
+    weights and code are AGPL-3.0, which would oblige Peakboard to offer the
+    complete corresponding source of anything that links them, over a network
+    as well as on distribution. yolov8n.onnx was shipped in this package until
+    it was removed, and it was also the default model.
+
+    Build\package_extension.ps1 enforces this: it copies an allowlist rather
+    than the whole PretrainedModels folder, and then fails the build if any
+    staged .onnx contains the Ultralytics marker. It is a content check, not a
+    filename check, so renaming a file does not get past it. Do not weaken it
+    to "fix" a build.
+
+    The classes file must match the model. The extension refuses to load a
+    class list whose length disagrees with the model's output tensor, so a
+    mismatch fails loudly instead of relabelling every detection.
+
+
+2. Inference and imaging runtime - SHIPPED
+------------------------------------------
+
+    onnxruntime.dll
+    onnxruntime_providers_shared.dll
+    Microsoft.ML.OnnxRuntime.dll
+
+      ONNX Runtime, MIT
+      Copyright (c) Microsoft Corporation
+      https://github.com/microsoft/onnxruntime
+
+    OpenCvSharp.dll
+
+      OpenCvSharp, Apache License 2.0
+      Copyright (c) shimat
+      https://github.com/shimat/opencvsharp
+
+    OpenCvSharpExtern.dll
+
+      Native OpenCV 4.9 plus the OpenCvSharp binding layer, Apache License 2.0
+      Copyright (c) OpenCV team
+      https://github.com/opencv/opencv
+
+
+3. FFmpeg video I/O - SHIPPED, AND THE ONE TO REVIEW
+----------------------------------------------------
+
+    opencv_videoio_ffmpeg490_64.dll        26 MB
+
+      Built from FFmpeg, LGPL v2.1 or later
+      https://ffmpeg.org
+
+    This is the only component in the package that is not MIT or Apache. Two
+    obligations follow, and a third thing worth checking:
+
+    a) LGPL means the licence text must be distributed with the binary and the
+       recipient must be able to replace the library. It is a separate DLL
+       loaded at runtime, not statically linked, so replaceability is already
+       satisfied - but the licence text and an offer of source have to travel
+       with the package.
+
+    b) The corresponding FFmpeg source must be made available on request.
+       OpenCV publishes the exact build under
+       https://github.com/opencv/opencv_3rdparty (branch
+       ffmpeg/master_20231225 for the 4.9 wrapper). Record which revision was
+       shipped with each release.
+
+    c) Some codecs FFmpeg can decode carry patent considerations in certain
+       jurisdictions, independent of the software licence. H.264 over RTSP is
+       the common case for this extension.
+
+    WHAT IT IS FOR. OpenCV uses this DLL for RTSP and video-file sources. USB
+    cameras go through DirectShow and do not touch it. If a release only ever
+    needs USB cameras, dropping this one file removes the entire LGPL question
+    and 26 MB of the package - but it also removes RTSP and IP camera support,
+    which is a product decision, not a build one.
+
+
+4. Microsoft Visual C++ runtime - SHIPPED
+-----------------------------------------
+
+    msvcp140.dll  msvcp140_1.dll  vcruntime140.dll  vcruntime140_1.dll
+    Version 14.51, Copyright (c) Microsoft Corporation
+
+    Shipped deliberately, and the extension does not load on a stock Peakboard
+    Box without them.
+
+    onnxruntime.dll imports MSVCP140, VCRUNTIME140 and VCRUNTIME140_1.
+    Extensions run in Peakboard.ExtensionKit.Process64.exe, which bundles no C++
+    runtime of its own and therefore resolves one from System32. A developer PC
+    has a recent redistributable because Visual Studio and countless other
+    applications install one; a Peakboard Box has none. So without these files
+    the extension works everywhere it is tested and fails on the appliance it
+    was written for, with 0x8007007E naming nothing useful.
+
+    A copy beside the importing DLL takes precedence over System32, which is
+    what makes app-local deployment the fix.
+
+    These files are on Microsoft's redistributable list and app-local deployment
+    is Microsoft's documented pattern. CONFIRM THIS AGAINST PEAKBOARD'S OWN
+    VISUAL STUDIO LICENCE before publishing. The same four files, at the same
+    version, are already shipped by the LocalAI extension in this repository.
+
+    See _platform ERRATA 87 for the diagnosis and the offline reproduction.
+
+
+5. Peakboard components - NOT REDISTRIBUTED
+-------------------------------------------
+
+    Peakboard.ExtensionKit is Peakboard's own and is not shipped here. The
+    project references it with Private=false and ExcludeAssets=runtime, so it
+    is not copied into the package; the Peakboard host provides it at runtime.
+
+    It was previously being redistributed inside the package.
+
+
+6. Not shipped: the Windows SDK projection
+------------------------------------------
+
+    The project targets plain net8.0 rather than net8.0-windows. The Windows
+    TFM pulls in Microsoft.Windows.SDK.NET.dll (23.6 MB) and WinRT.Runtime.dll,
+    which this extension does not use and which carry the Windows SDK licence.
+    Targeting net8.0 keeps both out. The assembly is marked
+    [assembly: SupportedOSPlatform("windows")] instead, which is accurate: the
+    natives are win-x64 and camera enumeration uses DirectShow COM.
