@@ -79,9 +79,21 @@ git repository, and which one you want depends on your hardware. You point
 `ModelPath` at a folder you create once.
 
 The model must be in **ONNX Runtime GenAI** format — a folder containing
-`genai_config.json`, `model.onnx`, `model.onnx.data` and a tokenizer. Neither raw
-`.safetensors` nor the `onnx/` folder published for transformers.js will work;
-if there is no `genai_config.json`, it is the wrong format.
+`genai_config.json`, `model.onnx`, `model.onnx.data` and a tokenizer. If there is
+no `genai_config.json`, it is the wrong format.
+
+Three things that look like models and are not, because all three come up:
+
+| | |
+|---|---|
+| **GGUF** (`.gguf`) | llama.cpp's format, and the one LM Studio and Ollama hand out. ONNX Runtime GenAI cannot read it and no setting changes that. |
+| raw **`.safetensors`** | Hugging Face weights. Convert them — see below. |
+| the **`onnx/`** folder published for transformers.js | built for the browser runtime, no `genai_config.json`. |
+
+The extension names whichever of these it finds, so the data source preview will
+tell you rather than leaving you to guess. It also catches the commonest mistake of
+all: prebuilt repositories nest the real model several folders down, so if
+`genai_config.json` turns up in a subfolder, the preview says which one to use.
 
 There are two ways to get one, and **which one is open to you depends on the
 precision you need**:

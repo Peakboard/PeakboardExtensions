@@ -162,11 +162,28 @@ namespace LocalAI
             // Until something calls Ask, this stays a placeholder row.
             if (!LlmEngine.Loaded && !LlmEngine.Busy)
             {
+                // But do check the path, which costs two file-system calls. A preview
+                // that reports "idle" against a ModelPath of "Quatscheingabe" is
+                // telling the designer the one thing they most need to not believe.
+                var path = data.Properties["ModelPath"];
+                var problem = LlmEngine.CheckModelFolder(path, designTime: true);
+
+                // A folder this machine cannot see is the normal case for a board
+                // bound for a Box, so it gets a different word from a folder that is
+                // here and holds the wrong thing. Only the second is a fault.
+                var here = !string.IsNullOrWhiteSpace(path) && Directory.Exists(path);
+                var status = problem == null
+                    ? (string.IsNullOrEmpty(LlmEngine.Error)
+                        ? "idle - call Ask() to load the model"
+                        : LlmEngine.Status)
+                    : here || string.IsNullOrWhiteSpace(path)
+                        ? "ModelPath is not usable - see Error"
+                        : "idle - ModelPath not on this machine, see Error";
+
                 items.Add(Row(
                     answer: LlmEngine.Answer ?? "",
-                    status: string.IsNullOrEmpty(LlmEngine.Error)
-                        ? "idle - call Ask() to load the model"
-                        : LlmEngine.Status));
+                    status: status,
+                    overrideError: problem));
                 return items;
             }
 
@@ -174,7 +191,8 @@ namespace LocalAI
             return items;
         }
 
-        private static CustomListObjectElement Row(string answer, string status, bool live = false)
+        private static CustomListObjectElement Row(string answer, string status,
+            bool live = false, string overrideError = null)
         {
             return new CustomListObjectElement
             {
@@ -185,7 +203,7 @@ namespace LocalAI
                 { "TokensGenerated", live ? (double)LlmEngine.Generated : 0.0 },
                 { "TokensPerSecond", live ? Math.Round(LlmEngine.TokensPerSec, 2) : 0.0 },
                 { "TimeToFirstTokenMs", live ? Math.Round(LlmEngine.TtftMs, 0) : 0.0 },
-                { "Error", LlmEngine.Error ?? "" },
+                { "Error", overrideError ?? LlmEngine.Error ?? "" },
             };
         }
 

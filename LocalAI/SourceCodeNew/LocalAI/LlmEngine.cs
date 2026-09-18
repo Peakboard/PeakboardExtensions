@@ -45,6 +45,12 @@ namespace LocalAI
         private static double _tokensPerSec;
 
         public static string Answer => _answer;
+
+        /// <summary>
+        /// The model's output before <see cref="StripThinking"/> runs. Diagnostic:
+        /// when Answer is empty but tokens were generated, this is what it produced.
+        /// </summary>
+        public static string RawAnswer { get { lock (Buffer) { return Buffer.ToString(); } } }
         public static string Status => _status;
         public static string Error => _error;
         public static bool Busy => _busy;
@@ -108,6 +114,84 @@ namespace LocalAI
         /// </summary>
         public static void ReportError(string message) => _error = message ?? "";
 
+        /// <summary>
+        /// Is this folder an ONNX Runtime GenAI model? Returns null if it is, or a
+        /// sentence describing what is wrong if it is not.
+        ///
+        /// Existence checks only - nothing here loads a model, so it is cheap enough
+        /// to run on every Designer preview. That matters: without it the first
+        /// report of a mistyped path came from a Box, out of a board that was
+        /// already deployed.
+        ///
+        /// The message names what the folder actually holds. A previous version
+        /// always said "not raw .safetensors", which to someone holding a GGUF model
+        /// reads as an answer to a question they did not ask.
+        /// </summary>
+        /// <param name="designTime">
+        /// True when called from the Designer preview, where the model is usually
+        /// NOT on this machine - it lives on the Box or the BYOD device the board
+        /// will be deployed to. An absent folder is then unremarkable and must not
+        /// be reported as a fault. Everything else on this list is still worth
+        /// saying, because it describes a folder that is here and is wrong.
+        /// </param>
+        public static string CheckModelFolder(string modelPath, bool designTime = false)
+        {
+            if (string.IsNullOrWhiteSpace(modelPath))
+                return "ModelPath is empty. Point it at a folder containing genai_config.json.";
+
+            if (!Directory.Exists(modelPath))
+                return designTime
+                    ? "Not checked: no such folder on this machine. That is normal if the "
+                      + "model lives on the Box or BYOD device - this preview only sees the "
+                      + "Designer's own disk. If you expected it here, the path is wrong: "
+                      + modelPath
+                    : "Model folder not found: " + modelPath;
+
+            if (File.Exists(Path.Combine(modelPath, "genai_config.json")))
+                return null;
+
+            // Prebuilt repositories nest the model several levels down, and pointing
+            // at the download root is the commonest mistake with this extension. If
+            // the real folder is in there somewhere, name it rather than making
+            // someone go hunting.
+            try
+            {
+                var nested = Directory.GetFiles(modelPath, "genai_config.json",
+                                                SearchOption.AllDirectories);
+                if (nested.Length > 0)
+                    return "ModelPath points one level too high. genai_config.json is in "
+                         + Path.GetDirectoryName(nested[0])
+                         + " - set ModelPath to that folder.";
+            }
+            catch (Exception)
+            {
+                // Unreadable subfolder: fall through to the format checks below.
+            }
+
+            if (Directory.GetFiles(modelPath, "*.gguf").Length > 0)
+                return "This is a GGUF model, which is llama.cpp's format. ONNX Runtime "
+                     + "GenAI cannot load it, and there is no setting that makes it. Use an "
+                     + "ONNX GenAI build instead - onnx-community publishes them on Hugging "
+                     + "Face - or convert one with onnxruntime_genai.models.builder.";
+
+            if (Directory.GetFiles(modelPath, "*.safetensors").Length > 0)
+                return "This folder holds raw Hugging Face weights (.safetensors), not an "
+                     + "ONNX Runtime GenAI model. Convert it with "
+                     + "onnxruntime_genai.models.builder, or download a prebuilt ONNX build.";
+
+            if (Directory.GetFiles(modelPath, "*.onnx").Length > 0)
+                return "This folder has an .onnx file but no genai_config.json, so ONNX "
+                     + "Runtime GenAI cannot tell how to run it. A GenAI model folder carries "
+                     + "genai_config.json and tokenizer.json beside the weights.";
+
+            if (Directory.GetFiles(modelPath).Length == 0
+                    && Directory.GetDirectories(modelPath).Length == 0)
+                return "Model folder is empty: " + modelPath;
+
+            return "No genai_config.json in " + modelPath
+                 + ". This must be an ONNX Runtime GenAI model folder.";
+        }
+
         public static void Reset()
         {
             _cancel = true;
@@ -142,15 +226,9 @@ namespace LocalAI
 
                 Unload();
 
-                if (string.IsNullOrWhiteSpace(modelPath))
-                    throw new InvalidOperationException(
-                        "ModelPath is empty. Point it at a folder containing genai_config.json.");
-                if (!Directory.Exists(modelPath))
-                    throw new DirectoryNotFoundException("Model folder not found: " + modelPath);
-                if (!File.Exists(Path.Combine(modelPath, "genai_config.json")))
-                    throw new FileNotFoundException(
-                        "No genai_config.json in " + modelPath +
-                        ". This must be an ONNX Runtime GenAI model folder, not raw .safetensors.");
+                var problem = CheckModelFolder(modelPath);
+                if (problem != null)
+                    throw new InvalidOperationException(problem);
 
                 _status = "loading model";
                 var config = new Config(modelPath);
@@ -293,6 +371,15 @@ namespace LocalAI
                         _tokensPerSec = n / genClock.Elapsed.TotalSeconds;
                 }
 
+                // Resolve what the board will actually show. Up to here _answer has
+                // been the streaming view, which deliberately hides an unclosed
+                // <think>; now that nothing more is coming, an empty view means the
+                // user gets a blank panel after a generation that worked.
+                if (!_cancel)
+                {
+                    lock (Buffer) { _answer = FinalAnswer(Buffer.ToString(), n >= budget); }
+                }
+
                 _status = _cancel ? "cancelled" : "done";
             }
             catch (Exception ex)
@@ -335,6 +422,36 @@ namespace LocalAI
                 // Model folder has no chat template - fall back to plain text.
                 return string.IsNullOrWhiteSpace(systemPrompt) ? user : systemPrompt + "\n\n" + user;
             }
+        }
+
+        /// <summary>
+        /// What to show once generation has finished.
+        ///
+        /// Normally the answer with any reasoning block removed. If that leaves
+        /// nothing - a reasoning model that never closed its &lt;think&gt;, or spent
+        /// the whole token budget inside one - show the reasoning instead, and say
+        /// so. It is not the answer that was asked for, but it is what the model
+        /// produced, and a blank panel tells the operator nothing at all.
+        /// </summary>
+        internal static string FinalAnswer(string raw, bool hitTokenLimit)
+        {
+            var visible = StripThinking(raw);
+            if (!string.IsNullOrWhiteSpace(visible)) return visible;
+
+            var inner = raw.Replace("<think>", "").Replace("</think>", "").Trim();
+            if (inner.Length == 0) return visible;
+
+            // Cut off mid-thought: the budget really is the problem, and the text is
+            // a fragment rather than an answer.
+            if (hitTokenLimit)
+                return "The model ran out of tokens before finishing - raise "
+                     + "MaxNewTokens to give it room. What it had written:\n\n" + inner;
+
+            // Finished on its own with the tag left open. The text is the answer; the
+            // model was simply sloppy about closing a marker, and saying anything
+            // about token limits here would be wrong and would send the reader off
+            // to change a setting that is not involved.
+            return inner;
         }
 
         /// <summary>
