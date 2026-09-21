@@ -45,13 +45,19 @@ will need to satisfy once you add some, not a description of this package.
 2. Inference runtime
 --------------------
 
-    Shipped in this package. All MIT licensed, Copyright (c) Microsoft
-    Corporation and the .NET Foundation.
+    Shipped in this package. MIT licensed.
 
-      ONNX Runtime                         https://github.com/microsoft/onnxruntime
-      ONNX Runtime GenAI                   https://github.com/microsoft/onnxruntime-genai
-      System.Numerics.Tensors              https://dot.net/
-      Microsoft.Extensions.AI.Abstractions https://dot.net/
+      llama.cpp   https://github.com/ggml-org/llama.cpp
+      ggml        https://github.com/ggml-org/ggml
+                  Copyright (c) 2023-2024 The ggml authors
+
+    The binaries are taken unmodified from llama.cpp release b11070:
+
+      llama.dll  ggml.dll  ggml-base.dll  libomp.dll
+      ggml-cpu-*.dll  (fourteen, one per CPU instruction set)
+
+    libomp.dll is the LLVM OpenMP runtime, licensed under Apache 2.0 with the
+    LLVM exception, Copyright (c) the LLVM Project.
 
     Nothing here is under the Windows SDK licence. The project targets plain
     `net8.0` rather than `net8.0-windows`, which is what keeps the Windows SDK
@@ -68,13 +74,13 @@ will need to satisfy once you add some, not a description of this package.
 
     Copyright (c) Microsoft Corporation. These are the redistributable files of
     the Microsoft Visual C++ Runtime, deployed application-locally beside the
-    ONNX Runtime binaries that import them.
+    llama.cpp binaries that import them.
 
-    WHY THEY ARE HERE. onnxruntime.dll and onnxruntime-genai.dll link to this
+    WHY THEY ARE HERE. llama.dll, ggml.dll and every ggml-cpu-*.dll link to this
     runtime dynamically. The process that hosts Peakboard extensions ships none
     of its own, so without these it uses whatever is installed on the machine.
-    A Peakboard Box ships a 2019-era version that ONNX Runtime 1.23 cannot load,
-    failing with 0x8007045A - a message naming neither the DLL nor the cause.
+    A stock Peakboard Box has no Visual C++ runtime at all, and the load fails
+    with 0x8007007E - a message naming neither the DLL nor the cause.
     A copy beside the binaries takes precedence, so shipping a current one makes
     the extension work on an unmodified Box.
 
@@ -90,20 +96,22 @@ will need to satisfy once you add some, not a description of this package.
     the same host process, but an older one would not.
 
 
-4. Not shipped: DirectML
-------------------------
+4. Not shipped: GPU backends
+----------------------------
 
-    This build contains no DirectML and is CPU-only.
+    This build is CPU-only.
 
-    Swapping the package reference from Microsoft.ML.OnnxRuntimeGenAI to
-    Microsoft.ML.OnnxRuntimeGenAI.DirectML adds Microsoft.AI.DirectML, which is
-    NOT MIT. It carries the MICROSOFT SOFTWARE LICENSE TERMS for DirectX Machine
-    Learning, which restrict use to Windows and Xbox and include a binding
-    arbitration clause. That flavour should not be distributed without a legal
-    review.
+    llama.cpp publishes Vulkan, SYCL, CUDA and ROCm builds, all MIT, and any of
+    them could be bundled instead. None is, for a measured reason rather than a
+    licensing one: on a Peakboard Box the Gen11 integrated GPU returned
+    numerically wrong output under DirectML, and no GPU path on that hardware
+    has been shown correct. A GPU build is a thing to prove, not to ship
+    hopefully. See the README, "Why CPU only".
 
-    It is also of no use on a Peakboard Box: DirectML returns numerically wrong
-    output on the Box's Gen11 integrated GPU. See the README, "Why CPU only".
+    Earlier versions of this extension used ONNX Runtime GenAI, where the GPU
+    option was Microsoft.AI.DirectML - NOT MIT, carrying terms restricting use
+    to Windows and Xbox. That consideration no longer applies: llama.cpp's GPU
+    backends carry the same MIT licence as the rest of it.
 
 
 5. Peakboard components

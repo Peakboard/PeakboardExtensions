@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using Peakboard.ExtensionKit;
 
 namespace LocalAI
@@ -45,7 +45,20 @@ namespace LocalAI
                 Name = "Local AI",
                 Description = "Runs a small language model on the device itself. "
                             + "No cloud, no API key, no data leaves the machine.",
-                Version = "1.4",
+                // This pair is the compatibility range the Designer enforces on
+                // boards, and it is NOT the same number as Extension.xml's - both
+                // have to be bumped, which is easy to miss. A board records the
+                // version it was built against, and the Designer refuses to open
+                // one outside [MinVersion, Version] with "this custom list cannot
+                // be edited".
+                Version = "2.0",
+
+                // Deliberately left at 1.0 even though 2.0 changed ModelPath from a
+                // folder to a file. Refusing 1.x boards outright would force an
+                // "upgrade" that discards their saved properties; letting them open
+                // means CheckModelFolder gets to say "Since 2.0 it must be the model
+                // FILE" against the actual path, which is a far better place to find
+                // out.
                 MinVersion = "1.0",
                 Author = "Peakboard",
                 Company = "Peakboard GmbH",

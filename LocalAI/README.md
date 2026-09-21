@@ -25,12 +25,13 @@ One row, carrying the current answer and how the generation is going.
 
 | Property | Type | Default | Description |
 |---|---|---|---|
-| `ModelPath` | text | `C:\LocalAI\models\qwen3-0.6b` | Folder holding an ONNX Runtime GenAI model. Must contain `genai_config.json`. |
-| `Device` | list | `cpu` | `cpu` or `dml`. The published build is CPU-only and `dml` will refuse with a message saying so. See [DirectML](#why-cpu-only). |
+| `ModelPath` | text | `C:\LocalAI\models\Qwen3-0.6B-Q4_K_M.gguf` | The **.gguf model file**. Changed in 2.0 - 1.x wanted a folder. |
+| `Device` | list | `cpu` | `cpu` only. llama.cpp publishes GPU builds, but no GPU path has been shown correct on a Box. See [Why CPU only](#why-cpu-only). |
 | `SystemPrompt` | text, multi-line | `You are a helpful assistant. Answer briefly.` | Standing instruction sent before every question. |
 | `MaxNewTokens` | number | `128` | Upper bound on answer length. Every token costs time. Trimmed automatically if the prompt leaves less room than this in the context window. |
-| `MaxPromptTokens` | number | `2048` | Refuses a prompt longer than this. `0` disables it — but not the memory check below it, which cannot be turned off from a board. See [Prompt length](#prompt-length-is-the-real-limit). |
+| `MaxPromptTokens` | number | `4096` | Refuses a prompt longer than this. `0` disables it — but not the memory check below it, which cannot be turned off from a board. See [Prompt length](#prompt-length-is-the-real-limit). |
 | `Thinking` | checkbox | `false` | `true` lets a reasoning model think out loud. Slow — see below. |
+| `Temperature` | number | `0.7` | 0 is greedy - same prompt, same answer, every time, which is usually what a dashboard wants. New in 2.0; 1.x hard-coded 0.7. |
 
 ### Columns
 
@@ -74,113 +75,62 @@ would have carried no information — watch `Status` instead.
 
 ## Getting a model
 
-**The extension ships without one.** Models are 0.5–3 GB; they do not belong in a
+**The extension ships without one.** Models are 0.4-3 GB; they do not belong in a
 git repository, and which one you want depends on your hardware. You point
-`ModelPath` at a folder you create once.
+`ModelPath` at a file you download once.
 
-The model must be in **ONNX Runtime GenAI** format — a folder containing
-`genai_config.json`, `model.onnx`, `model.onnx.data` and a tokenizer. If there is
-no `genai_config.json`, it is the wrong format.
+Since 2.0 the model is a **GGUF file** - the format llama.cpp reads, and the one
+the model ecosystem actually publishes. `ModelPath` is that file, not a folder:
 
-Three things that look like models and are not, because all three come up:
+```
+C:\LocalAI\models\Qwen3-0.6B-Q4_K_M.gguf
+```
 
-| | |
-|---|---|
-| **GGUF** (`.gguf`) | llama.cpp's format, and the one LM Studio and Ollama hand out. ONNX Runtime GenAI cannot read it and no setting changes that. |
-| raw **`.safetensors`** | Hugging Face weights. Convert them — see below. |
-| the **`onnx/`** folder published for transformers.js | built for the browser runtime, no `genai_config.json`. |
-
-The extension names whichever of these it finds, so the data source preview will
-tell you rather than leaving you to guess. It also catches the commonest mistake of
-all: prebuilt repositories nest the real model several folders down, so if
-`genai_config.json` turns up in a subfolder, the preview says which one to use.
-
-There are two ways to get one, and **which one is open to you depends on the
-precision you need**:
-
-| | Download a prebuilt one | Convert one yourself |
-|---|---|---|
-| effort | a browser, a few minutes | Python, ~10 min, a few GB of scratch |
-| available as | **int4 only** | any precision |
-| use it for | a PC or laptop | a Peakboard Box, or anything unusual |
+No conversion, no Python, no toolchain. Download one file from Hugging Face and
+point at it. If you get this wrong the data source tells you what it found instead
+- a folder, an ONNX model, raw `.safetensors`, or a `.gguf` sitting one level down.
 
 ### Which model
 
-**Precision is not a detail here, and the right answer inverts between a Box and
-a PC.** Pick your row:
+Pick on **speed**, because on a CPU that is what constrains you, and a Box is slow.
+All measured on a Peakboard Box (Celeron N5105, 4 cores, no AVX):
 
-| Hardware | Model | Precision | On disk | How |
+| model | file | prefill | generate | verdict on a Box |
 |---|---|---|---|---|
-| Peakboard Box (Celeron N5105, no AVX) | Qwen3-0.6B | **fp16** | ~1.2 GB | convert |
-| PC or laptop, 16 GB RAM | Qwen3-4B | **int4** | ~2.8 GB | download |
-| PC with 8 GB RAM, or you want snappier answers | Qwen3-1.7B | **int4** | ~1.1 GB | download |
+| **Qwen3-0.6B Q4_K_M** | 373 MB | 16.5 tok/s | 7-10 tok/s | **use this one** |
+| Qwen3-1.7B Q4_K_M | 1.0 GB | 5.7 tok/s | 3.9 tok/s | better answers, ~1 min per question |
+| Qwen3-4B Q4_K_M | 2.4 GB | 2.2 tok/s | 1.6 tok/s | too slow - PC only |
 
-**Why the reversal.** int4 matrix multiply (`MatMulNBits`) has hand-written AVX2
-and AVX-512 kernels in ONNX Runtime, and no SSE-only one. Every x86 CPU since
-roughly 2013 has AVX2, so on a PC int4 is the fast path — a quarter of the memory
-traffic for nearly the same answers. The Box's Celeron is one of the few current
-CPUs *without* AVX, so it falls back to a reference implementation and int4
-collapses: **0.26 tokens/s, against 3.6 for fp16 of the same model.** Do not carry
-the Box's fp16 recommendation onto a PC, and do not carry a PC's int4 onto a Box.
+On a PC the picture changes completely: the same 4B file does **43 tok/s** prefill
+on a Ryzen 7 PRO 7840U. Bigger models are fine there.
 
-This is also why there is no download link for the Box. The prebuilt ONNX Runtime
-GenAI models published on Hugging Face are int4 — the one precision a Box cannot
-use — so a Box model has to be converted.
+Quantisation: **Q4_K_M** unless you have a reason. Q8_0 is about twice the size for
+a difference you will struggle to see on a 0.6B.
 
-### Downloading a prebuilt model (PC)
+### Where to get one
 
-`onnx-community` publishes ready-made ONNX Runtime GenAI builds. In a browser, open
+Straight from Hugging Face, one file:
 
-- **Qwen3-4B** — <https://huggingface.co/onnx-community/Qwen3-4B-ONNX/tree/main/onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128>
-- **Qwen3-1.7B** — <https://huggingface.co/onnx-community/Qwen3-1.7B-ONNX/tree/main/onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128>
+- **Qwen3-0.6B** - <https://huggingface.co/unsloth/Qwen3-0.6B-GGUF> (`Qwen3-0.6B-Q4_K_M.gguf`)
+- **Qwen3-1.7B** - <https://huggingface.co/unsloth/Qwen3-1.7B-GGUF>
+- **Qwen3-4B** - <https://huggingface.co/Qwen/Qwen3-4B-GGUF>
 
-and download **every file in that folder** into one local folder, e.g.
-`C:\LocalAI\models\qwen3-4b`. It is a handful of files; `model.onnx.data` is the
-big one. Then point `ModelPath` at that folder.
-
-With a shell, the same thing in one line:
+Or with the CLI:
 
 ```bash
-pip install huggingface_hub
-hf download onnx-community/Qwen3-4B-ONNX \
-    --include "onnxruntime/cpu_and_mobile/cpu-int4-kld-block-128/*" \
-    --local-dir C:\LocalAI\models\qwen3-4b
+hf download unsloth/Qwen3-0.6B-GGUF Qwen3-0.6B-Q4_K_M.gguf --local-dir C:\LocalAI\models
 ```
 
-**`ModelPath` must be the folder that holds `genai_config.json`** — with the
-command above that is
-`C:\LocalAI\models\qwen3-4b\onnxruntime\cpu_and_mobile\cpu-int4-kld-block-128`,
-not the download root. This is the single most common way to get a "No
-genai_config.json in ..." error.
+Any GGUF llama.cpp can read will work - Qwen, Llama, Phi, Gemma, Mistral. Check the
+model's own licence before shipping it; they differ.
 
-### Converting one yourself (Box, or any other precision)
+**Deploying to a Box.** The model is not in the `.pbmx`, so copy the file to the
+device once and leave it there - any path works as long as `ModelPath` matches:
 
-```bash
-pip install onnxruntime-genai transformers torch
-```
+```powershell
+Copy-Item .\Qwen3-0.6B-Q4_K_M.gguf \<box>\c$\LocalAI\models```
 
-```bash
-# Peakboard Box - fp16. int4 is ~12x SLOWER here; see Performance.
-python -m onnxruntime_genai.models.builder \
-    -m Qwen/Qwen3-0.6B -o C:\LocalAI\models\qwen3-0.6b -p fp16 -e dml
-
-# PC - int4, if you would rather build than download.
-python -m onnxruntime_genai.models.builder \
-    -m Qwen/Qwen3-4B   -o C:\LocalAI\models\qwen3-4b   -p int4 -e cpu
-```
-
-`-e` names the **export flavour, not the runtime provider**. The fp16 model above
-is built with `-e dml` and runs perfectly well on the CPU — that is the exact
-model behind every Box number in [Performance](#performance). `-p fp16 -e cpu` is
-accepted by the builder too, but it is not the combination that was tested here.
-
-Any model the builder supports will work — Qwen, Llama, Phi, Gemma, Mistral.
-Check the model's own licence before shipping it in a product: Qwen3 is Apache
-2.0, but Gemma and Llama have their own terms.
-
-> If `transformers` asks for a Hugging Face token on a public model, download the
-> weights first with `huggingface_hub.snapshot_download(..., token=False)` and
-> point the builder at the local folder with `-i`.
+A board then deploys in seconds rather than carrying a gigabyte each time.
 
 ## Showing the answer as it is written
 
@@ -217,139 +167,102 @@ end
 data.LocalAI.Ask(table.concat({p, ' Which line needs attention first?'}))
 ```
 
-## Prompt length is the real limit
+## Prompt length is the real limit - but the limit is now TIME, not memory
 
-The obvious way to use this on a dashboard is to walk a data source and put every
-row in the prompt. That works, and then stops working — abruptly, and with an
-error message that does not explain itself. **This is the thing to understand
-before building anything on it.**
+Up to 1.4 this section warned that ONNX Runtime's attention buffer grew with the
+*square* of the prompt, so a prompt well inside the model's context could ask for
+tens of gigabytes and kill the runtime. **That was a property of ONNX Runtime, not
+of the hardware.** llama.cpp uses flash attention and never builds that matrix, so
+2.0's memory is linear in context: about 112 KiB per token for Qwen3-0.6B, with a
+compute buffer that stays flat from 2k to 16k.
 
-A model advertises a context window: Qwen3-4B says 40,960 tokens. That number is
-a hard ceiling, not a budget you can spend. Two separate walls arrive well before
-it:
+Measured on a Box:
 
-**1. Memory.** ONNX Runtime's CPU attention kernel materialises the whole
-attention score matrix, so that one allocation grows with the *square* of the
-prompt. It is the allocation that kills you long before the context limit does.
-
-**2. Time.** Reading the prompt dominates everything else; the answer's length
-barely matters by comparison. Measured, it costs roughly 2.5x per doubling of the
-prompt.
-
-Measured end to end on a Ryzen 7 PRO 7840U (8 cores, 28 GB) with Qwen3-4B int4 —
-a fast machine, far above a Peakboard Box:
-
-| Prompt | Peak RAM | Wall clock |
+| context | KV cache | compute buffer |
 |---|---|---|
-| ~1,000 tokens | 4.4 GB | 37 s |
-| ~2,000 tokens | 5.9 GB | 52 s |
-| ~4,100 tokens | 9.8 GB | 130 s |
-| ~8,200 tokens | 17.0 GB | 332 s |
-| ~36,900 tokens | **fails** — asks for a single 163 GB buffer | — |
+| 2,048 | 224 MiB | 301 MiB |
+| 8,192 | 896 MiB | 301 MiB |
+| 16,384 | 1,792 MiB | 321 MiB |
 
-(Roughly 3.4 GB of that peak is the loaded model, which is paid once regardless
-of prompt length.)
+So memory has stopped being the wall. **Time took its place**, and prefill runs at
+a flat ~16.5 tok/s on a Box regardless of prompt length:
 
-The last row is still *inside* the model's 40,960-token context. It fails anyway,
-with `BFCArena::AllocateRawInternal Failed to allocate memory for requested buffer
-of size 174720360960` naming a node in layer 0 — which tells you nothing about
-the prompt being too long. Go past 40,960 instead and you get
-`max_length (55160) cannot be greater than model context_length (40960)`, which at
-least names the problem.
+| prompt | first token | plus an 80-token answer |
+|---|---|---|
+| 150 | 9 s | ~19 s |
+| 300 | 18 s | ~28 s |
+| 500 | 30 s | ~40 s |
+| 1,000 | 61 s | ~71 s |
+| 2,000 | 121 s | ~131 s |
+
+**A Box is comfortable to roughly 300-500 prompt tokens.** Past about 1,000 it
+stops feeling like pressing a button. On a PC, multiply by three or more.
 
 ### What the extension does about it
 
-Two checks, and the difference between them matters.
+`MaxPromptTokens` is a policy cap you set. The engine additionally sizes the
+context to the actual work and refuses when that will not fit in free memory,
+naming what would:
 
-**`MaxPromptTokens` (default 2048) is your policy.** It refuses anything longer,
-before ONNX Runtime is asked for a byte. Raise it, lower it, or set it to `0` to
-turn it off.
+> This prompt needs a 12,400-token context, about 1.8 GB; only 900 MB is free on
+> this machine. About 6,200 tokens fit here right now. Send fewer rows, or
+> summarise them before asking.
 
-**The memory check is physics, and a board cannot turn it off.** Before
-generating, the extension works out what the prompt will actually cost on *this*
-machine and compares it against free physical memory:
+That refusal is now rare, because memory is rarely the binding constraint. Treat
+`MaxPromptTokens` as your patience budget rather than a safety device - roughly
+1,000 on a Box, more on a PC.
 
-```
-attention scores = num_attention_heads x tokens^2 x 4 bytes
-KV cache         = 2 x layers x kv_heads x head_size x (prompt + answer) x 4 bytes
-```
+### Give the model facts, not rows
 
-Those two are read from the model's own `genai_config.json`, so the answer is
-specific to the model you loaded, and the first is the allocation the runtime
-literally asks for — predicted against the observed 163 GB failure, it was 0.35%
-out. If the total will not fit, you get a sentence instead of a crash:
+The sharpest limitation is not speed, and it is worth knowing before you design a
+board. **A small model reads a prepared summary well and searches raw data badly.**
 
-> Prompt is 36,882 tokens, which needs about 345 GB; only 7.6 GB is free on this
-> machine. Attention memory grows with the SQUARE of the prompt, so the real
-> ceiling sits far below the model's 40,960-token context window. About 4,604
-> tokens fit here right now. Send fewer rows, or summarise them before asking.
+Measured on a Box, same model, same day: given three stations summarised into three
+lines with one flagged in alarm, Qwen3-0.6B correctly named the faulted station and
+what to check. Given twenty rows of raw sensor readings with one anomalous row, it
+named a timestamp that **did not exist in the data**, quoted ordinary values as the
+deviations, and still concluded confidently.
 
-**"About N tokens fit here right now" is the number to design against.** It is
-the point of the check: before 1.3, raising `MaxPromptTokens` to 40,000 sailed
-straight past the guard into the allocation failure, and the only way to find the
-real limit was to keep crashing the runtime until you bracketed it.
-
-It is a *current* number, not a fixed one — it moves with free memory, so a Box
-running a heavy dashboard has less room than the same Box idle. Leave margin.
-`MaxPromptTokens` is also reported against it: exceed your own policy limit and
-the message names the machine ceiling too, so you know how far the knob can go.
-
-The estimate is deliberately conservative near the ceiling. Refusing a prompt
-that would have just fitted costs you one sentence naming the limit; allowing one
-that does not costs the runtime.
-
-### On a Peakboard Box, the ceiling is lower than the default
-
-Measured on a Box (Celeron N5105, 7.82 GB) with Qwen3-0.6B fp16 loaded: **780 MB
-of physical memory free, and a ceiling of about 1,200 tokens.**
-
-That is below the `MaxPromptTokens` default of 2,048. On a Box, between roughly
-1,200 and 2,048 tokens it is the memory check rather than your own limit that
-refuses the prompt — which is the check doing its job, but it means **2,048 is not
-a safe number on Box hardware and should not be read as one.** The same laptop
-figure is 4,604.
-
-No single default can be right for both, which is the whole reason the ceiling is
-computed rather than configured. Treat `MaxPromptTokens` as a policy you set below
-the machine's ceiling, not as the thing that keeps you safe.
-
-**Design for a few hundred tokens on a Box.** That is four or five machine
-readings and a question, which is the shape this extension is good at anyway.
-
-If you have more data than fits, the answer is not a bigger limit. A 4,000-token
-prompt is over two minutes of staring at a dashboard and an 8,000-token one is
-five and a half, on a laptop far quicker than a Box. Filter or aggregate the rows
-first and send the model a summary — a hundred rows of readings become "3 lines
-faulted, worst is Line 3 at E-17". It is being asked to judge, not to read.
+So reduce first - minimum, maximum, trend, delta, which one is in alarm - in Lua,
+where a `for` loop gets it right every time, and hand the model a dozen prepared
+lines. That is cheaper in tokens, faster, and far more reliable than hoping it
+finds the needle. A 4B on a PC *can* do the search; a Box-sized model cannot.
 
 ## Performance
 
-Measured on a **Peakboard Box** (Intel Celeron N5105, 8 GB RAM) with
-Qwen3-0.6B at fp16:
+Measured on a **Peakboard Box** (Intel Celeron N5105, 4 cores, 8 GB RAM) with
+Qwen3-0.6B Q4_K_M under 2.0:
 
 | | |
 |---|---|
-| Model load (once, on first Ask) | 8–18 s |
-| Short prompt (~50 tokens), warm | first token after **2.4 s**, then **5.4 tokens/s** |
-| Long prompt (~500 tokens) | first token after **~31 s**, then ~3.6 tokens/s |
-| Peak memory | ~4.6 GB |
+| Model load (once, on first Ask) | ~0.7 s |
+| Model resident | **373 MiB** |
+| Prefill | **16.5 tokens/s**, flat from 128 to 2,048 tokens |
+| Generation | **7-13 tokens/s** depending on context |
+| 300-token prompt -> 40-token answer | ~20 s end to end |
 
-Three things follow from this, and they are worth knowing before you design a
-board around it:
+For comparison, 1.4 on the same Box with the same model at fp16 managed **5.8
+tokens/s** generating and peaked near **3.3 GB**. 2.0 is roughly twice as fast and
+uses a ninth of the memory, because llama.cpp's 4-bit kernels have an SSE path and
+ONNX Runtime's do not.
 
-- **Keep prompts short.** Reading the prompt dominates. A 500-token prompt costs
-  half a minute before the first word appears.
-- **Keep the model loaded.** The first `Ask` pays the load cost; later ones do not.
-- **Memory is tight on a Box.** A 0.6B model at fp16 peaks near 4.6 GB against
-  roughly 4.6 GB free. A larger model will not fit alongside a real dashboard.
+On a PC the same engine with Qwen3-4B Q4_K_M does **43 tok/s** prefill and ~12
+tok/s generating (Ryzen 7 PRO 7840U). The 2x advantage is a **weak-CPU** result: a
+machine with AVX-512 takes ONNX Runtime's fast path too, and the two come out
+level.
 
-Anything bigger than about 1B parameters is not usable on Box hardware. On a
-normal PC with more memory and a faster CPU, larger models are fine.
+Three things follow, and they are worth knowing before designing a board:
 
-**Avoid int4 on a Peakboard Box.** It is a third of the size and looks like the
-obvious choice, but the N5105 has no AVX instructions and ONNX Runtime has no
-SSE-only kernel for int4 matrix multiply. Measured: **0.26 tokens/s**, against 3.6
-for fp16 — about twelve times slower, for the same answers.
+- **Keep prompts short.** Reading the prompt dominates, and it is linear: every 16
+  tokens costs about a second on a Box. 300-500 tokens is comfortable; 2,000 is two
+  minutes.
+- **Keep the model loaded.** The first `Ask` pays the load; later ones do not.
+- **Summarise before asking.** Not only for speed - a Box-sized model reads
+  prepared facts reliably and searches raw rows badly. See
+  [Give the model facts, not rows](#give-the-model-facts-not-rows).
+
+Memory is no longer the constraint it was: a 0.6B leaves several gigabytes spare on
+a Box, and a 1.7B fits comfortably if you can wait about a minute per question.
 
 ### Reasoning models
 
@@ -361,23 +274,24 @@ therefore `false` by default; the extension appends `/no_think` and strips any
 
 ## Why CPU only
 
-There is a DirectML (GPU) flavour of ONNX Runtime GenAI, and this extension is
-**not** built with it, for two reasons:
+llama.cpp publishes Vulkan, SYCL, CUDA and ROCm builds, all MIT, and any could be
+bundled. None is, for a measured reason rather than a licensing one.
 
-1. **It returns wrong answers on Intel integrated graphics.** On a Peakboard Box's
-   Gen11 iGPU the same model and prompt that produce *"The sky on a clear day is
-   blue."* on CPU produce a stream of nonsense tokens through DirectML. This is a
-   [known ONNX Runtime issue](https://github.com/microsoft/onnxruntime/issues/19837)
-   in the DirectML/Intel metacommand path, not specific to this hardware, and
-   disabling metacommands does not fix it.
-2. **Licensing.** DirectML is not MIT — it carries a Microsoft EULA restricting
-   use to Windows and Xbox. Leaving it out keeps the entire runtime MIT.
+**GPU on a Peakboard Box has been shown to return wrong answers.** Under the ONNX
+Runtime + DirectML stack that 1.x used, the Box's Gen11 integrated GPU produced a
+stream of nonsense tokens for the same prompt that gave *"The sky on a clear day is
+blue."* on CPU - a [known ONNX Runtime
+issue](https://github.com/microsoft/onnxruntime/issues/19837) in the DirectML/Intel
+metacommand path. That specific bug does not apply to llama.cpp's Vulkan backend,
+but nothing has demonstrated that path is correct on this hardware either, and a
+GPU backend that is fast and wrong is worse than a CPU one that is slow and right.
 
-If you have a machine with a GPU DirectML handles correctly, swap the package
-reference in `LocalAI.csproj` from `Microsoft.ML.OnnxRuntimeGenAI` to
-`Microsoft.ML.OnnxRuntimeGenAI.DirectML`, rebuild, and set `Device` to `dml`.
-Verify the output is *correct* before trusting it — see above, this is exactly
-where it goes wrong quietly — and have the DirectML licence reviewed.
+Measure correctness before speed. The first benchmark round on this project did the
+opposite and recommended a configuration that returned garbage.
+
+If you want to try a GPU build, swap the DLLs in `llamacpp/` for those from a
+Vulkan or SYCL release of the same llama.cpp build and check the answers against
+CPU before trusting anything.
 
 ## Building from source
 
@@ -419,7 +333,7 @@ releases: it worked for everyone who tested it and failed on the appliance.
 Without these files a Box fails on the first `Ask` with
 
 ```
-DllNotFoundException: Unable to load DLL '...\Extensions\LocalAI\onnxruntime-genai.dll'
+DllNotFoundException: Unable to load DLL '...\Extensions\LocalAI\llama.dll'
 or one of its dependencies: The specified module could not be found. (0x8007007E)
 ```
 
@@ -437,11 +351,12 @@ newer copy is safe and an older one is not.
 
 ## Licences
 
-Everything in the shipped package is **MIT** (ONNX Runtime, ONNX Runtime GenAI,
-and the .NET libraries). See `NOTICE.txt` in the ZIP.
+Everything in the shipped package is **MIT** (llama.cpp and ggml), apart from
+libomp.dll, which is Apache 2.0 with the LLVM exception. See `NOTICE.txt` in the
+ZIP.
 
 The **model is licensed separately and is not shipped here.** Qwen3-0.6B is Apache
 2.0, which permits commercial use but requires the licence text and a statement of
-modifications to travel with the weights — converting to ONNX counts as a
+modifications to travel with the weights — quantising to GGUF counts as a
 modification. `NOTICE.txt` and `Qwen3-0.6B-LICENSE.txt` are included as a starting
 point; adjust them if you ship a different model.

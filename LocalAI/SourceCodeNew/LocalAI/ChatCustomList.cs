@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using Peakboard.ExtensionKit;
 
 namespace LocalAI
@@ -32,21 +32,25 @@ namespace LocalAI
                 {
                     new CustomListPropertyDefinition
                     {
-                        // Folder holding an ONNX Runtime GenAI model; must contain
-                        // genai_config.json. The README explains how to get one.
+                        // The .gguf model FILE. 1.x wanted a folder holding an ONNX
+                        // Runtime GenAI model; 2.0 runs llama.cpp, so this is a single
+                        // file and every 1.x board needs it changed. CheckModelPath
+                        // recognises the old shape and says so.
                         Name = "ModelPath",
-                        Value = @"C:\LocalAI\models\qwen3-0.6b",
+                        Value = @"C:\LocalAI\models\Qwen3-0.6B-Q4_K_M.gguf",
                     },
                     new CustomListPropertyDefinition
                     {
-                        // The published build is CPU-only; "dml" only resolves in a
-                        // rebuild against the DirectML flavour of the GenAI package,
-                        // and LlmEngine says so rather than failing obscurely.
+                        // CPU only. llama.cpp publishes Vulkan and SYCL builds, but
+                        // the Box's Gen11 iGPU already produced numerically wrong
+                        // output under DirectML, so GPU on this hardware is a thing to
+                        // prove rather than offer. Kept as a property so the refusal
+                        // has somewhere to point.
                         Name = "Device",
                         Value = "cpu",
                         TypeDefinition = new CustomListPropertyStringTypeDefinition
                         {
-                            SelectableValues = new[] { "cpu", "dml" },
+                            SelectableValues = new[] { "cpu" },
                         },
                     },
                     new CustomListPropertyDefinition
@@ -73,14 +77,17 @@ namespace LocalAI
                     {
                         // A policy cap on prompt length. 0 disables it.
                         //
-                        // This is NOT what stops the runtime dying: raise it to 40,000
-                        // and a 36,882-token prompt used to sail through into a 163 GB
-                        // allocation failure. LlmEngine's memory check is the guard
-                        // that cannot be configured away; this one exists so a board
-                        // can hold a tighter line than the machine's own ceiling, and
-                        // so the refusal names a number the author chose.
+                        // Far less load-bearing than it was. Under ONNX Runtime the
+                        // attention buffer grew with the SQUARE of the prompt, so a
+                        // large prompt meant a 163 GB allocation and this cap was the
+                        // only thing between a board and a dead runtime. llama.cpp's
+                        // memory is linear - 112 KiB per token of context - so the
+                        // engine now simply sizes the context to the work and refuses
+                        // only when that will not fit. This remains so a board can
+                        // hold a tighter line than the machine would, and so the
+                        // refusal names a number its author chose.
                         Name = "MaxPromptTokens",
-                        Value = "2048",
+                        Value = "4096",
                         TypeDefinition = new CustomListPropertyNumberTypeDefinition
                         {
                             Integer = true, Minimum = 0, Maximum = 131072,
@@ -92,6 +99,21 @@ namespace LocalAI
                         Name = "Thinking",
                         Value = "false",
                         TypeDefinition = new CustomListPropertyBooleanTypeDefinition(),
+                    },
+                    new CustomListPropertyDefinition
+                    {
+                        // 1.x hard-coded 0.7 and exposed no way to change it. That is
+                        // why the same board could give two different answers to the
+                        // same data, and why the blank-answer bug was intermittent.
+                        //
+                        // 0 is greedy: same prompt, same answer, every time. That is
+                        // usually what a dashboard wants.
+                        Name = "Temperature",
+                        Value = "0.7",
+                        TypeDefinition = new CustomListPropertyNumberTypeDefinition
+                        {
+                            Integer = false, Minimum = 0, Maximum = 2,
+                        },
                     },
                 },
                 Functions =
@@ -224,12 +246,13 @@ namespace LocalAI
                         var system = data.Properties["SystemPrompt"] ?? "";
                         var thinking = ParseBool(data.Properties["Thinking"], false);
                         var maxTokens = ParseInt(data.Properties["MaxNewTokens"], 128, 1);
-                        var maxPrompt = ParseInt(data.Properties["MaxPromptTokens"], 2048, 0);
+                        var maxPrompt = ParseInt(data.Properties["MaxPromptTokens"], 4096, 0);
+                        var temperature = ParseDouble(data.Properties["Temperature"], 0.7, 0, 2);
 
                         Log?.Info($"LocalAI Ask: {prompt.Length} chars, device={device}, " +
-                                  $"maxNew={maxTokens}, maxPrompt={maxPrompt}");
+                                  $"maxNew={maxTokens}, maxPrompt={maxPrompt}, temp={temperature}");
                         ret.Add(LlmEngine.Ask(prompt, modelPath, device, system,
-                                              maxTokens, thinking, maxPrompt));
+                                              maxTokens, thinking, maxPrompt, temperature));
                         break;
                     }
 
@@ -270,6 +293,25 @@ namespace LocalAI
             if (!int.TryParse(s, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n))
                 return fallback;
             return n < minimum ? fallback : n;
+        }
+
+        private static double ParseDouble(string raw, double fallback, double lo, double hi)
+        {
+            if (!string.IsNullOrWhiteSpace(raw))
+            {
+                // The Designer writes the number the way the operator's locale does,
+                // so "0,7" and "0.7" both have to land on 0.7.
+                if (double.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                    System.Globalization.CultureInfo.InvariantCulture, out var v)
+                    || double.TryParse(raw, System.Globalization.NumberStyles.Float,
+                                       System.Globalization.CultureInfo.CurrentCulture, out v))
+                {
+                    if (v < lo) return lo;
+                    if (v > hi) return hi;
+                    return v;
+                }
+            }
+            return fallback;
         }
 
         private static bool ParseBool(string s, bool fallback)

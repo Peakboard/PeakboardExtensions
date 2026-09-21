@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
@@ -13,6 +13,10 @@
 		<GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
 		<AssemblyName>LocalAI</AssemblyName>
 		<RootNamespace>LocalAI</RootNamespace>
+		<!-- ParamLayout patches a few fields inside llama.cpp's opaque by-value
+		     parameter blobs. Pointer arithmetic on a fixed-size struct is what
+		     unsafe is for; nothing else in the extension uses it. -->
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -22,15 +26,30 @@
 		</PackageReference>
 	</ItemGroup>
 
-	<!-- ONNX Runtime GenAI, CPU only. Everything here is MIT.
+	<!-- llama.cpp, CPU only. MIT, as is ggml.
 
-	     There is a DirectML flavour of this package for GPU inference, but it
-	     pulls in Microsoft.AI.DirectML, which is not MIT - it carries a Microsoft
-	     EULA limiting use to Windows and Xbox. It is also useless on a Peakboard
-	     Box: DirectML returns numerically wrong output on the Box's Gen11
-	     integrated GPU. CPU it is. -->
+	     2.0 replaced ONNX Runtime GenAI with this. The case is in
+	     LocalAI/MIGRATION-llamacpp.md; briefly, it is 2-3x faster generating on a
+	     Peakboard Box, needs a ninth of the memory, and reads GGUF - the format
+	     the model ecosystem actually publishes, which ORT GenAI's does not.
+
+	     These are the binaries from release b11070, committed rather than
+	     restored so the build is reproducible and the P/Invoke offsets in
+	     LlamaNative.cs keep matching the header they were written against.
+
+	     Fourteen ggml-cpu-*.dll are shipped, not one. llama.cpp dispatches on
+	     instruction set at load: a Box picks ggml-cpu-sse42.dll (its Celeron has
+	     no AVX), a modern PC picks alderlake or zen4. Ship only one and either the
+	     Box or every BYOD device loses. libomp.dll is needed by all of them.
+
+	     They must end up flat beside LocalAI.dll, because LlmEngine loads them by
+	     absolute path from the assembly's own folder and then points
+	     ggml_backend_load_all_from_path at it. -->
 	<ItemGroup>
-		<PackageReference Include="Microsoft.ML.OnnxRuntimeGenAI" Version="0.14.1" />
+		<None Include="llamacpp\*.dll">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>%(Filename)%(Extension)</Link>
+		</None>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -52,13 +71,15 @@
 
 	<!-- The Visual C++ runtime, shipped inside the package.
 
-	     onnxruntime.dll and onnxruntime-genai.dll import MSVCP140/VCRUNTIME140
-	     dynamically, so they need whatever copy the host process resolves. That
+	     llama.dll, ggml.dll and every ggml-cpu-*.dll import MSVCP140/VCRUNTIME140
+	     dynamically - the same dependency ONNX Runtime had - so they need whatever
+	     copy the host process resolves. That
 	     host is Peakboard.ExtensionKit.Process64.exe, which bundles none of its
 	     own and therefore takes System32's. A developer PC has a current one; a
-	     Peakboard Box ships 14.24 and never updates, and ONNX Runtime 1.23 fails
-	     against it with 0x8007045A, "DLL initialization routine failed" - a
-	     message that names neither this DLL nor the cause.
+	     Peakboard Box ships 14.24 and never updates, and a stock Box has none at
+	     all: 1.2 failed on a reviewer's untouched Box with 0x8007007E, "the
+	     specified module could not be found" - naming neither this DLL nor the
+	     cause.
 
 	     A copy beside the native DLLs wins over System32, so shipping a current
 	     one fixes it with nothing asked of the customer. Verified both ways on
@@ -74,15 +95,5 @@
 			<Link>%(Filename)%(Extension)</Link>
 		</None>
 	</ItemGroup>
-
-	<!-- .lib files are link-time import libraries for the native ONNX DLLs.
-	     Nothing needs them at runtime, and tools\pack-extension.ps1 zips whatever
-	     is in the output folder, so drop them here rather than shipping dead weight. -->
-	<Target Name="RemoveImportLibs" AfterTargets="Build">
-		<ItemGroup>
-			<_ImportLibs Include="$(OutDir)*.lib" />
-		</ItemGroup>
-		<Delete Files="@(_ImportLibs)" />
-	</Target>
 
 </Project>
