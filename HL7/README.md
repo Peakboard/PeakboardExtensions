@@ -30,7 +30,8 @@ and you get one row per observation, each carrying the patient.
 | `MessageTypes` | *(all)* | See [Filters](#filters). |
 | `SegmentTypes` | *(all)* | See [Filters](#filters). |
 | `PatientIds` | *(all)* | See [Filters](#filters). |
-| `MaxRows` | `1000` | The oldest rows are removed beyond this. |
+| `Mode` | `History` | `History` keeps the received rows; `Latest` shows only the newest message and overwrites it. See [Rows and retention](#rows-and-retention). |
+| `MaxRows` | `1000` | The oldest rows are removed beyond this. Ignored in `Latest` mode. |
 
 | Column | Type | Description |
 |---|---|---|
@@ -162,9 +163,18 @@ The lists are push lists. **New rows are appended at the bottom**; when `MaxRows
 reached the oldest row is removed from the top. Sort a table by `ReceivedAt`
 descending to show the newest first.
 
+With `Mode` = `Latest` the list holds only the newest accepted message. On HL7 -
+Messages that is one row, overwritten by every new message. On HL7 - Segments it
+is the segments of that message.
+
 Rows live in memory. They are gone after a restart of the board, and they are not
 there in Designer until the listener has received something (or you call
 `ProcessMessage`).
+
+Loading the data source preview in Designer opens the port for 10 seconds and shows
+the messages that arrive in that time and pass the filter. Send one with
+`Send-HL7.ps1` (see below) while the preview loads. The sender gets its ACK as
+usual, so these messages do not reach a board on another machine.
 
 ## Setting up
 
