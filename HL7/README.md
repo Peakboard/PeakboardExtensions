@@ -125,7 +125,6 @@ Available on HL7 - Segments and HL7 - Messages.
 |---|---|---|
 | `GetValue(text, path)` | String | Reads one value from a message or a single segment, escape sequences resolved. See below. |
 | `SetPatientIds(ids)` | – | Replaces the `PatientIds` filter at runtime, e.g. from a patient picker. Applies to messages received afterwards; call `Clear` first to drop the other patients' rows. Pass `''` for all patients. |
-| `Clear()` | – | Removes all rows. |
 | `ProcessMessage(message)` | String | Runs a message through this list's filter as if it had been received: `OK n` (rows added), `FILTERED`, or the parse error. For testing a board. |
 
 `GetValue` paths:

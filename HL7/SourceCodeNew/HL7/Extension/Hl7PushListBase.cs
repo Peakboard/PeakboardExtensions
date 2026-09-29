@@ -78,11 +78,6 @@ namespace PeakboardExtensionHL7.Extension
                 {
                     new CustomListFunctionDefinition
                     {
-                        Name = "Clear",
-                        Description = "Removes all rows from the list.",
-                    },
-                    new CustomListFunctionDefinition
-                    {
                         Name = "SetPatientIds",
                         Description = "Replaces the PatientIds filter at runtime, e.g. from a patient picker. " +
                                       "Applies to messages received from now on; call Clear first to drop rows of other patients.",
@@ -211,11 +206,7 @@ namespace PeakboardExtensionHL7.Extension
             var name = context.FunctionName ?? "";
             _states.TryGetValue(data.ListName ?? "", out var state);
 
-            if (name.Equals("Clear", StringComparison.OrdinalIgnoreCase))
-            {
-                if (state != null) ClearRows(state);
-            }
-            else if (name.Equals("SetPatientIds", StringComparison.OrdinalIgnoreCase))
+            if (name.Equals("SetPatientIds", StringComparison.OrdinalIgnoreCase))
             {
                 var ids = context.Values.Count > 0 ? context.Values[0].StringValue : "";
                 if (state != null)
@@ -281,16 +272,6 @@ namespace PeakboardExtensionHL7.Extension
                     push?.Remove(0);
                 }
                 return rows.Count;
-            }
-        }
-
-        private void ClearRows(ListState state)
-        {
-            lock (state.Lock)
-            {
-                var push = Data?.Push(state.ListName);
-                for (int i = state.Rows.Count; i > 0; i--) push?.Remove(0);
-                state.Rows.Clear();
             }
         }
 
