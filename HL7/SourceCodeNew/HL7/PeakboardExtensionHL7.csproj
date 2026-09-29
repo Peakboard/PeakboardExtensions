@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Plain net8.0: the extension uses nothing but sockets and strings, so there
+         is no reason to pull in the Windows SDK projection. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <Platforms>x64</Platforms>
+    <PlatformTarget>x64</PlatformTarget>
+    <AssemblyName>PeakboardExtensionHL7</AssemblyName>
+    <RootNamespace>PeakboardExtensionHL7</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+
+    <!-- No debug directory in the shipped assembly, so the building machine's
+         obj\ path does not travel inside the package. -->
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Private=false with ExcludeAssets=runtime keeps Peakboard's own assembly
+         out of the package. -->
+    <PackageReference Include="Peakboard.ExtensionKit" Version="4.0.1">
+      <Private>false</Private>
+      <ExcludeAssets>runtime</ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Extension.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="HL7.png" />
+    <EmbeddedResource Include="HL7.png" />
+  </ItemGroup>
+
+</Project>

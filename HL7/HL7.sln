@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SourceCodeNew", "SourceCodeNew", "{65DB7665-2C21-40D6-8EB4-D4EA897BE16F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HL7", "SourceCodeNew\HL7\PeakboardExtensionHL7.csproj", "{C3D1B254-EB61-4776-913E-9316F166EEB2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C3D1B254-EB61-4776-913E-9316F166EEB2}.Debug|x64.ActiveCfg = Debug|x64
+		{C3D1B254-EB61-4776-913E-9316F166EEB2}.Debug|x64.Build.0 = Debug|x64
+		{C3D1B254-EB61-4776-913E-9316F166EEB2}.Release|x64.ActiveCfg = Release|x64
+		{C3D1B254-EB61-4776-913E-9316F166EEB2}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C3D1B254-EB61-4776-913E-9316F166EEB2} = {65DB7665-2C21-40D6-8EB4-D4EA897BE16F}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {01FC5620-13E5-46A4-A732-979A3A5AD4CE}
+	EndGlobalSection
+EndGlobal

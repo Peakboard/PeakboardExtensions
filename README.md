@@ -71,6 +71,12 @@ For more details on how extensions work and how to build your own, see:
 | [Woutex](Woutex/) | Woutex e-Ink display integration |
 | [Xminnov](Xminnov/) | Xminnov RFID tag reader |
 
+### Healthcare
+
+| Extension | Description |
+|-----------|-------------|
+| [HL7](HL7/) | Receives HL7 v2 messages over MLLP, filtered by message type, segment type and patient |
+
 ### Monitoring and Network
 
 | Extension | Description |
