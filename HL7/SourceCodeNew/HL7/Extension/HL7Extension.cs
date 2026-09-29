@@ -29,7 +29,6 @@ namespace PeakboardExtensionHL7.Extension
             {
                 new SegmentsCustomList(),
                 new MessagesCustomList(),
-                new StatusCustomList(),
             };
         }
 

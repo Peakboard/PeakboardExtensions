@@ -22,7 +22,7 @@ namespace PeakboardExtensionHL7.Hl7
     /// interface engine speaks. A frame is 0x0B, the message, then 0x1C 0x0D.
     ///
     /// One listener per port, shared by every list configured for that port, so a
-    /// board can show the Segments, Messages and Status lists of one feed side by side.
+    /// board can show the Segments and Messages lists of one feed side by side.
     /// The listener starts with the first list and stops with the last.
     ///
     /// Every well-formed message is acknowledged with AA, including those no list
@@ -39,48 +39,31 @@ namespace PeakboardExtensionHL7.Hl7
         private static readonly object RegistryLock = new object();
         private static readonly Dictionary<int, MllpListener> Registry = new Dictionary<int, MllpListener>();
 
-        private readonly object _stateLock = new object();
-        private Encoding _encoding;
-        private bool _encodingExplicit;
+        private readonly Encoding _encoding;
         private readonly ILoggingService _log;
         private TcpListener _listener;
         private CancellationTokenSource _cts;
         private int _refCount;
-        private int _connections;
 
         public int Port { get; }
-        public string EncodingName { get; private set; }
+        public string EncodingName { get; }
         public bool IsListening { get; private set; }
-        public int ActiveConnections => _connections;
-        public long MessagesReceived { get; private set; }
-        public long MessagesRejected { get; private set; }
-        public DateTime? LastMessageAt { get; private set; }
-        public string LastMessageType { get; private set; } = "";
-        public string LastRemoteEndpoint { get; private set; } = "";
         public string LastError { get; private set; } = "";
 
         public event Action<ReceivedMessage> MessageReceived;
-        public event Action StatusChanged;
 
         private MllpListener(int port, string encodingName, ILoggingService log)
         {
             Port = port;
-            SetEncoding(encodingName);
-            _log = log;
-        }
-
-        private void SetEncoding(string encodingName)
-        {
-            _encodingExplicit = encodingName != null;
             EncodingName = encodingName ?? "UTF-8";
             _encoding = ResolveEncoding(EncodingName);
+            _log = log;
         }
 
         /// <summary>
         /// Gets the listener for a port, starting it if this is the first user.
-        /// Dispose the returned lease to release it. A null encoding means "whatever
-        /// the other lists on this port use": the Status list passes null so it never
-        /// decides the encoding for the lists that actually read the messages.
+        /// Dispose the returned lease to release it. The first list on a port decides
+        /// its encoding.
         /// </summary>
         public static Lease Acquire(int port, string encodingName, ILoggingService log)
         {
@@ -92,12 +75,7 @@ namespace PeakboardExtensionHL7.Hl7
                     listener = new MllpListener(port, encodingName, log);
                     Registry[port] = listener;
                 }
-                else if (encodingName == null) { }
-                else if (!listener._encodingExplicit)
-                {
-                    listener.SetEncoding(encodingName);
-                }
-                else if (!string.Equals(listener.EncodingName, encodingName, StringComparison.OrdinalIgnoreCase))
+                else if (!string.Equals(listener.EncodingName, encodingName ?? "UTF-8", StringComparison.OrdinalIgnoreCase))
                 {
                     log?.Warning($"[HL7] Port {port} is already open with encoding {listener.EncodingName}; " +
                                  $"the {encodingName} setting of this list is ignored.");
@@ -106,13 +84,6 @@ namespace PeakboardExtensionHL7.Hl7
                 if (listener._refCount == 1) listener.Start();
             }
             return new Lease(listener);
-        }
-
-        /// <summary>The listener on a port, if one is open. Does not start anything.</summary>
-        public static MllpListener Find(int port)
-        {
-            lock (RegistryLock)
-                return Registry.TryGetValue(port, out var l) ? l : null;
         }
 
         private void Release()
@@ -139,13 +110,12 @@ namespace PeakboardExtensionHL7.Hl7
             }
             catch (Exception ex)
             {
-                // Not thrown on: the Status list is where this belongs. The usual cause
-                // is the port being taken, often by Designer and Runtime on one PC.
+                // Not thrown here: every list sharing the port reports it from
+                // IsListening and LastError, and releases its lease.
                 IsListening = false;
                 LastError = $"Cannot listen on port {Port}: {ex.Message}";
                 _log?.Error($"[HL7] {LastError}");
             }
-            RaiseStatusChanged();
         }
 
         private void Stop()
@@ -155,7 +125,6 @@ namespace PeakboardExtensionHL7.Hl7
             _listener = null;
             IsListening = false;
             _log?.Info($"[HL7] Stopped listening on port {Port}.");
-            RaiseStatusChanged();
         }
 
         private async Task AcceptLoop(CancellationToken ct)
@@ -184,9 +153,7 @@ namespace PeakboardExtensionHL7.Hl7
         private async Task HandleClient(TcpClient client, CancellationToken ct)
         {
             var remote = client.Client.RemoteEndPoint?.ToString() ?? "";
-            Interlocked.Increment(ref _connections);
             _log?.Verbose($"[HL7] Connection from {remote}.");
-            RaiseStatusChanged();
 
             try
             {
@@ -247,9 +214,7 @@ namespace PeakboardExtensionHL7.Hl7
             }
             finally
             {
-                Interlocked.Decrement(ref _connections);
                 _log?.Verbose($"[HL7] Connection from {remote} closed.");
-                RaiseStatusChanged();
             }
         }
 
@@ -263,17 +228,8 @@ namespace PeakboardExtensionHL7.Hl7
             }
             catch (FormatException ex)
             {
-                lock (_stateLock) MessagesRejected++;
                 SetError($"Unparseable message from {remote}: {ex.Message}");
                 return Hl7Ack.BuildReject(ex.Message);
-            }
-
-            lock (_stateLock)
-            {
-                MessagesReceived++;
-                LastMessageAt = DateTime.Now;
-                LastMessageType = message.MessageType;
-                LastRemoteEndpoint = remote;
             }
 
             var received = new ReceivedMessage { Message = message, ReceivedAt = DateTime.Now, RemoteEndpoint = remote };
@@ -286,8 +242,6 @@ namespace PeakboardExtensionHL7.Hl7
                     catch (Exception ex) { _log?.Error($"[HL7] A list failed to process {message.ControlId}: {ex}"); }
                 }
             }
-
-            RaiseStatusChanged();
 
             // Never acknowledge an acknowledgement: an ACK storm between two
             // receivers is the classic misconfiguration.
@@ -310,13 +264,6 @@ namespace PeakboardExtensionHL7.Hl7
         {
             LastError = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} {error}";
             _log?.Error($"[HL7] {error}");
-            RaiseStatusChanged();
-        }
-
-        private void RaiseStatusChanged()
-        {
-            try { StatusChanged?.Invoke(); }
-            catch (Exception ex) { _log?.Error($"[HL7] Status update failed: {ex.Message}"); }
         }
 
         public static Encoding ResolveEncoding(string name)

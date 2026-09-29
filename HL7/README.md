@@ -8,20 +8,21 @@ every HL7 v2 interface speaks, and acknowledges each message.
 You choose what to keep:
 
 - **Message types**, e.g. only `ADT` (admissions, transfers, discharges) or only `ORU^R01` (results)
-- **Segment types**, e.g. only `OBX` (observations). **MSH and PID are always stored** with them, so every row says which message and which patient it belongs to
+- **Segment types**, e.g. only `OBX` (observations). Every row says which message and which patient it belongs to
 - **Patients**, by patient ID, with wildcards
 
 No third-party libraries: the package is one DLL plus `Extension.xml`.
 
 ## Data sources
 
-Three, sharing one listener per port. Add the ones you need with the same `Port`;
+Two, sharing one listener per port. Add the ones you need with the same `Port`;
 the port opens with the first and closes with the last.
 
 ### HL7 - Segments
 
-**One row per stored segment.** The best fit for tables of results: filter to `OBX`
-and you get one row per observation, each carrying the patient.
+**One row per stored segment.** The best fit for tables: with `KeepMshPid` off,
+`SegmentTypes = OBX` gives one row per observation and `SegmentTypes = PV1` one row
+per ADT event (location in `Field3`), each carrying the patient.
 
 | Property | Default | Description |
 |---|---|---|
@@ -30,6 +31,7 @@ and you get one row per observation, each carrying the patient.
 | `MessageTypes` | *(all)* | See [Filters](#filters). |
 | `SegmentTypes` | *(all)* | See [Filters](#filters). |
 | `PatientIds` | *(all)* | See [Filters](#filters). |
+| `KeepMshPid` | `true` | Store the MSH and PID of every message as rows of their own. Turn off to get only the segments `SegmentTypes` names; their rows still carry the message and patient columns. HL7 - Segments only. |
 | `Mode` | `History` | `History` keeps the received rows; `Latest` shows only the newest message and overwrites it. See [Rows and retention](#rows-and-retention). |
 | `MaxRows` | `1000` | The oldest rows are removed beyond this. Ignored in `Latest` mode. |
 
@@ -73,26 +75,6 @@ Properties as above; `MaxRows` defaults to `200`.
 | `Segments` | String | The stored segments, one per line. |
 | `RemoteEndpoint` | String | IP and port of the sender. |
 
-### HL7 - Status
-
-**One row, always.** The two lists above stay empty until something arrives, which
-does not tell "nothing sent yet" from "firewall blocks the port". This one does.
-
-| Property | Default |
-|---|---|
-| `Port` | `2575` |
-
-| Column | Type | Description |
-|---|---|---|
-| `Status` | String | `Listening on port 2575`, or why not. |
-| `Listening` | Boolean | |
-| `Port` | Number | |
-| `Encoding` | String | The encoding the port is decoding with. |
-| `ActiveConnections` | Number | Senders currently connected. Most keep one connection open. |
-| `MessagesReceived`, `MessagesRejected` | Number | Rejected means not parseable as HL7 at all. Filtered messages count as received. |
-| `LastMessageAt`, `LastMessageType`, `LastRemoteEndpoint` | String | |
-| `LastError` | String | With timestamp. `Cannot listen on port …` means the port is taken. |
-
 ## Filters
 
 All three are comma- or semicolon-separated lists and case-insensitive. Empty means
@@ -101,14 +83,15 @@ no restriction. They combine: a message must pass all of them.
 | Property | Examples | Matches |
 |---|---|---|
 | `MessageTypes` | `ADT` · `ADT^A01, ADT^A03` · `ORU_R01` · `ADT, ORU` | MSH-9. `ADT` matches every ADT event; `ADT^A01` only admissions. `ADT_A01` is accepted too. |
-| `SegmentTypes` | `OBX` · `OBR, OBX, NTE` · `PV1` | Which segments are stored. MSH and PID are always stored in addition. |
+| `SegmentTypes` | `OBX` · `OBR, OBX, NTE` · `PV1` | Which segments are stored. MSH and PID are stored in addition unless `KeepMshPid` is off. |
 | `PatientIds` | `4711` · `4711, 4712` · `47*` · `A-???` | The patient identifiers in PID-3 (every repetition), PID-2 and PID-4. `*` and `?` are wildcards. |
 
 Two rules worth knowing:
 
 - **With `SegmentTypes` set, a message containing none of those segments is dropped
   entirely**, not stored as a lone MSH and PID. `SegmentTypes = OBX` means "results";
-  an ADT without results leaves nothing behind.
+  an ADT without results leaves nothing behind. Likewise, with `KeepMshPid` off and
+  `SegmentTypes` empty, a message of nothing but MSH and PID leaves nothing behind.
 - **With `PatientIds` set, messages without a PID segment are dropped**, since they
   cannot be attributed to a patient.
 
@@ -178,19 +161,24 @@ usual, so these messages do not reach a board on another machine.
 
 ## Setting up
 
-1. Add **HL7 - Status** and one of the message lists with the same `Port`.
+1. Add one of the lists with the desired `Port`.
 2. Allow the port inbound in the firewall of the machine running the board. On a
    Peakboard Box, ask your administrator; on a PC, Windows Firewall will ask on the
    first run.
 3. Configure the sending system with an **MLLP / TCP client** connection to the
    Box's IP and port. Most engines call this an "LLP Sender" or "TCP Sender" with
    MLLP framing.
-4. Watch **HL7 - Status**: `ActiveConnections` goes to 1 when the sender connects,
-   `MessagesReceived` counts up as messages arrive.
+4. Check the connection from the sending system's side: interface engines show
+   whether their MLLP connection is up and whether messages are acknowledged.
 
-The listener runs wherever the board runs. **Designer and Runtime on the same PC
-cannot both open the same port**; if Status shows `Cannot listen on port …`, close
-the Designer preview or use another port for testing.
+If the port cannot be opened, the data source fails with `Cannot listen on port …`
+instead of staying empty. The listener runs wherever the board runs. **Designer and
+Runtime on the same PC cannot both open the same port**; close the Designer preview
+or use another port for testing.
+
+A list that stays empty while the sender reports acknowledged messages is filtering
+them out. Clear `MessageTypes`, `SegmentTypes` and `PatientIds` to check, or test a
+message with `ProcessMessage`, which returns `FILTERED`.
 
 ### Testing without a sending system
 

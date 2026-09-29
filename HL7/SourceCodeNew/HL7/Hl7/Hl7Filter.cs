@@ -9,13 +9,15 @@ namespace PeakboardExtensionHL7.Hl7
     /// Decides which messages a list keeps, and which of their segments.
     ///
     /// Each criterion is a comma- or semicolon-separated list; empty means "no
-    /// restriction". MSH and PID are always kept for an accepted message, whatever
+    /// restriction". By default MSH and PID are kept for an accepted message, whatever
     /// SegmentTypes says, so every stored row can be traced to its message and patient.
+    /// With keepMshPid off they are kept only when SegmentTypes names them; the Segments
+    /// list repeats their keys on every row anyway.
     /// </summary>
     public sealed class Hl7Filter
     {
         private static readonly char[] Separators = { ',', ';', '\r', '\n', '\t' };
-        private static readonly string[] AlwaysKept = { "MSH", "PID" };
+        private static readonly string[] MshPid = { "MSH", "PID" };
 
         private readonly List<(string Code, string Event)> _messageTypes;
         private readonly HashSet<string> _segmentTypes;
@@ -24,9 +26,11 @@ namespace PeakboardExtensionHL7.Hl7
         public string MessageTypesText { get; }
         public string SegmentTypesText { get; }
         public string PatientIdsText { get; }
+        public bool KeepMshPid { get; }
 
-        public Hl7Filter(string messageTypes, string segmentTypes, string patientIds)
+        public Hl7Filter(string messageTypes, string segmentTypes, string patientIds, bool keepMshPid = true)
         {
+            KeepMshPid = keepMshPid;
             MessageTypesText = messageTypes?.Trim() ?? "";
             SegmentTypesText = segmentTypes?.Trim() ?? "";
             PatientIdsText = patientIds?.Trim() ?? "";
@@ -49,7 +53,7 @@ namespace PeakboardExtensionHL7.Hl7
         public static Hl7Filter None { get; } = new Hl7Filter("", "", "");
 
         public Hl7Filter WithPatientIds(string patientIds) =>
-            new Hl7Filter(MessageTypesText, SegmentTypesText, patientIds);
+            new Hl7Filter(MessageTypesText, SegmentTypesText, patientIds, KeepMshPid);
 
         public bool AcceptsMessage(Hl7Message message)
         {
@@ -72,8 +76,12 @@ namespace PeakboardExtensionHL7.Hl7
             return true;
         }
 
-        public bool KeepsSegment(Hl7Segment segment) =>
-            _segmentTypes.Count == 0 || AlwaysKept.Contains(segment.Type) || _segmentTypes.Contains(segment.Type);
+        public bool KeepsSegment(Hl7Segment segment)
+        {
+            if (_segmentTypes.Contains(segment.Type)) return true;
+            if (MshPid.Contains(segment.Type)) return KeepMshPid;
+            return _segmentTypes.Count == 0;
+        }
 
         /// <summary>
         /// The segments kept for a message, or an empty list when the message is rejected.

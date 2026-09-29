@@ -166,6 +166,7 @@ namespace PeakboardExtensionHL7.Extension
             ReadPort(data);
             ReadMaxRows(data);
             ReadLatestOnly(data);
+            ReadKeepMshPid(data);
         }
 
         protected override CustomListObjectElementCollection GetItemsOverride(CustomListData data)
@@ -235,9 +236,20 @@ namespace PeakboardExtensionHL7.Extension
             state.Lease = MllpListener.Acquire(ReadPort(data), ReadProperty(data, "Encoding", "UTF-8"), Log);
             state.Lease.Listener.MessageReceived += state.Handler;
 
+            // Thrown, so the board shows a data source error instead of a list that
+            // stays empty. The usual cause is the port being taken, often by Designer
+            // and Runtime on one PC.
+            if (!state.Lease.Listener.IsListening)
+            {
+                var error = state.Lease.Listener.LastError;
+                CleanupState(listName);
+                throw new InvalidOperationException(error);
+            }
+
             Log?.Info($"[HL7] {ListDisplayName} '{listName}' on port {state.Lease.Listener.Port}: " +
                       $"MessageTypes='{state.Filter.MessageTypesText}' SegmentTypes='{state.Filter.SegmentTypesText}' " +
-                      $"PatientIds='{state.Filter.PatientIdsText}' Mode={(state.LatestOnly ? ModeLatest : ModeHistory)} MaxRows={state.MaxRows}");
+                      $"PatientIds='{state.Filter.PatientIdsText}' KeepMshPid={state.Filter.KeepMshPid} " +
+                      $"Mode={(state.LatestOnly ? ModeLatest : ModeHistory)} MaxRows={state.MaxRows}");
         }
 
         protected override void CleanupOverride(CustomListData data) => CleanupState(data.ListName ?? "");
@@ -406,11 +418,21 @@ namespace PeakboardExtensionHL7.Extension
             return true;
         }
 
+        /// <summary>Only the Segments list offers KeepMshPid; without the property MSH and PID are kept.</summary>
+        private static bool ReadKeepMshPid(CustomListData data)
+        {
+            var text = ReadProperty(data, "KeepMshPid", "true");
+            if (text.Length == 0 || text.Equals("true", StringComparison.OrdinalIgnoreCase) || text == "1") return true;
+            if (text.Equals("false", StringComparison.OrdinalIgnoreCase) || text == "0") return false;
+            throw new InvalidOperationException($"KeepMshPid must be true or false, not '{text}'.");
+        }
+
         private static Hl7Filter ReadFilter(CustomListData data) =>
             new Hl7Filter(
                 ReadProperty(data, "MessageTypes", ""),
                 ReadProperty(data, "SegmentTypes", ""),
-                ReadProperty(data, "PatientIds", ""));
+                ReadProperty(data, "PatientIds", ""),
+                ReadKeepMshPid(data));
 
         protected static string FormatTimestamp(DateTime value) => value.ToString("yyyy-MM-dd HH:mm:ss");
     }
