@@ -154,7 +154,7 @@ namespace PeakboardExtensionObjectDetection.Annotation
                 var dir = Path.GetDirectoryName(sampleFile);
                 var sampleId = Path.GetFileNameWithoutExtension(sampleFile);
                 var dataset = DatasetOf(sampleFile);
-                var error = Upload(hubUrl, key, dataset, dir, sampleId, out var permanent, out var hubWide);
+                var error = Upload(hubUrl, key, dataset, dir, sampleId, out var permanent, out var hubWide, out var warning);
                 if (error != null && permanent)
                 {
                     // The Hub will never take this one. Keeping it at the head of the queue would
@@ -183,7 +183,13 @@ namespace PeakboardExtensionObjectDetection.Annotation
 
                 MoveTo("uploaded", dir, sampleId);
                 done++;
-                SetStatus($"Sample {sampleId} uploaded to dataset \"{dataset}\".");
+                if (warning.Length == 0)
+                {
+                    SetStatus($"Sample {sampleId} uploaded to dataset \"{dataset}\".");
+                    continue;
+                }
+                SetStatus($"Sample {sampleId} sent to dataset \"{dataset}\", but the Hub says: {warning}");
+                _log?.Warning($"[ObjectDetection] Sample {sampleId}: {warning}");
             }
             if (skipped > 0) SetStatus($"{skipped} sample(s) waiting: {skipReason}");
         }
@@ -232,10 +238,11 @@ namespace PeakboardExtensionObjectDetection.Annotation
         /// on the device (the Hub stores boxes only), in the "uploaded" folder beside the frame.
         /// </summary>
         private static string Upload(string hubUrl, string key, string dataset, string dir, string sampleId,
-            out bool permanent, out bool hubWide)
+            out bool permanent, out bool hubWide, out string warning)
         {
             permanent = false;
             hubWide = false;
+            warning = "";
             var url = $"{hubUrl}/api/ObjectDetectionManager/UploadSample";
 
             string annotations, device;
@@ -284,7 +291,13 @@ namespace PeakboardExtensionObjectDetection.Annotation
                         var hubError = HubError(body);
 
                         // The Hub answers errors with their status code AND lists them in the body.
-                        if (response.IsSuccessStatusCode && hubError.Length == 0) return null;
+                        if (response.IsSuccessStatusCode && hubError.Length == 0)
+                        {
+                            // Accepted, but not necessarily stored: a frame the dataset already
+                            // holds comes back 200 with its boxes dropped, said only in a warning.
+                            warning = HubWarning(body);
+                            return null;
+                        }
                         var code = (int)response.StatusCode;
                         var reason = hubError.Length > 0 ? hubError : response.ReasonPhrase;
                         switch (response.StatusCode)
@@ -364,7 +377,12 @@ namespace PeakboardExtensionObjectDetection.Annotation
         private static double Clamp(double v, double min, double max) => Math.Max(min, Math.Min(max, v));
 
         /// <summary>The first entry of the Hub's <c>errors</c> array, or "".</summary>
-        private static string HubError(string body)
+        private static string HubError(string body) => HubMessage(body, "errors");
+
+        /// <summary>The first entry of the Hub's <c>warnings</c> array, or "".</summary>
+        private static string HubWarning(string body) => HubMessage(body, "warnings");
+
+        private static string HubMessage(string body, string array)
         {
             if (string.IsNullOrWhiteSpace(body)) return "";
             try
@@ -374,7 +392,7 @@ namespace PeakboardExtensionObjectDetection.Annotation
                     if (doc.RootElement.ValueKind != JsonValueKind.Object) return "";
                     foreach (var p in doc.RootElement.EnumerateObject())
                     {
-                        if (!string.Equals(p.Name, "errors", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (!string.Equals(p.Name, array, StringComparison.OrdinalIgnoreCase)) continue;
                         if (p.Value.ValueKind != JsonValueKind.Array) return "";
                         foreach (var e in p.Value.EnumerateArray())
                             if (e.ValueKind == JsonValueKind.String) return e.GetString() ?? "";
