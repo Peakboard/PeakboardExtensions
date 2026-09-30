@@ -28,7 +28,7 @@ The current frame, one row.
 |---|---|---|---|
 | `CameraSource` | text | `0` | USB camera index, or an RTSP URL, or a path to a video file. See [Choosing a camera](#choosing-a-camera). |
 | `ModelName` | text | `yolov9t` | Which model to run. See [Models](#models). |
-| `ConfidenceThreshold` | number | `0.4` | Detections below this are discarded. |
+| `ConfidenceThreshold` | number | `0.4` | Detections below this are discarded. `0.4` and `0,4` both work. |
 
 | Column | Type | Description |
 |---|---|---|
@@ -158,8 +158,17 @@ data.DS_Annotation.DiscardBox()
 data.DS_Annotation.Save()
 ```
 
-`getstrokes()` is a function of the Drawing Area itself and needs a Peakboard
-Runtime that has it (Designer/Runtime from 28.09.2026 on).
+`getstrokes()` is a function of the Drawing Area itself, and **no Peakboard build has
+it yet** (checked against `dev_master` on 30.09.2026): the Drawing Area only keeps its
+strokes for itself (`SaveOnBox`), Lua cannot read them, and the Designer's script check
+does not know the function either. The change it needs - a `[MoonSharpVisible]`
+`GetStrokes()` on `PeakboardDrawingArea` returning the JSON below, plus the method on the
+Designer's Drawing Area mock - is a patch on the Test Board card of the annotation feature.
+Until a Peakboard release carries it, `ProposeBox` can only be fed from a script that
+builds the drawing itself.
+
+The drawing `ProposeBox` expects is
+`{"width":w,"height":h,"strokes":[[[x,y],[x,y],...],...]}` in the Drawing Area's own pixels.
 
 **Saving never waits for the Hub.** The sample is written to
 `C:\ProgramData\Peakboard\ObjectDetection\datasets\<DatasetName>\outbox` first -
@@ -169,7 +178,15 @@ and uploaded from there in the background. When the Hub is unreachable the sampl
 waits and is retried every 30 seconds; uploaded samples move to `…\uploaded`.
 A sample goes to the dataset it was saved for, even if `DatasetName` changes while it
 waits. A sample the Hub refuses for good (a 4xx other than the key, a missing endpoint,
-408 or 429) moves to `…\rejected` and does not hold up the ones behind it.
+408 or 429) or whose frame file is gone moves to `…\rejected` and does not hold up the
+ones behind it. A sample the Hub fails to store (a 5xx) stays in the outbox and is tried
+again, but the samples behind it go out in the meantime. When the Hub accepts a sample
+and still adds nothing - it already holds that very frame - `UploadStatus` says so with
+the Hub's own words.
+
+The Annotation and the Suggestions list share the outbox and its Hub connection. It is
+enough to set `HubUrl` and `UserGroupKey` on one of them; a list that leaves them empty
+does not take them away from the other.
 
 The class name is saved exactly as entered. Only the label drawn into the preview spells
 umlauts out (`Schlüssel` → `Schluessel`) - the font of the preview has no umlauts.
@@ -509,7 +526,7 @@ health, one row per detected object, and the cameras the machine can see.
 
 It carries the extension inside it - version 1.0, without the Annotation and
 Suggestions lists and without the Hub model sync - so it can be uploaded straight to a
-Peakboard Box and will run without installing anything first. Install the ZIP to get 1.2. Open it in Designer instead
+Peakboard Box and will run without installing anything first. Install the ZIP to get 1.3. Open it in Designer instead
 if you want to look at how the bindings are put together.
 
 It is also the fastest way to find out whether a camera works: if the Cameras
