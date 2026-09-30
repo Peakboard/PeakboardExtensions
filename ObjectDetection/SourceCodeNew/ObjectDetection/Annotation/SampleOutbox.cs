@@ -246,9 +246,19 @@ namespace PeakboardExtensionObjectDetection.Annotation
                 return $"the saved boxes cannot be read ({ex.Message}).";
             }
 
+            // Without its frame a sample can never be sent. Thrown from here, the exception ended
+            // every upload round before the samples behind this one were reached.
+            byte[] frame;
+            try { frame = File.ReadAllBytes(Path.Combine(dir, sampleId + ".jpg")); }
+            catch (Exception ex) when (ex is FileNotFoundException || ex is DirectoryNotFoundException)
+            {
+                permanent = true;
+                return "its frame file is missing.";
+            }
+
             using (var content = new MultipartFormDataContent())
             {
-                var image = new ByteArrayContent(File.ReadAllBytes(Path.Combine(dir, sampleId + ".jpg")));
+                var image = new ByteArrayContent(frame);
                 image.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg");
                 content.Add(image, "file", sampleId + ".jpg");
                 content.Add(new StringContent(dataset, Encoding.UTF8), "dataset");
@@ -379,7 +389,9 @@ namespace PeakboardExtensionObjectDetection.Annotation
         {
             var target = Path.Combine(Path.GetDirectoryName(dir), folder);
             Directory.CreateDirectory(target);
-            foreach (var suffix in new[] { ".jpg", ".drawings.json", ".json" })
+            // The .json first: it is what makes a sample "waiting". Interrupted after it, the
+            // sample is done and only loose files stay behind - not a sample without its frame.
+            foreach (var suffix in new[] { ".json", ".jpg", ".drawings.json" })
             {
                 var from = Path.Combine(dir, sampleId + suffix);
                 var to = Path.Combine(target, sampleId + suffix);
