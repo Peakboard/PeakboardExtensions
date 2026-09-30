@@ -132,22 +132,15 @@ namespace PeakboardExtensionObjectDetection.Extension
                 var source = data.Properties["CameraSource"] ?? "0";
                 var model = data.Properties["ModelName"] ?? "yolov9t";
 
-                float conf = 0.4f, nms = 0.45f;
-                float.TryParse(data.Properties["ConfidenceThreshold"] ?? "0.4",
-                    System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out conf);
-                float.TryParse(data.Properties["NmsThreshold"] ?? "0.45",
-                    System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out nms);
+                var conf = (float)NumberProperty.Parse(data.Properties["ConfidenceThreshold"], 0.4);
+                var nms = (float)NumberProperty.Parse(data.Properties["NmsThreshold"], 0.45);
 
                 DetectionEngine.SetLogger(Log);
                 DetectionEngine.Start(source, model, conf, nms);
 
                 // After the engine: it starts on the fallback when the first Hub model has
                 // not arrived yet, and switches to it as soon as the sync installed it.
-                double.TryParse(Property(data, HubCheckSecondsProperty, "60"),
-                    System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out var checkSeconds);
+                var checkSeconds = NumberProperty.Parse(Property(data, HubCheckSecondsProperty, "60"), 60);
                 HubModelSync.Configure(
                     Property(data, HubUrlProperty, ""),
                     Property(data, UserGroupKeyProperty, ""),

@@ -138,10 +138,7 @@ namespace PeakboardExtensionObjectDetection.Extension
             var source = data.Properties["CameraSource"] ?? "0";
             var model = data.Properties["ModelName"] ?? "yolov9t";
 
-            float conf = 0.4f;
-            float.TryParse(data.Properties["ConfidenceThreshold"] ?? "0.4",
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out conf);
+            var conf = (float)NumberProperty.Parse(data.Properties["ConfidenceThreshold"], 0.4);
 
             DetectionEngine.SetLogger(Log);
             DetectionEngine.Start(source, model, conf);

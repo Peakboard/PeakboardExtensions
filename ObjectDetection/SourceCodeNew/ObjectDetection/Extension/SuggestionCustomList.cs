@@ -293,8 +293,7 @@ namespace PeakboardExtensionObjectDetection.Extension
 
         private static double Number(CustomListData data, string name, double fallback)
         {
-            return double.TryParse(Property(data, name, ""), NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
-                && !double.IsNaN(v) && !double.IsInfinity(v) ? v : fallback;
+            return NumberProperty.Parse(Property(data, name, ""), fallback);
         }
     }
 }
