@@ -147,12 +147,14 @@ namespace PeakboardExtensionObjectDetection.Annotation
             }
 
             var done = 0;
+            var skipped = 0;
+            string skipReason = null;
             foreach (var sampleFile in samples)
             {
                 var dir = Path.GetDirectoryName(sampleFile);
                 var sampleId = Path.GetFileNameWithoutExtension(sampleFile);
                 var dataset = DatasetOf(sampleFile);
-                var error = Upload(hubUrl, key, dataset, dir, sampleId, out var permanent);
+                var error = Upload(hubUrl, key, dataset, dir, sampleId, out var permanent, out var hubWide);
                 if (error != null && permanent)
                 {
                     // The Hub will never take this one. Keeping it at the head of the queue would
@@ -163,16 +165,27 @@ namespace PeakboardExtensionObjectDetection.Annotation
                     _log?.Error($"[ObjectDetection] Sample {sampleId} rejected: {error}");
                     continue;
                 }
-                if (error != null)
+                if (error != null && hubWide)
                 {
+                    // Nothing gets through right now - no point in sending the rest.
                     SetStatus($"{samples.Count - done} sample(s) waiting: {error}");
                     return;
+                }
+                if (error != null)
+                {
+                    // Something about THIS sample (a 5xx while storing it, its dataset not there
+                    // yet). It is tried again next round; the samples behind it go out now.
+                    skipped++;
+                    skipReason = error;
+                    _log?.Warning($"[ObjectDetection] Sample {sampleId} not uploaded, retrying later: {error}");
+                    continue;
                 }
 
                 MoveTo("uploaded", dir, sampleId);
                 done++;
                 SetStatus($"Sample {sampleId} uploaded to dataset \"{dataset}\".");
             }
+            if (skipped > 0) SetStatus($"{skipped} sample(s) waiting: {skipReason}");
         }
 
         /// <summary>The samples in every dataset's outbox, oldest first.</summary>
@@ -209,6 +222,8 @@ namespace PeakboardExtensionObjectDetection.Annotation
         /// Returns null on success, otherwise the reason in words an operator can act on.
         /// permanent: the Hub understood the request and refused THIS sample (a 4xx other than the
         /// key, a missing endpoint, a timeout or throttling) - sending it again cannot help.
+        /// hubWide: the failure is not about this sample (Hub unreachable, key refused, no Object
+        /// Detection endpoint, timeout or throttling) - every other sample would fail the same way.
         ///
         /// The Hub's contract (ObjectDetectionManager/UploadSample): form fields <c>file</c> (the
         /// JPEG), <c>dataset</c>, <c>sourceDevice</c> and <c>annotations</c> - a JSON array of boxes
@@ -216,9 +231,11 @@ namespace PeakboardExtensionObjectDetection.Annotation
         /// <c>origin</c> "AcceptedSuggestion" for an accepted detection. The operator's drawings stay
         /// on the device (the Hub stores boxes only), in the "uploaded" folder beside the frame.
         /// </summary>
-        private static string Upload(string hubUrl, string key, string dataset, string dir, string sampleId, out bool permanent)
+        private static string Upload(string hubUrl, string key, string dataset, string dir, string sampleId,
+            out bool permanent, out bool hubWide)
         {
             permanent = false;
+            hubWide = false;
             var url = $"{hubUrl}/api/ObjectDetectionManager/UploadSample";
 
             string annotations, device;
@@ -246,6 +263,7 @@ namespace PeakboardExtensionObjectDetection.Annotation
                     try { response = _http.SendAsync(request).GetAwaiter().GetResult(); }
                     catch (Exception ex) when (ex is HttpRequestException || ex is System.Threading.Tasks.TaskCanceledException)
                     {
+                        hubWide = true;
                         return $"the Hub at {hubUrl} cannot be reached ({ex.Message}).";
                     }
 
@@ -263,13 +281,16 @@ namespace PeakboardExtensionObjectDetection.Annotation
                         {
                             case HttpStatusCode.Unauthorized:
                             case HttpStatusCode.Forbidden:
+                                hubWide = true;
                                 return "the Hub refused the UserGroupKey.";
                             case HttpStatusCode.NotFound:
-                                return hubError.Length > 0
-                                    ? $"the Hub answered 404: {hubError}"
-                                    : "the Hub has no Object Detection endpoint (404) - is it a Hub with Object Detection?";
+                                // With a text it is about this sample's dataset; without, the endpoint is missing.
+                                if (hubError.Length > 0) return $"the Hub answered 404: {hubError}";
+                                hubWide = true;
+                                return "the Hub has no Object Detection endpoint (404) - is it a Hub with Object Detection?";
                             case HttpStatusCode.RequestTimeout:
                             case (HttpStatusCode)429:
+                                hubWide = true;
                                 return $"the Hub answered {code}: {reason}";
                             default:
                                 permanent = code >= 400 && code < 500;
