@@ -24,6 +24,7 @@ namespace PeakboardExtensionObjectDetection.Extension
     /// It is a passive observer: it never opens a device and never touches the
     /// detection engine, so it is safe to refresh while detection is running.
     /// </summary>
+    [Serializable]
     [CustomListIcon("PeakboardExtensionObjectDetection.ObjectDetection.png")]
     public class CameraDeviceCustomList : CustomListBase
     {

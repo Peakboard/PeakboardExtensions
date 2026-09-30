@@ -35,6 +35,10 @@ namespace PeakboardExtensionObjectDetection.Inference
         // for. Re-published on every poll so it cannot scroll away.
         private static string _modelWarning = "";
 
+        // Sticky note that the last hot-reload failed and the previous model is
+        // still the one running. Cleared by the next reload that succeeds.
+        private static string _reloadWarning = "";
+
         // What actually got loaded, as opposed to what was asked for.
         private static string _loadedModelPath = "";
         // The model's logical name, not its filename. Every custom model is stored
@@ -42,6 +46,17 @@ namespace PeakboardExtensionObjectDetection.Inference
         // the LoadedModel column would identify nothing.
         private static string _loadedModelName = "";
         private static int _loadedClassCount;
+        // The Hub model version of what is running (hub.json beside the model);
+        // 0 when the model did not come from the Hub.
+        private static int _loadedModelVersion;
+
+        // Detections below the confidence threshold but at or above this one are
+        // kept apart as "uncertain" for the Suggestions list. 0 = nobody asked.
+        private static float _suggestionThreshold;
+
+        // Set by the Hub model sync after it installed a model, so the engine
+        // does not wait for its next periodic check to load it.
+        private static volatile bool _modelCheckRequested;
 
         public static bool IsRunning => _running && _thread != null && _thread.IsAlive;
 
@@ -58,6 +73,33 @@ namespace PeakboardExtensionObjectDetection.Inference
         public static string LoadedModelPath => _loadedModelPath ?? "";
         public static string LoadedModelName => _loadedModelName ?? "";
         public static int LoadedClassCount => _loadedClassCount;
+        public static int LoadedModelVersion => _loadedModelVersion;
+        public static float ConfidenceThreshold => _confThreshold;
+
+        /// <summary>Look at the model files on the next loop cycle instead of in up to a minute.</summary>
+        public static void RequestModelCheck() => _modelCheckRequested = true;
+
+        /// <summary>
+        /// Keep detections between <paramref name="threshold"/> and the confidence threshold as
+        /// uncertain ones (<see cref="DetectionResult.Uncertain"/>). 0 switches it off. The
+        /// Detections list, the Camera overlay and every count still see only the confident ones.
+        /// </summary>
+        public static void SetSuggestionThreshold(float threshold)
+        {
+            lock (_startLock)
+            {
+                _suggestionThreshold = threshold > 0 ? threshold : 0;
+                var inf = _inference;
+                if (inf != null) inf.ConfidenceThreshold = InferenceThreshold();
+            }
+        }
+
+        /// <summary>What the model is asked for: the lower of the two thresholds.</summary>
+        private static float InferenceThreshold()
+        {
+            return _suggestionThreshold > 0 && _suggestionThreshold < _confThreshold
+                ? _suggestionThreshold : _confThreshold;
+        }
 
         /// <summary>Give the engine somewhere to log. Any list may supply it.</summary>
         public static void SetLogger(ILoggingService log)
@@ -76,6 +118,7 @@ namespace PeakboardExtensionObjectDetection.Inference
         private static float _nmsThreshold;
         // Cached results
         private static List<Detection> _detections = new List<Detection>();
+        private static List<Detection> _uncertain = new List<Detection>();
         private static byte[] _annotatedJpeg;
         private static byte[] _rawJpeg;
         private static string _timestamp = "";
@@ -176,7 +219,7 @@ namespace PeakboardExtensionObjectDetection.Inference
             var inf = _inference;
             if (inf != null)
             {
-                inf.ConfidenceThreshold = conf;
+                inf.ConfidenceThreshold = InferenceThreshold();
                 inf.NmsThreshold = nms;
             }
             Info($"Thresholds updated: confidence {conf:0.###}, NMS {nms:0.###}.");
@@ -189,6 +232,7 @@ namespace PeakboardExtensionObjectDetection.Inference
                 return new DetectionResult
                 {
                     Detections = _detections,
+                    Uncertain = _uncertain,
                     AnnotatedJpeg = _annotatedJpeg,
                     RawJpeg = _rawJpeg,
                     Timestamp = _timestamp,
@@ -237,6 +281,7 @@ namespace PeakboardExtensionObjectDetection.Inference
         {
             InferenceService inference = null;
             string onnxPath = "", classesPath = "";
+            _reloadWarning = "";
 
             try
             {
@@ -259,13 +304,14 @@ namespace PeakboardExtensionObjectDetection.Inference
                 {
                     inference = new InferenceService
                     {
-                        ConfidenceThreshold = _confThreshold,
+                        ConfidenceThreshold = InferenceThreshold(),
                         NmsThreshold = _nmsThreshold
                     };
                     inference.LoadModel(onnxPath, classesPath);
                     _inference = inference;
                     _loadedModelPath = onnxPath;
                     _loadedClassCount = inference.ClassNames.Length;
+                    _loadedModelVersion = HubModelSync.ReadInstalledVersion(onnxPath);
                     Info($"Loaded model '{Path.GetFileName(onnxPath)}' " +
                          $"({inference.ClassNames.Length} classes, input {inference.InputSize}).");
                 }
@@ -285,10 +331,10 @@ namespace PeakboardExtensionObjectDetection.Inference
                 return;
             }
 
-            // Track the model file so an updated custom model is picked up without
-            // restarting the board.
-            DateTime lastModelWrite = File.Exists(onnxPath)
-                ? File.GetLastWriteTimeUtc(onnxPath) : DateTime.MinValue;
+            // Track the model and its class file so an updated custom model is
+            // picked up without restarting the board. Both, because a new model
+            // usually arrives with a new class list, and not always in one go.
+            var lastModelWrite = ModelStamp(onnxPath, classesPath);
             int cyclesSinceModelCheck = 0;
             const int ModelCheckInterval = 600; // check every ~60 seconds (600 cycles * 100ms)
 
@@ -320,8 +366,16 @@ namespace PeakboardExtensionObjectDetection.Inference
                         {
                             consecutiveFailures = 0;
 
-                            var detections = inference != null
+                            var all = inference != null
                                 ? inference.Detect(frame)
+                                : new List<Detection>();
+                            // The model ran at the lower of the two thresholds; what
+                            // falls short of the confidence threshold is only a
+                            // suggestion and is never counted as a detection.
+                            var conf = _confThreshold;
+                            var detections = all.Where(d => d.Confidence >= conf).ToList();
+                            var uncertain = _suggestionThreshold > 0
+                                ? all.Where(d => d.Confidence < conf && d.Confidence >= _suggestionThreshold).ToList()
                                 : new List<Detection>();
 
                             var annotated = DrawDetections(frame, detections);
@@ -333,13 +387,17 @@ namespace PeakboardExtensionObjectDetection.Inference
                             lock (_cacheLock)
                             {
                                 _detections = detections;
+                                _uncertain = uncertain;
                                 _annotatedJpeg = jpeg;
                                 _rawJpeg = rawJpeg;
                                 _timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
                                 _frameWidth = frame.Width;
                                 _frameHeight = frame.Height;
-                                _status = _modelWarning.Length > 0 ? "ok_model_fallback" : "ok";
-                                _error = _modelWarning;
+                                _status = _reloadWarning.Length > 0 ? "ok_reload_failed"
+                                        : _modelWarning.Length > 0 ? "ok_model_fallback"
+                                        : "ok";
+                                _error = string.Join(" ", new[] { _reloadWarning, _modelWarning }
+                                    .Where(w => w.Length > 0));
                             }
                         }
                         else
@@ -384,31 +442,56 @@ namespace PeakboardExtensionObjectDetection.Inference
 
                 // Periodically check for model updates
                 cyclesSinceModelCheck++;
-                if (cyclesSinceModelCheck >= ModelCheckInterval)
+                var requested = _modelCheckRequested;
+                if (cyclesSinceModelCheck >= ModelCheckInterval || requested)
                 {
                     cyclesSinceModelCheck = 0;
-                    try
+                    _modelCheckRequested = false;
+
+                    // Running on the bundled fallback because the requested model did
+                    // not exist at start. It may have arrived since -- the Hub model
+                    // sync installs the first model while the board is already up.
+                    if (_modelWarning.Length > 0 &&
+                        TrySwitchFromFallback(inference, ref onnxPath, ref classesPath))
                     {
-                        {
-                            // The model file changed on disk -- reload it.
-                            var currentWrite = File.GetLastWriteTimeUtc(onnxPath);
-                            if (currentWrite != lastModelWrite && File.Exists(onnxPath))
-                            {
-                                SetStatus("reloading", "Reloading model...");
-                                Thread.Sleep(2000);
-                                inference.LoadModel(onnxPath, classesPath);
-                                _loadedClassCount = inference.ClassNames.Length;
-                                lastModelWrite = File.GetLastWriteTimeUtc(onnxPath);
-                                SetStatus("ok", "");
-                            }
-                        }
+                        lastModelWrite = ModelStamp(onnxPath, classesPath);
                     }
-                    catch (Exception ex)
+
+                    // The model or its class file changed on disk -- reload it.
+                    var currentWrite = ModelStamp(onnxPath, classesPath);
+                    if (currentWrite != lastModelWrite && File.Exists(onnxPath))
                     {
-                        // Keep serving the model already loaded, but do not pretend
-                        // the reload happened -- a silently stale model is exactly
-                        // the failure this extension is prone to.
-                        Fail($"Model reload failed, continuing on the previously loaded model: {ex.Message}");
+                        try
+                        {
+                            SetStatus("reloading", "Reloading model...");
+                            // A file copied in by hand may still be growing. The Hub
+                            // sync writes complete files and asks for the check.
+                            if (!requested) Thread.Sleep(2000);
+                            currentWrite = ModelStamp(onnxPath, classesPath);
+                            inference.LoadModel(onnxPath, classesPath);
+                            _loadedClassCount = inference.ClassNames.Length;
+                            _loadedModelVersion = HubModelSync.ReadInstalledVersion(onnxPath);
+                            _reloadWarning = "";
+                            Info($"Reloaded model '{Path.GetFileName(onnxPath)}' " +
+                                 $"({inference.ClassNames.Length} classes, input {inference.InputSize}).");
+                            SetStatus("ok", "");
+                        }
+                        catch (Exception ex)
+                        {
+                            // LoadModel only replaces the running model once the new
+                            // one has loaded and passed its checks, so the previous
+                            // model is still serving. Say so on every poll -- a
+                            // silently stale model is exactly the failure this
+                            // extension is prone to.
+                            _reloadWarning = $"Model reload failed, still running the previous " +
+                                             $"model: {ex.Message}";
+                            Fail(_reloadWarning);
+                            SetStatus("ok_reload_failed", _reloadWarning);
+                        }
+
+                        // Not retried until one of the files changes again, so a
+                        // broken upload is reported once instead of every minute.
+                        lastModelWrite = currentWrite;
                     }
                 }
 
@@ -421,11 +504,59 @@ namespace PeakboardExtensionObjectDetection.Inference
             _loadedModelPath = "";
             _loadedModelName = "";
             _loadedClassCount = 0;
+            _loadedModelVersion = 0;
 
             // The loop only reaches here on a clean stop. Failures return early
             // and leave their own status in place.
             SetStatus("stopped", "");
             Info("Detection engine stopped.");
+        }
+
+        /// <summary>
+        /// Resolve ModelName again and, when it now names a real model, load that one in place
+        /// of the fallback. The fallback keeps running if the new model does not load.
+        /// </summary>
+        private static bool TrySwitchFromFallback(InferenceService inference,
+            ref string onnxPath, ref string classesPath)
+        {
+            var fallbackName = _loadedModelName;
+            var (newOnnx, newClasses, stillFallback) = ResolveModel();
+            if (stillFallback || !File.Exists(newOnnx))
+            {
+                _loadedModelName = fallbackName;
+                return false;
+            }
+
+            try
+            {
+                SetStatus("reloading", "Loading model...");
+                inference.LoadModel(newOnnx, newClasses);
+                onnxPath = newOnnx;
+                classesPath = newClasses;
+                _loadedModelPath = newOnnx;
+                _loadedClassCount = inference.ClassNames.Length;
+                _loadedModelVersion = HubModelSync.ReadInstalledVersion(newOnnx);
+                _modelWarning = "";
+                _reloadWarning = "";
+                Info($"Model '{_modelName}' is available now and replaces the fallback " +
+                     $"({inference.ClassNames.Length} classes).");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _loadedModelName = fallbackName;
+                _reloadWarning = $"Model '{_modelName}' could not be loaded, still running " +
+                                 $"'{fallbackName}': {ex.Message}";
+                Fail(_reloadWarning);
+                SetStatus("ok_reload_failed", _reloadWarning);
+                return false;
+            }
+        }
+
+        private static (DateTime onnx, DateTime classes) ModelStamp(string onnxPath, string classesPath)
+        {
+            return (File.Exists(onnxPath) ? File.GetLastWriteTimeUtc(onnxPath) : DateTime.MinValue,
+                    File.Exists(classesPath) ? File.GetLastWriteTimeUtc(classesPath) : DateTime.MinValue);
         }
 
         private static string SanitizeForHershey(string text)
@@ -514,6 +645,8 @@ namespace PeakboardExtensionObjectDetection.Inference
     public class DetectionResult
     {
         public List<Detection> Detections { get; set; }
+        /// <summary>Below the confidence threshold, above the suggestion threshold. Empty unless asked for.</summary>
+        public List<Detection> Uncertain { get; set; }
         public byte[] AnnotatedJpeg { get; set; }
         public byte[] RawJpeg { get; set; }
         public string Timestamp { get; set; }

@@ -29,43 +29,54 @@ namespace PeakboardExtensionObjectDetection.Inference
 
         public void LoadModel(string onnxPath, string classNamesPath)
         {
-            lock (_lock)
+            if (!File.Exists(onnxPath))
+                throw new FileNotFoundException("ONNX model not found", onnxPath);
+
+            var options = new SessionOptions();
+            options.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
+            options.InterOpNumThreads = 4;
+            options.IntraOpNumThreads = 4;
+
+            // Build and check the new model completely before touching the one in
+            // use. This used to dispose the running session first, so a reload that
+            // failed left a disposed session behind -- or, when only the class check
+            // failed, the new model running with the wrong class list.
+            var session = new InferenceSession(onnxPath, options);
+            try
             {
-                _session?.Dispose();
-
-                if (!File.Exists(onnxPath))
-                    throw new FileNotFoundException("ONNX model not found", onnxPath);
-
-                var options = new SessionOptions();
-                options.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-                options.InterOpNumThreads = 4;
-                options.IntraOpNumThreads = 4;
-
-                _session = new InferenceSession(onnxPath, options);
-                _modelPath = onnxPath;
-                _boxesAreXyxy = null;   // re-probe after a hot-reload
-
                 // Determine input size from model metadata
-                var inputMeta = _session.InputMetadata.First();
+                int inputSize = 320;
+                var inputMeta = session.InputMetadata.First();
                 if (inputMeta.Value.Dimensions.Length == 4)
                 {
-                    _inputSize = inputMeta.Value.Dimensions[2]; // NCHW: [1, 3, H, W]
-                    if (_inputSize <= 0) _inputSize = 320;
+                    inputSize = inputMeta.Value.Dimensions[2]; // NCHW: [1, 3, H, W]
+                    if (inputSize <= 0) inputSize = 320;
                 }
 
                 // Load class names
-                if (File.Exists(classNamesPath))
-                {
-                    _classNames = File.ReadAllLines(classNamesPath)
+                var classNames = File.Exists(classNamesPath)
+                    ? File.ReadAllLines(classNamesPath)
                         .Where(l => !string.IsNullOrWhiteSpace(l))
-                        .ToArray();
-                }
-                else
-                {
-                    _classNames = new string[0];
-                }
+                        .ToArray()
+                    : new string[0];
 
-                ValidateClassNames(onnxPath, classNamesPath);
+                ValidateClassNames(session, inputSize, classNames, onnxPath, classNamesPath);
+
+                lock (_lock)
+                {
+                    var previous = _session;
+                    _session = session;
+                    _classNames = classNames;
+                    _inputSize = inputSize;
+                    _modelPath = onnxPath;
+                    _boxesAreXyxy = null;   // re-probe after a hot-reload
+                    previous?.Dispose();
+                }
+            }
+            catch
+            {
+                session.Dispose();
+                throw;
             }
         }
 
@@ -77,15 +88,12 @@ namespace PeakboardExtensionObjectDetection.Inference
         /// "bicycle", "car". Fail here instead, while there is something useful
         /// to say about it.
         /// </summary>
-        private void ValidateClassNames(string onnxPath, string classNamesPath)
+        private static void ValidateClassNames(InferenceSession session, int inputSize,
+            string[] classNames, string onnxPath, string classNamesPath)
         {
-            var dims = _session.OutputMetadata.First().Value.Dimensions;
-            if (dims.Length != 3 || dims[1] <= 4)
-                return;                       // dynamic or unexpected shape: nothing to check against
+            int expected = PredictedClassCount(session, inputSize, onnxPath);
 
-            int expected = dims[1] - 4;
-
-            if (_classNames.Length == 0)
+            if (classNames.Length == 0)
             {
                 throw new InvalidOperationException(
                     $"No class names for model '{Path.GetFileName(onnxPath)}', which predicts " +
@@ -93,14 +101,49 @@ namespace PeakboardExtensionObjectDetection.Inference
                     $"name per line.");
             }
 
-            if (_classNames.Length != expected)
+            if (classNames.Length != expected)
             {
                 throw new InvalidOperationException(
                     $"Class list does not match the model: '{Path.GetFileName(onnxPath)}' predicts " +
                     $"{expected} classes but '{Path.GetFileName(classNamesPath)}' lists " +
-                    $"{_classNames.Length}. Every reported label would be wrong. Ship the class " +
+                    $"{classNames.Length}. Every reported label would be wrong. Ship the class " +
                     $"file that belongs to this model.");
             }
+        }
+
+        /// <summary>
+        /// Read the class count from the output shape. LibreYOLO exports declare
+        /// every output dimension as dynamic, so the metadata says nothing and the
+        /// check used to be skipped for exactly the models this extension ships
+        /// and trains. In that case run one inference on a blank frame and read
+        /// the shape the model really produces.
+        /// </summary>
+        private static int PredictedClassCount(InferenceSession session, int inputSize, string onnxPath)
+        {
+            var dims = session.OutputMetadata.First().Value.Dimensions;
+            if (dims.Length == 3 && dims[1] > 4)
+                return dims[1] - 4;
+
+            var input = new DenseTensor<float>(new[] { 1, 3, inputSize, inputSize });
+            var inputs = new List<NamedOnnxValue>
+            {
+                NamedOnnxValue.CreateFromTensor(session.InputMetadata.First().Key, input)
+            };
+
+            int[] shape;
+            using (var results = session.Run(inputs))
+            {
+                shape = results.First().AsTensor<float>().Dimensions.ToArray();
+            }
+
+            if (shape.Length != 3 || shape[1] <= 4)
+            {
+                throw new InvalidOperationException(
+                    $"Model '{Path.GetFileName(onnxPath)}' has an unsupported output shape " +
+                    $"[{string.Join(", ", shape)}]. Expected [1, 4 + classes, anchors].");
+            }
+
+            return shape[1] - 4;
         }
 
         public List<Detection> Detect(Mat frame)

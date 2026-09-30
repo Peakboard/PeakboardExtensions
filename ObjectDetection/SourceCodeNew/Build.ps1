@@ -90,7 +90,19 @@ if (-not (Test-Path "$root\Binary")) { New-Item -ItemType Directory -Path "$root
 for ($attempt = 1; $attempt -le $Retries; $attempt++) {
     try {
         if (Test-Path $destination) { Remove-Item $destination -Force }
-        Compress-Archive -Path "$stagingDir\*" -DestinationPath $destination -CompressionLevel Optimal -Force
+        # Not Compress-Archive: under Windows PowerShell 5.1 it writes entry names with
+        # '\' (PretrainedModels\yolov9t.onnx), which the ZIP format does not allow and
+        # which non-Windows unzippers turn into a file name with a backslash in it.
+        Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+        $zip = [System.IO.Compression.ZipFile]::Open($destination, 'Create')
+        try {
+            Get-ChildItem -LiteralPath $stagingDir -Recurse -File | ForEach-Object {
+                $entryName = $_.FullName.Substring($stagingDir.Length + 1).Replace('\', '/')
+                [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                    $zip, $_.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+            }
+        }
+        finally { $zip.Dispose() }
         break
     }
     catch {

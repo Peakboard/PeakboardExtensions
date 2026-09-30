@@ -4,6 +4,7 @@ using PeakboardExtensionObjectDetection.Data;
 
 namespace PeakboardExtensionObjectDetection.Extension
 {
+    [Serializable]
     [CustomListIcon("PeakboardExtensionObjectDetection.ObjectDetection.png")]
     public class ModelCustomList : CustomListBase
     {

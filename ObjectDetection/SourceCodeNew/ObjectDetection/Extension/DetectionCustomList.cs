@@ -1,12 +1,19 @@
 using System;
 using Peakboard.ExtensionKit;
+using PeakboardExtensionObjectDetection.Data;
 using PeakboardExtensionObjectDetection.Inference;
 
 namespace PeakboardExtensionObjectDetection.Extension
 {
+    [Serializable]
     [CustomListIcon("PeakboardExtensionObjectDetection.ObjectDetection.png")]
     public class DetectionCustomList : CustomListBase
     {
+        private const string HubUrlProperty = "HubUrl";
+        private const string UserGroupKeyProperty = "UserGroupKey";
+        private const string DatasetProperty = "DatasetName";
+        private const string HubCheckSecondsProperty = "HubCheckSeconds";
+
         protected override CustomListDefinition GetDefinitionOverride()
         {
             return new CustomListDefinition
@@ -21,6 +28,17 @@ namespace PeakboardExtensionObjectDetection.Extension
                     new CustomListPropertyDefinition { Name = "ModelName", Value = "yolov9t" },
                     new CustomListPropertyDefinition { Name = "ConfidenceThreshold", Value = "0.4" },
                     new CustomListPropertyDefinition { Name = "NmsThreshold", Value = "0.45" },
+                    // Optional: keep ModelName in step with a Hub dataset's current model.
+                    // Left empty, the board runs the local model only.
+                    new CustomListPropertyDefinition { Name = HubUrlProperty, Value = "" },
+                    new CustomListPropertyDefinition
+                    {
+                        Name = UserGroupKeyProperty,
+                        Value = "",
+                        TypeDefinition = new CustomListPropertyStringTypeDefinition { Masked = true },
+                    },
+                    new CustomListPropertyDefinition { Name = DatasetProperty, Value = "" },
+                    new CustomListPropertyDefinition { Name = HubCheckSecondsProperty, Value = "60" },
                 }
             };
         }
@@ -108,27 +126,61 @@ namespace PeakboardExtensionObjectDetection.Extension
 
         protected override void SetupOverride(CustomListData data)
         {
-            // SetupOverride is called when the runtime starts — this is where we start the engine
-            var source = data.Properties["CameraSource"] ?? "0";
-            var model = data.Properties["ModelName"] ?? "yolov9t";
+            try
+            {
+                // SetupOverride is called when the runtime starts — this is where we start the engine
+                var source = data.Properties["CameraSource"] ?? "0";
+                var model = data.Properties["ModelName"] ?? "yolov9t";
 
-            float conf = 0.4f, nms = 0.45f;
-            float.TryParse(data.Properties["ConfidenceThreshold"] ?? "0.4",
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out conf);
-            float.TryParse(data.Properties["NmsThreshold"] ?? "0.45",
-                System.Globalization.NumberStyles.Float,
-                System.Globalization.CultureInfo.InvariantCulture, out nms);
+                float conf = 0.4f, nms = 0.45f;
+                float.TryParse(data.Properties["ConfidenceThreshold"] ?? "0.4",
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out conf);
+                float.TryParse(data.Properties["NmsThreshold"] ?? "0.45",
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out nms);
 
-            DetectionEngine.SetLogger(Log);
-            DetectionEngine.Start(source, model, conf, nms);
+                DetectionEngine.SetLogger(Log);
+                DetectionEngine.Start(source, model, conf, nms);
+
+                // After the engine: it starts on the fallback when the first Hub model has
+                // not arrived yet, and switches to it as soon as the sync installed it.
+                double.TryParse(Property(data, HubCheckSecondsProperty, "60"),
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var checkSeconds);
+                HubModelSync.Configure(
+                    Property(data, HubUrlProperty, ""),
+                    Property(data, UserGroupKeyProperty, ""),
+                    Property(data, DatasetProperty, ""),
+                    model,
+                    checkSeconds > 0 ? checkSeconds : 60,
+                    Log);
+            }
+            catch (Exception ex)
+            {
+                Log?.Error($"[ObjectDetection] Detections setup failed: {ex}");
+            }
+        }
+
+        /// <summary>A board saved with an older version of the extension does not carry the newer properties.</summary>
+        private static string Property(CustomListData data, string name, string fallback)
+        {
+            return data.Properties.TryGetValue(name, out var value) && value != null ? value : fallback;
         }
 
         protected override void CleanupOverride(CustomListData data)
         {
-            // Release, not Stop. Stopping here killed the camera feed that the
-            // Camera list was still using.
-            DetectionEngine.Release();
+            try
+            {
+                HubModelSync.Stop();
+                // Release, not Stop. Stopping here killed the camera feed that the
+                // Camera list was still using.
+                DetectionEngine.Release();
+            }
+            catch (Exception ex)
+            {
+                Log?.Error($"[ObjectDetection] Detections cleanup failed: {ex}");
+            }
         }
     }
 }

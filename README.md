@@ -91,7 +91,7 @@ For more details on how extensions work and how to build your own, see:
 |-----------|-------------|
 | [GPT](GPT/) | OpenAI GPT API integration for AI-powered data |
 | [LocalAI](LocalAI/) | Runs a small language model on the device itself - no cloud, no API key |
-| [ObjectDetection](ObjectDetection/) | Detects objects in a USB or IP camera feed on the device itself, with a bundled 80-class model |
+| [ObjectDetection](ObjectDetection/) | Detects objects in a USB or IP camera feed on the device itself, with a bundled 80-class model; teaches new objects on the device and keeps a model trained in the Peakboard Hub up to date |
 | [Python](Python/) | Execute Python scripts that produce tabular data |
 
 ### Utilities

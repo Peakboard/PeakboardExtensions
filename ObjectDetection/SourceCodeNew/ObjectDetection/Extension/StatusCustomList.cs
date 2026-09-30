@@ -1,5 +1,6 @@
 using System;
 using Peakboard.ExtensionKit;
+using PeakboardExtensionObjectDetection.Data;
 using PeakboardExtensionObjectDetection.Inference;
 
 namespace PeakboardExtensionObjectDetection.Extension
@@ -16,6 +17,7 @@ namespace PeakboardExtensionObjectDetection.Extension
     /// It is a passive observer: it never starts the engine and never keeps it
     /// alive. Add it alongside the Camera or Detections list.
     /// </summary>
+    [Serializable]
     [CustomListIcon("PeakboardExtensionObjectDetection.ObjectDetection.png")]
     public class StatusCustomList : CustomListBase
     {
@@ -45,6 +47,9 @@ namespace PeakboardExtensionObjectDetection.Extension
                 new CustomListColumn("FrameWidth", CustomListColumnTypes.Number),
                 new CustomListColumn("FrameHeight", CustomListColumnTypes.Number),
                 new CustomListColumn("Timestamp", CustomListColumnTypes.String),
+                // The Hub model version that is running; 0 when the model is not from the Hub.
+                new CustomListColumn("ModelVersion", CustomListColumnTypes.Number),
+                new CustomListColumn("HubModelStatus", CustomListColumnTypes.String),
             };
         }
 
@@ -56,7 +61,7 @@ namespace PeakboardExtensionObjectDetection.Extension
             {
                 items.Add(Row("not_started",
                     "Designer preview - the engine runs in the Peakboard Runtime",
-                    false, "", "", "", 0, 0, 0, 0, ""));
+                    false, "", "", "", 0, 0, 0, 0, "", 0, HubModelSync.Status ?? ""));
                 return items;
             }
 
@@ -75,12 +80,14 @@ namespace PeakboardExtensionObjectDetection.Extension
                     r.Detections?.Count ?? 0,
                     r.FrameWidth,
                     r.FrameHeight,
-                    r.Timestamp ?? ""));
+                    r.Timestamp ?? "",
+                    DetectionEngine.LoadedModelVersion,
+                    HubModelSync.Status ?? ""));
             }
             catch (Exception ex)
             {
                 Log?.Error($"[ObjectDetection] Status list failed: {ex}");
-                items.Add(Row("error", ex.Message, false, "", "", "", 0, 0, 0, 0, ""));
+                items.Add(Row("error", ex.Message, false, "", "", "", 0, 0, 0, 0, "", 0, ""));
             }
 
             return items;
@@ -88,7 +95,8 @@ namespace PeakboardExtensionObjectDetection.Extension
 
         private static CustomListObjectElement Row(string status, string error, bool running,
             string cameraSource, string requestedModel, string loadedModel, int classCount,
-            int detectionCount, int frameWidth, int frameHeight, string timestamp)
+            int detectionCount, int frameWidth, int frameHeight, string timestamp,
+            int modelVersion, string hubModelStatus)
         {
             return new CustomListObjectElement
             {
@@ -103,6 +111,8 @@ namespace PeakboardExtensionObjectDetection.Extension
                 { "FrameWidth", (double)frameWidth },
                 { "FrameHeight", (double)frameHeight },
                 { "Timestamp", timestamp },
+                { "ModelVersion", (double)modelVersion },
+                { "HubModelStatus", hubModelStatus ?? "" },
             };
         }
 

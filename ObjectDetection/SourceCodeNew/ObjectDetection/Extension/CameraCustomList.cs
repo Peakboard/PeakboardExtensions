@@ -9,6 +9,7 @@ using PeakboardExtensionObjectDetection.Inference;
 
 namespace PeakboardExtensionObjectDetection.Extension
 {
+    [Serializable]
     [CustomListIcon("PeakboardExtensionObjectDetection.ObjectDetection.png")]
     public class CameraCustomList : CustomListBase
     {

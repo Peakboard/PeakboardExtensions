@@ -3,7 +3,7 @@
 	<Extensions>
 		<Extension ID="PeakboardExtensionObjectDetection"
 				   Path="PeakboardExtensionObjectDetection.dll"
-				   Version="1.0"
+				   Version="1.2"
 				   Class="PeakboardExtensionObjectDetection.Extension.ObjectDetectionExtension" />
 	</Extensions>
 </ExtensionCatalog>

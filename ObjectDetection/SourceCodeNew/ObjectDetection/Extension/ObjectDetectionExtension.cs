@@ -39,7 +39,7 @@ namespace PeakboardExtensionObjectDetection.Extension
                 ID = "PeakboardExtensionObjectDetection",
                 Name = "Object Detection",
                 Description = "On-device object detection with YOLO. Supports USB, RTSP, and IP cameras.",
-                Version = "1.0",
+                Version = "1.2",
                 MinVersion = "1.0",
                 Author = "Peakboard",
                 Company = "Peakboard GmbH",
@@ -56,6 +56,8 @@ namespace PeakboardExtensionObjectDetection.Extension
                 new ModelCustomList(),
                 new StatusCustomList(),
                 new CameraDeviceCustomList(),
+                new AnnotationCustomList(),
+                new SuggestionCustomList(),
             };
         }
 

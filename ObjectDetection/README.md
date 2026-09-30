@@ -13,8 +13,12 @@ screwdriver is not one of them.
 
 ## Data sources
 
-Five, and they share one detection engine. Add the ones you need; the engine starts
-when the first list starts and stops when the last one goes away.
+Seven, and they share one detection engine. Add the ones you need; the engine starts
+when the first list starts and stops when the last one goes away. Two of them feed a
+Peakboard Hub dataset: [Annotation](#object-detection---annotation) teaches new objects
+on the device, and [Suggestions](#object-detection---suggestions) lets the operator accept
+detections the model was unsure about. The Detections list can in turn
+[keep its model in step with the Hub](#models-from-the-peakboard-hub).
 
 ### Object Detection - Camera
 
@@ -45,6 +49,8 @@ makes `count` mean what you expect in Lua.
 |---|---|---|
 | `CameraSource`, `ModelName`, `ConfidenceThreshold` | | as above |
 | `NmsThreshold` | number | `0.45` — how aggressively overlapping boxes are merged |
+| `HubUrl`, `UserGroupKey` (masked), `DatasetName` | | empty — set all three to [take the model from the Hub](#models-from-the-peakboard-hub) |
+| `HubCheckSeconds` | number | `60` — how often the Hub is asked for a new model version (at least 10) |
 
 | Column | Type | Description |
 |---|---|---|
@@ -62,7 +68,7 @@ when there is nothing to detect and an empty table cannot tell you why.
 
 | Column | Type | Description |
 |---|---|---|
-| `Status` | String | `not_started`, `idle`, `loading`, `connecting`, `ok`, `ok_model_fallback`, `reloading`, `reconnecting`, `error`, `stopped` |
+| `Status` | String | `not_started`, `idle`, `loading`, `connecting`, `ok`, `ok_model_fallback`, `reloading`, `ok_reload_failed`, `reconnecting`, `error`, `stopped` |
 | `Error` | String | Empty unless something is wrong. |
 | `IsRunning` | Boolean | Whether the engine is alive. |
 | `CameraSource` | String | What it is actually reading from. |
@@ -70,6 +76,8 @@ when there is nothing to detect and an empty table cannot tell you why.
 | `LoadedModel` | String | **What is actually running.** If these two differ, read `Error`. |
 | `ClassCount` | Number | How many classes the loaded model has. |
 | `DetectionCount`, `FrameWidth`, `FrameHeight`, `Timestamp` | | |
+| `ModelVersion` | Number | The Hub model version that is running. `0` when the model did not come from the Hub. |
+| `HubModelStatus` | String | What the Hub model sync did last, e.g. `Up to date: version 3 of "Parts".` or why it kept the current model. Never empty. |
 
 ### Object Detection - Cameras
 
@@ -87,6 +95,150 @@ The capture devices on the machine running the board.
 
 Every model the extension can see: `Name`, `Source` (`Pretrained` / `Resource` /
 `Custom`), `SizeMB`, `OnnxPath`, `ClassesPath`.
+
+### Object Detection - Annotation
+
+Teaching a new object on the Box touchscreen: freeze a camera frame, draw around
+each object, confirm the box, give it a class, save. The frame and its boxes go to
+the Peakboard Hub dataset named in `DatasetName`.
+
+It needs the **Camera** list on the same board - that is where the frame comes from.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `HubUrl` | text | | Address of the Peakboard Hub, e.g. `http://hub.example.local`. |
+| `UserGroupKey` | masked text | | The Hub's UserGroupKey, the same one boards use. |
+| `DatasetName` | text | | The Hub dataset the samples belong to. One per project; several Boxes can feed the same one. Required - `Save()` refuses without it. |
+| `ImageStretch` | `Uniform` / `Fill` | `Uniform` | How the image under the Drawing Area shows the frozen frame. Must match it, or the boxes land in the wrong place. |
+
+One row, always:
+
+| Column | Type | Description |
+|---|---|---|
+| `IsFrozen` | Boolean | Whether a frame is frozen for annotation. |
+| `FrameBase64` | String | The frozen frame with the confirmed boxes (green) and the box waiting for confirmation (orange, class followed by `?`). Empty when nothing is frozen. |
+| `FrameWidth`, `FrameHeight` | Number | Size of the frozen frame in pixels. |
+| `ObjectCount` | Number | Confirmed objects on this frame. |
+| `HasPendingBox` | Boolean | A box is waiting for confirmation. |
+| `PendingClass`, `PendingX`, `PendingY`, `PendingWidth`, `PendingHeight` | | That box, in frame pixels. |
+| `AnnotationsJson` | String | The confirmed objects: `[{"ClassName":…,"X":…,"Y":…,"Width":…,"Height":…}]` |
+| `Message` | String | What just happened, or why a function said no. Bind a text to it. |
+| `LastSampleId` | String | The sample saved last. |
+| `PendingUploads` | Number | Saved samples not yet accepted by the Hub. |
+| `UploadStatus` | String | The last upload result, e.g. that the Hub cannot be reached. |
+
+Functions - each returns `true` or `false`, and the reason is in `Message`:
+
+| Function | Parameters | What it does |
+|---|---|---|
+| `Freeze()` | | Freezes the current camera frame. Refused while the frozen frame still has unsaved objects - `Save()` or `Cancel()` first, so one tap cannot throw them away. |
+| `ProposeBox(drawing, className)` | the Drawing Area's `getstrokes()`, a class | Turns the drawing into the rectangle through its topmost, leftmost, rightmost and bottommost points - of all strokes together - and shows it for confirmation. |
+| `ConfirmBox()` | | Adds the proposed box to the frame. |
+| `DiscardBox()` | | Drops the proposed box. |
+| `RemoveLastBox()` | | Removes the object added last. |
+| `Save()` | | Saves the frame with its objects and uploads it. A second tap right after keeps the "Saved" message and saves nothing twice. |
+| `Cancel()` | | Drops the frozen frame and everything on it. |
+
+**The screen.** An image bound to the Camera list's `RawFrameBase64`, an image bound
+to this list's `FrameBase64` on top of it, and a **Drawing Area** of exactly the same
+position and size on top of both (Stretch off, i.e. `Uniform`). The buttons:
+
+```lua
+-- Freeze
+data.DS_Annotation.Freeze()
+screens['Screen1'].Outline.clear()
+
+-- Add box: the drawing and the class go in, the drawing is cleared for the next object
+data.DS_Annotation.ProposeBox(screens['Screen1'].Outline.getstrokes(), screens['Screen1'].ClassBox.text)
+screens['Screen1'].Outline.clear()
+
+-- Confirm / Discard / Save
+data.DS_Annotation.ConfirmBox()
+data.DS_Annotation.DiscardBox()
+data.DS_Annotation.Save()
+```
+
+`getstrokes()` is a function of the Drawing Area itself and needs a Peakboard
+Runtime that has it (Designer/Runtime from 28.09.2026 on).
+
+**Saving never waits for the Hub.** The sample is written to
+`C:\ProgramData\Peakboard\ObjectDetection\datasets\<DatasetName>\outbox` first -
+`<id>.jpg` (the frame as the camera delivered it), `<id>.json` (the boxes) and
+`<id>.drawings.json` (the outlines the boxes were derived from, kept separately) -
+and uploaded from there in the background. When the Hub is unreachable the sample
+waits and is retried every 30 seconds; uploaded samples move to `…\uploaded`.
+A sample goes to the dataset it was saved for, even if `DatasetName` changes while it
+waits. A sample the Hub refuses for good (a 4xx other than the key, a missing endpoint,
+408 or 429) moves to `…\rejected` and does not hold up the ones behind it.
+
+The class name is saved exactly as entered. Only the label drawn into the preview spells
+umlauts out (`Schlüssel` → `Schluessel`) - the font of the preview has no umlauts.
+
+The upload is `POST <HubUrl>/api/ObjectDetectionManager/UploadSample` with the
+`UserGroupKey` header and a form body: `file` (the JPEG), `dataset`, `sourceDevice`
+(the device name) and `annotations` - a JSON array of boxes relative to the frame
+(`x`, `y`, `width`, `height` from 0 to 1, origin top-left), each with its `className`
+and `origin: "Box"`. A box reaching past the frame edge is clipped to it. The dataset
+and a class are created in the Hub on first use. The drawings stay on the device, in
+`…\uploaded` next to the frame; the Hub stores boxes only.
+
+### Object Detection - Suggestions
+
+Improving a trained model in daily use. Detections the model was **unsure** about -
+below the Camera/Detections list's `ConfidenceThreshold`, at or above `MinConfidence` -
+are offered to the operator one at a time. An accepted detection goes to the Hub dataset
+as a box marked as an **accepted suggestion**; a rejected one is never uploaded. The
+operator can instead hand the frame to the Annotation list and mark it by hand.
+
+It needs the **Camera** or **Detections** list on the same board. Unsure detections never
+appear in the Detections list, the Camera overlay or any count.
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `HubUrl`, `UserGroupKey` (masked), `DatasetName` | | | As for the Annotation list. `DatasetName` is required - `Accept()` refuses without it. |
+| `MinConfidence` | number | `0.15` | The lower end of "unsure". The upper end is the `ConfidenceThreshold` of the Camera/Detections list. |
+| `CaptureIntervalSeconds` | number | `10` | At most one new frame is queued per interval. |
+| `RepeatAfterSeconds` | number | `300` | An object already offered - same class, overlapping box - is not offered again for this long, so an unchanged scene does not ask the same question every 10 seconds. |
+| `MaxQueued` | number | `20` | Frames waiting for a decision. Further ones are not collected until some are decided. |
+
+One row, always:
+
+| Column | Type | Description |
+|---|---|---|
+| `HasSuggestion` | Boolean | A detection is waiting for a decision. |
+| `SuggestionId` | String | The frame in question. |
+| `FrameBase64` | String | That frame, the detection in question in orange (`class 34% ?`), accepted ones on the same frame green, the others grey. |
+| `FrameWidth`, `FrameHeight` | Number | Frame size in pixels. |
+| `ClassName`, `Confidence` | | What the model thinks it is, and how sure it is (0 to 1). |
+| `X`, `Y`, `Width`, `Height` | Number | The box in frame pixels. |
+| `CandidateNumber`, `CandidateCount` | Number | "2 of 3" unsure detections on this frame. |
+| `QueuedFrames` | Number | Frames waiting, including this one. |
+| `AcceptedCount`, `RejectedCount` | Number | Decisions since the board started. |
+| `Message` | String | The question, what just happened, or why a function said no. |
+| `PendingUploads`, `UploadStatus` | | As for the Annotation list - both share one outbox. |
+
+Functions - each returns `true` or `false`, and the reason is in `Message`:
+
+| Function | Parameters | What it does |
+|---|---|---|
+| `Accept(className)` | a class, or `''` | Accepts the detection in question - as the model's class, or as `className` when the model named the wrong one. |
+| `Reject()` | | Rejects it. It is not uploaded. |
+| `Capture()` | | Queues the current frame's unsure detections now, without waiting for the interval. |
+| `AnnotateByHand()` | | Freezes the frame in question in the Annotation list and drops it here. Refused while the Annotation list holds unsaved objects. |
+| `Clear()` | | Drops every waiting frame. Nothing is uploaded. |
+
+Once every unsure detection of a frame is decided, the frame is saved with its **accepted**
+detections only (origin `AcceptedSuggestion`, with the model's confidence) and goes out
+through the same outbox as an annotated frame. A frame with nothing accepted is dropped.
+Waiting frames live in memory: a Runtime restart drops those not yet decided.
+
+```lua
+-- Yes / No buttons
+data.DS_Suggestions.Accept('')
+data.DS_Suggestions.Reject()
+-- "It is a different part": accept with the class from a dropdown
+data.DS_Suggestions.Accept(screens['Screen1'].ClassBox.text)
+```
 
 ## Choosing a camera
 
@@ -147,14 +299,23 @@ C:\ProgramData\Peakboard\ObjectDetection\models\<your-model-name>\
 ```
 
 Then set `ModelName` to `<your-model-name>`. It appears in the Models list as
-`Source = Custom`. The folder is watched, so replacing `model.onnx` reloads it
-without restarting the board.
+`Source = Custom`. The folder is watched, so replacing `model.onnx` or
+`classes.txt` reloads it without restarting the board (checked about once a
+minute).
+
+A reload is all or nothing. The new model is loaded and checked in full before it
+replaces the running one, so a reload that fails — a half-copied `.onnx`, a class
+list that does not match — leaves the previous model detecting as before.
+`Status` then reads `ok_reload_failed` and `Error` says why, until a reload
+succeeds. A failed reload is not retried until one of the two files changes again.
 
 ### The class list must match the model
 
 `classes.txt` is one class name per line, in the model's own class order. The
 extension reads how many classes the model predicts out of its output tensor and
-**refuses to load a class list of a different length.**
+**refuses to load a class list of a different length.** Models exported by
+LibreYOLO declare that size as dynamic, so for them the extension runs one
+inference on a blank frame while loading and reads the size from the result.
 
 That check exists because the failure it prevents is invisible: a 3-class custom
 model paired with the 80-line COCO list reports `person`, `bicycle` and `car`, with
@@ -169,6 +330,38 @@ class file are not a pair.
 `Error` names both. The extension keeps running on a bundled model rather than
 showing a black screen — but it says so, every poll. There is no prefix matching:
 asking for `yolov9` does not silently get you `yolov9t`.
+
+While it runs on the fallback, the extension keeps looking for the requested model and
+switches to it as soon as it appears — that is how the first model from the Hub arrives
+on a board that is already running.
+
+### Models from the Peakboard Hub
+
+A model trained in the Peakboard Hub reaches the device without redeploying the board.
+Set `HubUrl`, `UserGroupKey` and `DatasetName` on the **Detections** list, and give
+`ModelName` a name of its own — the dataset name is a good choice. It must not be
+`yolov9t` or the name of a Resource model: those are found first, so a Hub model under
+the same name would never run, and the sync refuses it with that explanation.
+
+Every `HubCheckSeconds` the extension asks the Hub for the dataset's current model
+version (`GET <HubUrl>/api/ObjectDetectionManager/CurrentModel?dataset=…`). When it is
+**different** from the installed one it downloads that version (`DownloadModel`), and:
+
+1. checks that the model file's SHA-256 is the one the Hub announced,
+2. loads it once on its own — model and class list must pair up, see
+   [above](#the-class-list-must-match-the-model),
+3. only then writes `classes.txt`, `model.onnx` and `hub.json` into
+   `C:\ProgramData\Peakboard\ObjectDetection\models\<ModelName>\`,
+4. and tells the engine, which swaps the model in without stopping the camera.
+
+"Different", not "newer": a **rollback** in the Hub reaches the device the same way a new
+version does. A version that fails one of the checks is not installed — the running model
+and the one on disk stay — and it is not fetched again for 10 minutes unless the Hub's
+version changes. **While the Hub cannot be reached, nothing is touched** and the current
+model keeps running; after a restart the device starts with the model it has on disk.
+
+The Status list shows the running version in `ModelVersion` and what the sync did last in
+`HubModelStatus`. Leave the three Hub properties empty and nothing is ever asked of a Hub.
 
 ## What it can and cannot recognise
 
@@ -279,6 +472,7 @@ Everything ends up in two places: the `Status` list, and the Peakboard log.
 | `Class list does not match the model` | The `.onnx` and the `classes.txt` are not a pair. |
 | `No class names for model` | The model has no `classes.txt` at all. |
 | `ok_model_fallback` | `ModelName` was not found. `Error` names what loaded instead. |
+| `ok_reload_failed` | A replaced model could not be loaded. The previous one is still running; `Error` says why. |
 | `reconnecting` | The feed dropped; it retries by itself. Normal on flaky RTSP. |
 
 A camera that will not open reports the camera error — it is not disguised as a
@@ -313,8 +507,9 @@ through the solution puts the output under `bind\...` and building the
 puts all five data sources on one screen: the annotated live feed, the engine's
 health, one row per detected object, and the cameras the machine can see.
 
-It carries the extension inside it, so it can be uploaded straight to a Peakboard
-Box and will run without installing anything first. Open it in Designer instead
+It carries the extension inside it - version 1.0, without the Annotation and
+Suggestions lists and without the Hub model sync - so it can be uploaded straight to a
+Peakboard Box and will run without installing anything first. Install the ZIP to get 1.2. Open it in Designer instead
 if you want to look at how the bindings are put together.
 
 It is also the fastest way to find out whether a camera works: if the Cameras
