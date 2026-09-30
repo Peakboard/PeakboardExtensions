@@ -36,6 +36,10 @@ namespace PeakboardExtensionObjectDetection.Annotation
         private static readonly AutoResetEvent _wake = new AutoResetEvent(false);
         private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(30);
 
+        // No byte order mark: JSON must not start with one (RFC 8259), and Python json.load or jq
+        // refuse a sample file that does - the files are meant to be read by other tools too.
+        private static readonly Encoding JsonFileEncoding = new UTF8Encoding(false);
+
         private static Thread _worker;
         private static string _hubUrl = "";
         private static string _userGroupKey = "";
@@ -108,8 +112,8 @@ namespace PeakboardExtensionObjectDetection.Annotation
             // The JSON last: the uploader only picks up a sample whose .json exists, so it never
             // sees one half written.
             File.WriteAllBytes(Path.Combine(dir, sampleId + ".jpg"), s.FrameJpeg);
-            File.WriteAllText(Path.Combine(dir, sampleId + ".drawings.json"), DrawingsJson(s), Encoding.UTF8);
-            File.WriteAllText(Path.Combine(dir, sampleId + ".json"), SampleJson(sampleId, dataset, s), Encoding.UTF8);
+            File.WriteAllText(Path.Combine(dir, sampleId + ".drawings.json"), DrawingsJson(s), JsonFileEncoding);
+            File.WriteAllText(Path.Combine(dir, sampleId + ".json"), SampleJson(sampleId, dataset, s), JsonFileEncoding);
 
             lock (_lock) { _uploadStatus = $"Sample {sampleId} saved, uploading..."; }
             _wake.Set();
