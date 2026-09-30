@@ -66,13 +66,21 @@ namespace PeakboardExtensionObjectDetection.Annotation
             ConfigureHub(hubUrl, userGroupKey, log);
         }
 
-        /// <summary>The Hub connection only; the dataset stays what the Annotation list set.</summary>
+        /// <summary>
+        /// The Hub connection only; the dataset stays what the Annotation list set.
+        ///
+        /// The outbox is shared by the Annotation and the Suggestions list. A list that leaves
+        /// HubUrl or UserGroupKey empty does not take them away from the other one - otherwise one
+        /// tap on the Suggestions list stranded every sample the Annotation list had saved.
+        /// </summary>
         public static void ConfigureHub(string hubUrl, string userGroupKey, ILoggingService log)
         {
             lock (_lock)
             {
-                _hubUrl = (hubUrl ?? "").Trim().TrimEnd('/');
-                _userGroupKey = (userGroupKey ?? "").Trim();
+                var url = (hubUrl ?? "").Trim().TrimEnd('/');
+                var key = (userGroupKey ?? "").Trim();
+                if (url.Length > 0) _hubUrl = url;
+                if (key.Length > 0) _userGroupKey = key;
                 if (log != null) _log = log;
 
                 if (_worker == null || !_worker.IsAlive)
