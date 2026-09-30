@@ -14,8 +14,8 @@ namespace PeakboardExtensionHL7.Extension
     /// the row buffer with its MaxRows cap, and the Lua functions.
     ///
     /// Push-only. In History mode new rows are appended at the end; once MaxRows is
-    /// reached the oldest row is removed from the top. In Latest mode the rows of the
-    /// newest message replace the previous ones. The rows are also held here, so a reload
+    /// reached the oldest row is removed from the top. In Latest mode the list holds the
+    /// newest message per patient (see RowStore). The rows are also held here, so a reload
     /// (GetItems) returns what the board is showing instead of blanking it.
     ///
     /// State is keyed by list name: Peakboard may serve several data sources of the
@@ -31,11 +31,13 @@ namespace PeakboardExtensionHL7.Extension
         private sealed class ListState
         {
             public readonly object Lock = new object();
-            public readonly List<CustomListObjectElement> Rows = new List<CustomListObjectElement>();
+            public readonly RowStore Store = new RowStore();
             public string ListName;
             public int MaxRows;
             public bool LatestOnly;
             public Hl7Filter Filter;
+            /// <summary>PatientIds as the properties gave it last; a reload with another value applies it.</summary>
+            public string PatientIdsProperty;
             public MllpListener.Lease Lease;
             public Action<ReceivedMessage> Handler;
         }
@@ -91,7 +93,7 @@ namespace PeakboardExtensionHL7.Extension
                     {
                         Name = "SetPatientIds",
                         Description = "Replaces the PatientIds filter at runtime, e.g. from a patient picker. " +
-                                      "Applies to messages received from now on; call Clear first to drop rows of other patients.",
+                                      "Rows of patients no longer included are removed; new rows follow with the next messages.",
                         InputParameters =
                         {
                             new CustomListFunctionInputParameterDefinition
@@ -175,7 +177,17 @@ namespace PeakboardExtensionHL7.Extension
             if (_states.TryGetValue(data.ListName ?? "", out var state))
             {
                 lock (state.Lock)
-                    foreach (var row in state.Rows) items.Add(row);
+                {
+                    // PatientIds bound to a variable is evaluated again on every reload.
+                    // The returned items replace the list, so nothing is pushed here.
+                    var patientIds = ReadProperty(data, "PatientIds", "");
+                    if (patientIds != state.PatientIdsProperty)
+                    {
+                        state.PatientIdsProperty = patientIds;
+                        ApplyPatientIds(state, patientIds, null);
+                    }
+                    foreach (var row in state.Store.Rows) items.Add(row);
+                }
             }
             else
             {
@@ -195,13 +207,10 @@ namespace PeakboardExtensionHL7.Extension
             var filter = ReadFilter(data);
             var maxRows = ReadMaxRows(data);
             var latestOnly = ReadLatestOnly(data);
-            var rows = new List<CustomListObjectElement>();
-            var rowsLock = new object();
+            var store = new RowStore();
             Action<ReceivedMessage> handler = received =>
             {
-                var kept = filter.Apply(received.Message);
-                if (kept.Count == 0) return;
-                lock (rowsLock) StoreRows(rows, BuildRows(received, kept).ToList(), latestOnly, maxRows, null);
+                lock (store) StoreMessage(store, filter, received, latestOnly, maxRows, null);
             };
 
             using (var lease = MllpListener.Acquire(ReadPort(data), ReadProperty(data, "Encoding", "UTF-8"), Log))
@@ -214,7 +223,7 @@ namespace PeakboardExtensionHL7.Extension
                 finally { lease.Listener.MessageReceived -= handler; }
             }
 
-            lock (rowsLock) return rows.ToList();
+            lock (store) return store.Rows.ToList();
         }
 
         protected override void SetupOverride(CustomListData data)
@@ -228,6 +237,7 @@ namespace PeakboardExtensionHL7.Extension
                 MaxRows = ReadMaxRows(data),
                 LatestOnly = ReadLatestOnly(data),
                 Filter = ReadFilter(data),
+                PatientIdsProperty = ReadProperty(data, "PatientIds", ""),
             };
             state.Handler = received => OnMessage(state, received);
 
@@ -273,8 +283,7 @@ namespace PeakboardExtensionHL7.Extension
                 var ids = context.Values.Count > 0 ? context.Values[0].StringValue : "";
                 if (state != null)
                 {
-                    lock (state.Lock) state.Filter = state.Filter.WithPatientIds(ids);
-                    Log?.Info($"[HL7] '{state.ListName}' PatientIds set to '{ids}'.");
+                    lock (state.Lock) ApplyPatientIds(state, ids, Data?.Push(state.ListName));
                 }
             }
             else if (name.Equals("ProcessMessage", StringComparison.OrdinalIgnoreCase))
@@ -317,56 +326,38 @@ namespace PeakboardExtensionHL7.Extension
         private int OnMessage(ListState state, ReceivedMessage received)
         {
             lock (state.Lock)
-            {
-                var kept = state.Filter.Apply(received.Message);
-                if (kept.Count == 0) return 0;
-
-                var rows = BuildRows(received, kept).ToList();
-                StoreRows(state.Rows, rows, state.LatestOnly, state.MaxRows, Data?.Push(state.ListName));
-                return rows.Count;
-            }
+                return StoreMessage(state.Store, state.Filter, received, state.LatestOnly, state.MaxRows, Data?.Push(state.ListName));
         }
 
         /// <summary>
-        /// Puts the rows of one message into target and mirrors each change to push, if given.
-        /// Latest mode overwrites the existing rows in place, so a single-row list keeps its row.
+        /// Filters one message and stores its rows. In Latest mode the key is the patient
+        /// PatientIds matched, so every patient asked for keeps its own newest message;
+        /// without PatientIds there is one key and the list shows the newest message only.
         /// </summary>
-        private static void StoreRows(List<CustomListObjectElement> target, IReadOnlyList<CustomListObjectElement> rows,
-            bool latestOnly, int maxRows, CustomListDataServicePushObject push)
+        private int StoreMessage(RowStore store, Hl7Filter filter, ReceivedMessage received, bool latestOnly, int maxRows,
+            CustomListDataServicePushObject push)
         {
-            if (latestOnly)
-            {
-                for (var i = 0; i < rows.Count; i++)
-                {
-                    if (i < target.Count)
-                    {
-                        target[i] = rows[i];
-                        push?.Update(i, rows[i]);
-                    }
-                    else
-                    {
-                        target.Add(rows[i]);
-                        push?.Add(rows[i]);
-                    }
-                }
-                while (target.Count > rows.Count)
-                {
-                    target.RemoveAt(target.Count - 1);
-                    push?.Remove(target.Count);
-                }
-                return;
-            }
+            var kept = filter.Apply(received.Message);
+            if (kept.Count == 0) return 0;
 
-            foreach (var row in rows)
-            {
-                target.Add(row);
-                push?.Add(row);
-            }
-            while (target.Count > maxRows)
-            {
-                target.RemoveAt(0);
-                push?.Remove(0);
-            }
+            var rows = BuildRows(received, kept).ToList();
+            if (rows.Count == 0) return 0;
+            if (latestOnly)
+                store.ReplaceLatest(filter.MatchedPatientId(received.Message), received.Message, rows, maxRows, push);
+            else
+                store.Append(received.Message, rows, maxRows, push);
+            return rows.Count;
+        }
+
+        /// <summary>
+        /// Switches the list to other patients: the new filter applies to the next
+        /// messages, and the rows of patients no longer asked for are removed.
+        /// </summary>
+        private void ApplyPatientIds(ListState state, string patientIds, CustomListDataServicePushObject push)
+        {
+            state.Filter = state.Filter.WithPatientIds(patientIds);
+            state.Store.Refilter(state.Filter, state.LatestOnly, push);
+            Log?.Info($"[HL7] '{state.ListName}' PatientIds set to '{patientIds}'.");
         }
 
         protected static string ReadProperty(CustomListData data, string name, string fallback)

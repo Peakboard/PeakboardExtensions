@@ -76,6 +76,15 @@ namespace PeakboardExtensionHL7.Hl7
             return true;
         }
 
+        /// <summary>
+        /// The first of the message's patient IDs that PatientIds matches, or "" when
+        /// PatientIds is empty. With wildcards this is the actual ID, not the pattern.
+        /// </summary>
+        public string MatchedPatientId(Hl7Message message) =>
+            _patientIds.Count == 0
+                ? ""
+                : message.AllPatientIds.FirstOrDefault(id => _patientIds.Any(r => r.IsMatch(id))) ?? "";
+
         public bool KeepsSegment(Hl7Segment segment)
         {
             if (_segmentTypes.Contains(segment.Type)) return true;

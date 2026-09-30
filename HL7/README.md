@@ -32,8 +32,8 @@ per ADT event (location in `Field3`), each carrying the patient.
 | `SegmentTypes` | *(all)* | See [Filters](#filters). |
 | `PatientIds` | *(all)* | See [Filters](#filters). |
 | `KeepMshPid` | `true` | Store the MSH and PID of every message as rows of their own. Turn off to get only the segments `SegmentTypes` names; their rows still carry the message and patient columns. HL7 - Segments only. |
-| `Mode` | `History` | `History` keeps the received rows; `Latest` shows only the newest message and overwrites it. See [Rows and retention](#rows-and-retention). |
-| `MaxRows` | `1000` | The oldest rows are removed beyond this. Ignored in `Latest` mode. |
+| `Mode` | `History` | `History` keeps the received rows; `Latest` shows only the newest message, per patient when `PatientIds` is set. See [Rows and retention](#rows-and-retention). |
+| `MaxRows` | `1000` | The oldest rows are removed beyond this. In `Latest` mode the patients that have gone longest without a message are removed. |
 
 | Column | Type | Description |
 |---|---|---|
@@ -108,7 +108,7 @@ Available on HL7 - Segments and HL7 - Messages.
 | Function | Returns | Description |
 |---|---|---|
 | `GetValue(text, path)` | String | Reads one value from a message or a single segment, escape sequences resolved. See below. |
-| `SetPatientIds(ids)` | – | Replaces the `PatientIds` filter at runtime, e.g. from a patient picker. Applies to messages received afterwards; call `Clear` first to drop the other patients' rows. Pass `''` for all patients. |
+| `SetPatientIds(ids)` | – | Replaces the `PatientIds` filter at runtime, e.g. from a patient picker. Rows of patients no longer included are removed; the new patients' rows follow with their next messages. Pass `''` for all patients. |
 | `ProcessMessage(message)` | String | Runs a message through this list's filter as if it had been received: `OK n` (rows added), `FILTERED`, or the parse error. For testing a board. |
 
 `GetValue` paths:
@@ -136,7 +136,6 @@ local insuranceId = data.HL7Messages.GetValue(msg.PID, 'PID-3(2).1')
 local visit = data.HL7Messages.GetValue(msg.Segments, 'PV1-19')
 
 -- Patient picker
-data.HL7Segments.Clear()
 data.HL7Segments.SetPatientIds(screens['Main'].PatientBox.Text)
 ```
 
@@ -146,9 +145,12 @@ The lists are push lists. **New rows are appended at the bottom**; when `MaxRows
 reached the oldest row is removed from the top. Sort a table by `ReceivedAt`
 descending to show the newest first.
 
-With `Mode` = `Latest` the list holds only the newest accepted message. On HL7 -
-Messages that is one row, overwritten by every new message. On HL7 - Segments it
-is the segments of that message.
+With `Mode` = `Latest` the list holds only the newest accepted message. With
+`PatientIds` set, it holds the newest message **per patient**: `4711, 4712` gives two
+slots, `47*` one slot for every matching patient. On HL7 - Messages a slot is one
+row, overwritten in place by the patient's next message. On HL7 - Segments it is
+the segments of that message. The patients stay in the order in which they first
+arrived.
 
 Rows live in memory. They are gone after a restart of the board, and they are not
 there in Designer until the listener has received something (or you call
