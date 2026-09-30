@@ -308,7 +308,14 @@ namespace PeakboardExtensionObjectDetection.Inference
                         NmsThreshold = _nmsThreshold
                     };
                     inference.LoadModel(onnxPath, classesPath);
-                    _inference = inference;
+                    lock (_startLock)
+                    {
+                        // Loading takes seconds. A Suggestions list set up meanwhile found no
+                        // _inference to lower, so its threshold is applied here - otherwise the
+                        // model keeps filtering at the confidence threshold and never offers any.
+                        _inference = inference;
+                        inference.ConfidenceThreshold = InferenceThreshold();
+                    }
                     _loadedModelPath = onnxPath;
                     _loadedClassCount = inference.ClassNames.Length;
                     _loadedModelVersion = HubModelSync.ReadInstalledVersion(onnxPath);
