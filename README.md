@@ -67,6 +67,7 @@ For more details on how extensions work and how to build your own, see:
 | [SerialBarcodeScanner](SerialBarcodeScanner/) | Serial COM port barcode scanner integration |
 | [SickExtension](SickExtension/) | SICK sensor and scanner integration |
 | [WERMASmartMonitor](WERMASmartMonitor/) | WERMA signal tower monitoring system |
+| [WebSocketClient](WebSocketClient/) | WebSocket client (ws:// and wss://) - live messages as a table, send from Lua and Building Blocks |
 | [WheelMe](WheelMe/) | wheel.me autonomous robot fleet management |
 | [Woutex](Woutex/) | Woutex e-Ink display integration |
 | [Xminnov](Xminnov/) | Xminnov RFID tag reader |
