@@ -16,7 +16,7 @@ public class WebSocketClientExtension : ExtensionBase
             Name = "WebSocket Client",
             Description = "Connects to a WebSocket server (ws:// or wss://), shows incoming messages live "
                         + "as a table and sends messages from Lua or Building Blocks.",
-            Version = "1.0",
+            Version = "1.1",
             MinVersion = "1.0",
             Author = "Peakboard",
             Company = "Peakboard GmbH",

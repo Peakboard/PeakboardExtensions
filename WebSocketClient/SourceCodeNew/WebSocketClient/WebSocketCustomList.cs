@@ -35,6 +35,11 @@ internal class WebSocketCustomList : CustomListBase
             Name = "WebSocket",
             Description = "Receives WebSocket messages live and sends messages over the same connection.",
             PropertyInputPossible = true,
+
+            // The rows arrive through Data.Push while the connection is open; a periodic reload
+            // would only re-read the same buffer. The Designer sets the data source's reload
+            // state to Push for such lists.
+            SupportsPushOnly = true,
             PropertyInputDefaults =
             {
                 new CustomListPropertyDefinition { Name = "WsUrl", Value = "ws://127.0.0.1:1880/ws" },

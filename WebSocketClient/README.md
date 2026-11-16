@@ -14,6 +14,9 @@ after a drop, and keeps the WebSocket alive with a protocol-level heartbeat.
    pick the ZIP, restart the Designer.
 3. **Add data source → Extensions → WebSocket Client → WebSocket**.
 
+The data source is a push data source: the Designer sets its reload state to **Push**, because
+every message reaches the table the moment it arrives — a periodic reload is not needed.
+
 ## Properties
 
 | Property | Default | Meaning |
